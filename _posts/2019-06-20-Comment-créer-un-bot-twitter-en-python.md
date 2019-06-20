@@ -13,7 +13,7 @@ author: Pierre Chopinet
 Dans ce tutoriel, je vais vous apprendre comment créer un bot twitter en utilisant le langage de programmation python et la librairie tweepy.
 <!--more-->
 Ce bot sera capable de répondre automatiquement à des mots-clés présent dans des tweets.
-Exemple de bot: [CrytptageBot](https://twitter.com/cryptagebot)
+Exemple de bot: [CryptageBot](https://twitter.com/cryptagebot)
 
 ## Installation
 
