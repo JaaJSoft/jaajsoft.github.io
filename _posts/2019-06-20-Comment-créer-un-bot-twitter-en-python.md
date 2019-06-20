@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: article
 title: Comment créer un bot twitter en python avec tweepy
 tags:
     - python
