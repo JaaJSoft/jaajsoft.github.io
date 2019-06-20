@@ -36,7 +36,7 @@ author:
   type      : organization # "person" (default), "organization"
   name      : JaaJ
   url       :
-  avatar    : # path or url of avatar image (square)
+  avatar    : https://github.com/organizations/JaaJ-dev/settings/profile # path or url of avatar image (square)
   bio       : JaaJ
   email     :
   facebook  : # "user_name" the last part of your profile url, e.g. https://www.facebook.com/user_name
