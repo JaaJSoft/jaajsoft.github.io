@@ -101,9 +101,7 @@ Remplissez les informations sur votre bot.
 
 Pour les liens demandés, vous pouvez mettre un lien vers le profil twitter de votre bot.
 
-Allez dans Keys and Access Tokens, en bas de la page cliquez sur "Create my access token"
-
-![2018-07-07-apps_twitter_token](../images/2018-07-07-apps_twitter_token.png)
+Une fois l’application créée. Dans le detail de l’application, allez dans Keys and Access Tokens, en bas de la page cliquez sur "Create my access token"
 
 Sur cette page notez votre :
 
