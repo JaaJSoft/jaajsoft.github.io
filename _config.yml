@@ -18,12 +18,11 @@
 ##############################
 text_skin: default # "default" (default), "dark", "forest", "ocean", "chocolate", "orange"
 highlight_theme: default # "default" (default), "tomorrow", "tomorrow-night", "tomorrow-night-eighties", "tomorrow-night-blue", "tomorrow-night-bright"
-url     : https://ccc-development-team.github.io
+url     : https://blog.jaaj.dev
 baseurl : # does not include hostname
 title   : JaaJ blog
 description: > # this means to ignore newlines until "Language & timezone"
-  Java
-
+  JaaJ : Articles, tutoriels et actualités informatiques
 
 ## => Language and Timezone
 ##############################
