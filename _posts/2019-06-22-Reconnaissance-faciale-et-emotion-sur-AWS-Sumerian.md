@@ -169,7 +169,7 @@ Après cela, la fonction **onLexResponse** doit détecter le moment où l'utilis
 
 Ensuite, ces deux messages doivent être reçus par un nouveau Behaviour. Attachez-le à l'entité hôte et modifiez-le comme ci-dessous.
 
-![behaviourWebcam](/assets/images/220619_Reconnaissance/behaviourWebcam.png)
+![behaviourWebcam](/assets/images/220619_Reconnaissance/behaviorWebcam.png)
 
 1. **Webcam off/on** : Attend respectivement l'émission du message *switchOn* et *switchOff*.
 2. **Switch on/off** : Exécute respectivement les scripts **SwitchOnWebcamScript** et **SwitchOffWebcamScript**.
