@@ -6,8 +6,6 @@ tags:
     - twitter
     - tweepy
     - bot
-key: Comment créer un bot twitter en python avec tweepy
-
 author: Pierre Chopinet
 ---
 
