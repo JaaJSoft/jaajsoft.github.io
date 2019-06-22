@@ -1,5 +1,5 @@
 ---
 layout: article
-title: a propos
+title: A propos
 ---
 
