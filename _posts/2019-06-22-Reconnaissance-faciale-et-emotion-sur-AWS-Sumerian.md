@@ -49,7 +49,7 @@ Tout ce projet sera réalisé sur [AWS Sumerian](https://aws.amazon.com/fr/sumer
 
 ### Gestion des droits d'accès
 
-Tout d'abord, vous devrez créer et configurer une nouvelle scène sur Sumerian en lui accordant tous les accès AWS dont vous avez besoin. Pour cela, créez un *Cognito Identity Pool* en suivant [ce tutoriel](https://docs.sumerian.amazonaws.com/tutorials/create/beginner/aws-setup/). Ce *Cognito Identity Pool* de fournit aux utilisateurs Sumerian un token temporaire vous permettant d’utiliser les services AWS depuis Sumerian tels que Lex, Rekognition ...
+Tout d'abord, vous devrez créer et configurer une nouvelle scène sur Sumerian en lui accordant tous les accès AWS dont vous avez besoin. Pour cela, créez un *Cognito Identity Pool* en suivant [ce tutoriel](https://docs.sumerian.amazonaws.com/tutorials/create/beginner/aws-setup/). Ce *Cognito Identity Pool* va fournir aux utilisateurs Sumerian un token temporaire vous permettant d’utiliser les services AWS depuis Sumerian tels que Lex, Rekognition ...
 
 ![cognito](/assets/images/220619_Reconnaissance/cognito.png)
 
