@@ -1,0 +1,2 @@
+User-agent: *
+Sitemap: https://blog.jaaj.dev/sitemap.xml/sitemap.xml
