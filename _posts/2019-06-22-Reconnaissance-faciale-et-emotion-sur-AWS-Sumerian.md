@@ -30,8 +30,8 @@ Tout ce projet sera réalisé sur [AWS Sumerian](https://aws.amazon.com/fr/sumer
 
 - Webcam, microphone et haut-parleurs
 - Connectez-vous à Sumerian à l'aide de votre [compte AWS](https://signin.aws.amazon.com/signin?client_id=signup&redirect_uri=https%3A%2F%2Fportal.aws.amazon.com%2Fbilling%2Fsignup%2Fresume&page=resolve)
-- Téléchargez les [ressources de base](../download/sumerianhostrecognition-bundle.zip) du projet
-- Téléchargez les [images et les scripts](../download/filesToS3.zip) à utiliser
+- Téléchargez les [ressources de base](/assets/files/220619_Reconnaissance/sumerianhostrecognition-bundle.zip) du projet
+- Téléchargez les [images et les scripts](/assets/files/220619_Reconnaissance/filesToS3.zip) à utiliser
 - Maîtrisez les [bases](https://aws.amazon.com/fr/sumerian/getting-started/) de l'utilisation de Sumerian
 - Soyez à l'aise avec les [scripts](https://docs.sumerian.amazonaws.com/tutorials/create/beginner/scripting-basics/index.html) et les [machines à états](https://docs.aws.amazon.com/sumerian/latest/userguide/sumerian-statemachines.html) sur Sumerian.
 
