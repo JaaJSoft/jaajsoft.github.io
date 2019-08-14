@@ -151,16 +151,16 @@ Pour gérer la réponse de Lex et la convertir en action permettant de modifier 
 ctx.onLexResponse = (data) => {
   if (data.dialogState === "Fulfilled") {
     if(data.intentName === args.intentCam){
-	  switch (data.slots[args.slotCam]){
-	    case "on":
-		  sumerian.SystemBus.emit("switchOn");
-		  break;
-	    case "off":
-		  sumerian.SystemBus.emit("switchOff");
-		  break;
-		default:
-		  break;
-	  }
+      switch (data.slots[args.slotCam]){
+        case "on":
+          sumerian.SystemBus.emit("switchOn");
+          break;
+        case "off":
+          sumerian.SystemBus.emit("switchOff");
+          break;
+        default:
+          break;
+      }
     }
   }
 }
@@ -288,15 +288,15 @@ if(Boolean(ctx.worldData.cameraOn)){
   tracker.on('track', function(event) {
     //check if faces are detected
     if (event.data.length === 0) {
-	  //increment timeout to reset current user
-	  if(currentFaceID != "" && timeout < timeoutLimit){
-	    timeout++;
-	  }else{
-		clearOutput(args, ctx);
-		resetCurrentState(args, ctx);
-	  }
-   	} else {
-	  //facial recognition
+      //increment timeout to reset current user
+      if(currentFaceID != "" && timeout < timeoutLimit){
+        timeout++;
+      }else{
+        clearOutput(args, ctx);
+        resetCurrentState(args, ctx);
+      }
+    } else {
+      //facial recognition
       let img = getImageFromCanvas(canvas);
       imageRecognition(img, args.collectionID, args.dbTable, args, ctx);
     }
