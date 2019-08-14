@@ -30,7 +30,7 @@ Tout ce projet sera réalisé sur [AWS Sumerian](https://aws.amazon.com/fr/sumer
 
 - Webcam, microphone et haut-parleurs
 - Connectez-vous à Sumerian à l'aide de votre [compte AWS](https://signin.aws.amazon.com/signin?client_id=signup&redirect_uri=https%3A%2F%2Fportal.aws.amazon.com%2Fbilling%2Fsignup%2Fresume&page=resolve)
-- Téléchargez les [ressources de base](/assets/files/220619_Reconnaissance/sumerianfacialrecognition-bundle.zip) du projet
+- Téléchargez les [ressources de base](/assets/files/220619_Reconnaissance/sumerianfacialecognition-bundle.zip) du projet
 - Téléchargez les [scripts](/assets/files/220619_Reconnaissance/filesToS3.zip) à utiliser
 - Maîtrisez les [bases](https://aws.amazon.com/fr/sumerian/getting-started/) de l'utilisation de Sumerian
 - Soyez à l'aise avec les [scripts](https://docs.sumerian.amazonaws.com/tutorials/create/beginner/scripting-basics/index.html) et les [machines à états](https://docs.aws.amazon.com/sumerian/latest/userguide/sumerian-statemachines.html) sur Sumerian.
@@ -149,22 +149,22 @@ Pour gérer la réponse de Lex et la convertir en action permettant de modifier 
 
 ```js
 ctx.onLexResponse = (data) => {
-    if (data.dialogState === "Fulfilled") {
-		if(data.intentName === args.intentCam){
-		  switch (data.slots[args.slotCam]){
-			case "on":
-			  sumerian.SystemBus.emit("switchOn");
-			  break;
-			case "off":
-			  sumerian.SystemBus.emit("switchOff");
-			  break;
-			default:
-			  break;
-		  }
-		}
+  if (data.dialogState === "Fulfilled") {
+    if(data.intentName === args.intentCam){
+	  switch (data.slots[args.slotCam]){
+	    case "on":
+		  sumerian.SystemBus.emit("switchOn");
+		  break;
+	    case "off":
+		  sumerian.SystemBus.emit("switchOff");
+		  break;
+		default:
+		  break;
 	  }
-	}
- 	sumerian.SystemBus.addListener( `${sumerian.SystemBusMessage.LEX_RESPONSE}.${ctx.entity.id}`, ctx.onLexResponse);
+    }
+  }
+}
+sumerian.SystemBus.addListener( `${sumerian.SystemBusMessage.LEX_RESPONSE}.${ctx.entity.id}`, ctx.onLexResponse);
 ```
 
 Après cela, la fonction **onLexResponse** doit détecter le moment où l'utilisateur appelle l'Intent de Lex de modifier l'état de la webcam et émet le message correct (*switchOn* ou *switchOff*).
@@ -177,15 +177,15 @@ Ce script définie une variable globale *cameraOn* afin de sauvegarder l'état d
 
 ```javascript
 if(Boolean(ctx.worldData.cameraOn)){
-	sumerian.SystemBus.emit("switchOff");
+  sumerian.SystemBus.emit("switchOff");
 }else{
-	sumerian.SystemBus.emit("switchOn");
+  sumerian.SystemBus.emit("switchOn");
 }
 ```
 
 Enfin, ces deux messages doivent être reçus par un nouveau Behaviour. Attachez-le à l'entité **Webcam** et modifiez-le comme ci-dessous.
 
-![behaviourWebcam](/assets/images/220619_Reconnaissance/behaviourWebcam.png)
+![behaviourWebcam](/assets/images/220619_Reconnaissance/behaviorWebcam.png)
 
 1. **Webcam off/on** : Attend respectivement l'émission du message *switchOn* et *switchOff*.
 2. **Switch on/off** : Exécute respectivement les scripts **SwitchOnWebcamScript** et **SwitchOffWebcamScript**.
@@ -222,12 +222,12 @@ A l'inverse, lorsque la caméra est désactivée, la variable de contexte **ctx.
 
 ```javascript
 function switchOffWebcam(ctx){
-	const video = document.getElementById('video');
-	video.pause();
-	video.src="";
-	video.srcObject=null;
-	video.load();
-	ctx.worldData.cameraOn = false;
+  const video = document.getElementById('video');
+  video.pause();
+  video.src="";
+  video.srcObject=null;
+  video.load();
+  ctx.worldData.cameraOn = false;
 }
 ```
 
@@ -285,32 +285,32 @@ Pour effectuer toutes ces actions, copiez le code ci-dessous dans la fonction **
 let canvas = document.getElementById("canvas");
 let video = document.getElementById("video");
 if(Boolean(ctx.worldData.cameraOn)){
-	tracker.on('track', function(event) {
-		//check if faces are detected
-    	if (event.data.length === 0) {
-			//increment timeout to reset current user
-			if(currentFaceID != "" && timeout < timeoutLimit){
-				timeout++;
-			}else{
-				clearOutput(args, ctx);
-				resetCurrentState(args, ctx);
-			}
-   		} else {
-			//facial recognition
-        	let img = getImageFromCanvas(canvas);
-    		imageRecognition(img, args.collectionID, args.dbTable, args, ctx);
-    	}
-    });
-	//launch face detection every 2 seconds
-    interval = setInterval(function(){
-    	drawVideoOnCanvas(video, canvas, 500, 500);
-        let task = tracking.track("#canvas", tracker);
-        task.stop();
-    }, frameRate);
-	ctx.transitions.success();
+  tracker.on('track', function(event) {
+    //check if faces are detected
+    if (event.data.length === 0) {
+	  //increment timeout to reset current user
+	  if(currentFaceID != "" && timeout < timeoutLimit){
+	    timeout++;
+	  }else{
+		clearOutput(args, ctx);
+		resetCurrentState(args, ctx);
+	  }
+   	} else {
+	  //facial recognition
+      let img = getImageFromCanvas(canvas);
+      imageRecognition(img, args.collectionID, args.dbTable, args, ctx);
+    }
+  });
+  //launch face detection every 2 seconds
+  interval = setInterval(function(){
+    drawVideoOnCanvas(video, canvas, 500, 500);
+    let task = tracking.track("#canvas", tracker);
+    task.stop();
+  }, frameRate);
+  ctx.transitions.success();
 }else{
-	cleanup(args, ctx);
-	ctx.transitions.failure();
+  cleanup(args, ctx);
+  ctx.transitions.failure();
 }
 ```
 
@@ -318,9 +318,9 @@ Pour terminer, afin de désactiver la détection si la webcam est désactivée, 
 
 ```js
 if(interval != null){
-	tracker.removeAllListeners();
-	clearInterval(interval);
-	interval = null;
+  tracker.removeAllListeners();
+  clearInterval(interval);
+  interval = null;
 }
 resetCurrentState(args, ctx);
 clearOutput(args, ctx);
