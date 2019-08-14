@@ -16,7 +16,7 @@ Dans ce tutoriel, nous allons voir comment créer un hôte virtuel sur AWS Sumer
 
 # Introduction
 
-![Demo_scene2](/assets/images/220619_Reconnaissance/Demo_scene2.png)
+![Demo_scene2](/assets/images/220619_Reconnaissance/Demo_scene3.png)
 
 ### Fonctionnalités
 
@@ -30,8 +30,8 @@ Tout ce projet sera réalisé sur [AWS Sumerian](https://aws.amazon.com/fr/sumer
 
 - Webcam, microphone et haut-parleurs
 - Connectez-vous à Sumerian à l'aide de votre [compte AWS](https://signin.aws.amazon.com/signin?client_id=signup&redirect_uri=https%3A%2F%2Fportal.aws.amazon.com%2Fbilling%2Fsignup%2Fresume&page=resolve)
-- Téléchargez les [ressources de base](/assets/files/220619_Reconnaissance/sumerianhostrecognition-bundle.zip) du projet
-- Téléchargez les [images et les scripts](/assets/files/220619_Reconnaissance/filesToS3.zip) à utiliser
+- Téléchargez les [ressources de base](/assets/files/220619_Reconnaissance/sumerianfacialrecognition-bundle.zip) du projet
+- Téléchargez les [scripts](/assets/files/220619_Reconnaissance/filesToS3.zip) à utiliser
 - Maîtrisez les [bases](https://aws.amazon.com/fr/sumerian/getting-started/) de l'utilisation de Sumerian
 - Soyez à l'aise avec les [scripts](https://docs.sumerian.amazonaws.com/tutorials/create/beginner/scripting-basics/index.html) et les [machines à états](https://docs.aws.amazon.com/sumerian/latest/userguide/sumerian-statemachines.html) sur Sumerian.
 
@@ -63,21 +63,22 @@ Par défaut, vous ne pourrez accéder qu'à Lex et à Polly. Pour ajouter les dr
 
 Pour importer les ressources défaut sur Sumerian, suivez la section *Re-Importing an Exported Sumerian Bundle* de [ce tutoriel](https://www.andreasjakl.com/download-export-or-backup-amazon-sumerian-scenes-part-6/) en important les [ressources par défaut](../ download / sumerianhostrecognition-bundle.zip).
 
-Cette scène a également besoin de quelques [fichiers](../ download / filesToS3.zip) pour fonctionner. Pour ce faire, allez sur [S3](https://console.aws.amazon.com/s3/), créez un [nouveau bucket](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/create-bucket.html) et [importez](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/upload-objects.html) les dossiers **scripts** et **img**. Assurez-vous de rendre les deux dossiers publics pour permettre à Sumerian d'y accéder.
+Cette scène a également besoin de quelques [fichiers](../ download / filesToS3.zip) pour fonctionner. Pour ce faire, allez sur [S3](https://console.aws.amazon.com/s3/), créez un [nouveau bucket](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/create-bucket.html) et [importez](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/upload-objects.html) le dossier **scripts**. Assurez-vous de le dossier public pour permettre à Sumerian d'y accéder.
 
 ![public](/assets/images/220619_Reconnaissance/public.png)
 
 Par défaut, la scène contient les éléments suivants :
 
-- **CamButton** et **Micro** : Entités HTML représentant les deux boutons
-- **Webcam** et **Dialog** : Entités 3DHTML représentant l'affichage de la caméra et l'affichage du résultat de la reconnaissance.
+- **WebcamButton** et **MicroButton** : Entités 3HTML représentant les deux boutons
+- **Webcam** : Entité 3DHTML représentant l'affichage de la caméra et l'affichage du résultat de la reconnaissance.
 - **Cristine** : L'hôte Sumerian
 
 Ainsi que les scripts suivants : 
 
-- **HostScript** : Initialise tous les évènement de la scène
-- **Recognition** : Fonctions de reconnaissance.
+- **MicrophoneScript** : Initialise tous les évènement liés au microphone.
+- **RecognitionScript** : Fonctions de reconnaissance.
 - **SwitchOnWebcamScript**/**SwitchOffWebcamScript** : Fonction permettant l'activation et la désactivation du flux vidéo.
+- **WebcamScript** : Initialise l'évènement d'activation de la webcam.
 
 Maintenant que les bases de la scène sont configurées, nous allons commencer par implémenter l'interaction vocale avec l'hôte à l'aide de Lex.
 
@@ -136,7 +137,7 @@ Ce Behaviour fonctionne comme ceci :
 7. **Response & Lex error** : Lit la réponse vocale de Lex.
 8. **End Response** : Emet le *endMessage* pour réinitialiser l'aspect du bouton du microphone.
 
-Enfin, pour intercepter tous les messages émis par ce Behaviour, ainsi que pour ajouter des événements sur le bouton du microphone, ajoutez un composant de script à l'hôte et indiquez au script les deux paramètres requis. Ces paramètres sont le lien vers les deux images téléchargées précédemment dans le bucket S3 et le nom de l'Intent et du Slot pour activer la webcam.
+Enfin, pour intercepter tous les messages émis par ce Behaviour, ainsi que pour ajouter des événements sur le bouton du microphone, ajoutez un composant de Script à l'entité **MicroButton**, faites glisser le script **MicrophoneScript** vers ce composant et indiquez au script les deux paramètres requis. Ces paramètres sont le nom de l'Intent et du Slot pour activer la webcam.
 
 ![addhostscript](/assets/images/220619_Reconnaissance/addhostscript.png)
 
@@ -144,38 +145,57 @@ Enfin, pour intercepter tous les messages émis par ce Behaviour, ainsi que pour
 
 Pour le moment, vous pouvez demander à l'hôte d'allumer et d'éteindre la webcam. Le chatbot Lex vous répondra que l'état de la webcam a été modifié, mais rien ne se passe vraiment.
 
-Pour gérer la réponse de Lex et la convertir en action permettant de modifier l'état de la caméra, vous devez ajouter le code suivant à la fonction **initLexResponseEvent** du fichier **hostScript**.
+Pour gérer la réponse de Lex et la convertir en action permettant de modifier l'état de la caméra, vous devez ajouter le code suivant à la fonction **initLexResponseEvent** du fichier **MicrophoneScript**.
 
 ```js
 ctx.onLexResponse = (data) => {
-  if (data.dialogState === "Fulfilled") {
-    if(data.intentName === args.intentCam){
-      switch (data.slots[args.slotCam]){
-        case "on":
-          sumerian.SystemBus.emit("switchOn", true);
-          break;
-        case "off":
-          sumerian.SystemBus.emit("switchOff", true);
-          break;
-        default:
-          break;
-      }
-    }
-  }
-}
+    if (data.dialogState === "Fulfilled") {
+		if(data.intentName === args.intentCam){
+		  switch (data.slots[args.slotCam]){
+			case "on":
+			  sumerian.SystemBus.emit("switchOn");
+			  break;
+			case "off":
+			  sumerian.SystemBus.emit("switchOff");
+			  break;
+			default:
+			  break;
+		  }
+		}
+	  }
+	}
+ 	sumerian.SystemBus.addListener( `${sumerian.SystemBusMessage.LEX_RESPONSE}.${ctx.entity.id}`, ctx.onLexResponse);
 ```
 
 Après cela, la fonction **onLexResponse** doit détecter le moment où l'utilisateur appelle l'Intent de Lex de modifier l'état de la webcam et émet le message correct (*switchOn* ou *switchOff*).
 
-Ensuite, ces deux messages doivent être reçus par un nouveau Behaviour. Attachez-le à l'entité hôte et modifiez-le comme ci-dessous.
+Ensuite, afin que le bouton de camera puisse lui aussi émettre les messages *switchOn* et *switchOff* quand il est appuyé ou relâché, il suffit de créer un composant Script à l'entité **WebcamButton** et de lui ajouter le script **WebcamScript**.
 
-![behaviourWebcam](/assets/images/220619_Reconnaissance/behaviorWebcam.png)
+![addWebcamScript](/assets/images/220619_Reconnaissance/addWebcamScript.png)
+
+Ce script définie une variable globale *cameraOn* afin de sauvegarder l'état de la caméra dans tout le programme (allumée ou éteinte) et émet le message *switchOn* ou *switchOff* en fonction de l'état de la caméra quand le bouton est pressé.
+
+```javascript
+if(Boolean(ctx.worldData.cameraOn)){
+	sumerian.SystemBus.emit("switchOff");
+}else{
+	sumerian.SystemBus.emit("switchOn");
+}
+```
+
+Enfin, ces deux messages doivent être reçus par un nouveau Behaviour. Attachez-le à l'entité **Webcam** et modifiez-le comme ci-dessous.
+
+![behaviourWebcam](/assets/images/220619_Reconnaissance/behaviourWebcam.png)
 
 1. **Webcam off/on** : Attend respectivement l'émission du message *switchOn* et *switchOff*.
 2. **Switch on/off** : Exécute respectivement les scripts **SwitchOnWebcamScript** et **SwitchOffWebcamScript**.
 3. **Change Recognition State** : Exécute le script **RecognitionScript** (que nous allons configurer plus tard).
 
-Les scripts activant la webcam utilisent l'[API WebRTC](https://webrtc.github.io/samples/) pour diffuser le flux de la webcam sur l'entité 3DHTML appelée **Webcam**. Une fois la webcam activée, la variable de contexte **ctx.worldData.cameraOn** passe à *true* pour sauvegarder l'état actuel de la caméra au seins de tout le programme.
+Faites attention à bien définir l'état **Webcam On** comme état initial en cliquant sur l'étant puis sur **Set As Initial State**.
+
+![setInitialState](/assets/images/220619_Reconnaissance/setInitialState.png)
+
+Les scripts activant la webcam utilisent l'[API WebRTC](https://webrtc.github.io/samples/) pour diffuser le flux de la webcam sur l'entité 3DHTML appelée **Webcam**. Une fois la webcam activée, la variable de contexte **ctx.worldData.cameraOn** passe à *true* pour sauvegarder l'état actuel de la caméra au seins de tout le programme. Pour fonctionner, copiez le code ci dessous dans la fonction **switchOnWebcam** dans le script **SwitchOnWebcamScript**.
 
 ```javascript
 function switchOnWebcam(ctx){
@@ -195,7 +215,19 @@ function switchOnWebcam(ctx){
     console.log(error);
   });
   ctx.worldData.cameraOn = true;
-  ctx.worldData.pressButton("CamButton");
+}
+```
+
+A l'inverse, lorsque la caméra est désactivée, la variable de contexte **ctx.worldData.cameraOn** passe à *false* et la diffusion du flux vidéo est arrêtée. Pour fonctionner, copiez le code ci dessous dans la fonction **switchOffWebcam** dans le script **SwitchOfWebcamScript**.
+
+```javascript
+function switchOffWebcam(ctx){
+	const video = document.getElementById('video');
+	video.pause();
+	video.src="";
+	video.srcObject=null;
+	video.load();
+	ctx.worldData.cameraOn = false;
 }
 ```
 
@@ -219,7 +251,7 @@ Gardez en mémoire l' **ID de la collection** et le **nom de la table DynamoDB**
 
 ### Implémentation de la détéction
 
-Commencez cette étape en ajoutant le script **RecognitionScript** à l'entité hôte et configurez-la avec l'ID de collection, la table DynamoDB créée juste avant et définissant la durée de l'intervalle JavaScript (par défaut à 2 000 millisecondes).
+Commencez cette étape en ajoutant le script **RecognitionScript** à l'entité **Webcam** en lui ajoutant un composant script, et configurez-le avec l'ID de collection et  la table DynamoDB créée juste avant.
 
 ![addRecoScript](/assets/images/220619_Reconnaissance/addRecoScript.png)
 
@@ -229,52 +261,69 @@ La détection faciale est effectuée par la bibliothèque **Tracking.js**. Le sc
 
 Avant de commencer à mettre en œuvre la détection faciale, jetez un coup d'œil au script lorsqu'il est ouvert : il contient déjà toutes les fonctions nécessaires à la reconnaissance faciale à l'aide d'AWS Rekognition.
 
-Dans la fonction **setup**, un objet appelé «**tracker**» est créé par **Tracking.js** et configuré pour détecter les visages sur les vidéos ou les images.
+Afin d'instancier les différents objets utilisés lors de la reconnaissance, copiez le code ci dessous dans la fonction **setup** du script **RecognitionScript**.
 
 ```js
+rekognition = new AWS.Rekognition();
+dynamodb = new AWS.DynamoDB();
 tracker = new tracking.ObjectTracker('face');
+tracker.setInitialScale(4);
+tracker.setStepSize(2);
+tracker.setEdgesDensity(0.1);
+resetCurrentState(args, ctx);
 ```
+
+Dans cette fonction, un objet appelé «**tracker**» est créé par **Tracking.js** et configuré pour détecter les visages sur les vidéos ou les images.
 
 Vous pouvez définir l'action effectuée par le *tracker* lors de l'appel de la détection faciale en créant une fonction lorsque le *tracker* émet le message *track*. Si les données reçues par cette fonction ne contiennent rien, aucun visage n'est détecté. Dans le cas contraire, le *tracker* a détecté un visage et la reconnaissance faciale et la détection des émotions peuvent être appelées.
 
 Une fois la fonction est définie, il ne reste plus qu'à créer l'intervalle pour appeler cette détection à un intervalle de temps régulier. À chaque exécution de la fonction intervalle, une capture d'écran de la webcam est sauvegardée sur le canvas, la détection faciale est appelée puis arrêtée juste après pour éviter de surcharger l'application.
 
-Pour effectuer toutes ces actions, copiez le code ci-dessous dans la fonction **enter** (la fonction appelée lorsque le script est exécuté à partir du *behaviour*).
+Pour effectuer toutes ces actions, copiez le code ci-dessous dans la fonction **enter** du script **RecognitionScript** (la fonction appelée lorsque le script est exécuté à partir du *behaviour*).
 
 ```js
+let canvas = document.getElementById("canvas");
+let video = document.getElementById("video");
 if(Boolean(ctx.worldData.cameraOn)){
-  tracker.on('track', function(event) {
-    if (event.data.length === 0) {
-      output.innerHTML = "";
-      resetCurrentState();
-    } else {
-      let img = getImageFromCanvas(canvas);
-      imageRecognition(img, output, args.collectionID, args.dbTable, ctx);
-    }
-  });
-  interval = setInterval(function(){
-    drawVideoOnCanvas(video, canvas, 500, 500);
-    let task = tracking.track("#canvas", tracker);
-    task.stop();
-  }, args.frameRate);
-  ctx.transitions.success();
+	tracker.on('track', function(event) {
+		//check if faces are detected
+    	if (event.data.length === 0) {
+			//increment timeout to reset current user
+			if(currentFaceID != "" && timeout < timeoutLimit){
+				timeout++;
+			}else{
+				clearOutput(args, ctx);
+				resetCurrentState(args, ctx);
+			}
+   		} else {
+			//facial recognition
+        	let img = getImageFromCanvas(canvas);
+    		imageRecognition(img, args.collectionID, args.dbTable, args, ctx);
+    	}
+    });
+	//launch face detection every 2 seconds
+    interval = setInterval(function(){
+    	drawVideoOnCanvas(video, canvas, 500, 500);
+        let task = tracking.track("#canvas", tracker);
+        task.stop();
+    }, frameRate);
+	ctx.transitions.success();
 }else{
-  cleanup(args, ctx);
-  ctx.transitions.failure();
+	cleanup(args, ctx);
+	ctx.transitions.failure();
 }
 ```
 
-Pour terminer, afin de désactiver la détection si la webcam est désactivée, copiez le code suivant dans la fonction **clean** pour tout effacer lorsque la reconnaissance s'arrête.
+Pour terminer, afin de désactiver la détection si la webcam est désactivée, copiez le code suivant dans la fonction **cleanup** du script **RecognitionScript** pour tout effacer lorsque la reconnaissance s'arrête.
 
 ```js
 if(interval != null){
-  var output = document.getElementById(args.output);
-  output.innerHTML = "";
-  tracker.removeAllListeners();
-  clearInterval(interval);
-  interval = null;
-  resetCurrentState();
+	tracker.removeAllListeners();
+	clearInterval(interval);
+	interval = null;
 }
+resetCurrentState(args, ctx);
+clearOutput(args, ctx);
 ```
 
 Désormais, le système est prêt à fonctionner ! Lancez la scène sur Sumerian puis demandez à l'hôte d'activer la webcam. L'hôte devrait alors pouvoir vous détecter si votre visage est connu dans la collection de reconnaissance.
