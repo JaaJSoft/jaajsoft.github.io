@@ -47,7 +47,7 @@ Oui oui, on y vient, dans la partie suivante nous verrons comment piloter notre 
 
 ## Hello Discord
 
-Dans ce tutoriel nous allons utiliser java, gradle et IntelliJ pour coder notre bot. A savoir qu'il est possible de coder un bot discord dans de nombreux langages (python, javascript, C++, ect ... ) . Libre à vous d’utiliser votre langage favoris. Vous pouvez trouver toutes les bibliothèques conforment à l'API discord ici : https://discordapp.com/developers/docs/topics/community-resources. 
+Dans ce tutoriel nous allons utiliser java, gradle et IntelliJ pour coder notre bot. A savoir qu'il est possible de coder un bot discord dans de nombreux langages (python, javascript, C++, ect ... ) . Libre à vous d’utiliser votre langage favoris. Vous pouvez trouver toutes les bibliothèques conformes à l'API discord ici : https://discordapp.com/developers/docs/topics/community-resources. 
 
 ### Création du projet et importation de la bibliothèque JDA
 
@@ -74,7 +74,7 @@ Créez un projet gralde avec IntelliJ, comme dit au début de ce tutoriel, je su
 	
 	mainClassName = "Application"
 
-Votre build.gradle devrait ressembler à quelque chose comme ça. Nous allons utiliser JDA (Java Discord API) pour piloter notre bot. Vous pouvez retrouvez le code source de cette bibliothèque ici https://github.com/DV8FromTheWorld/JDA. A noté que le dépot maven se trouve sur jcenter. Vous pouvez le trouver à cette adresse https://bintray.com/bintray/jcenter/net.dv8tion%3AJDA.
+Votre build.gradle devrait ressembler à quelque chose comme ça. Nous allons utiliser JDA (Java Discord API) pour piloter notre bot. Vous pouvez retrouvez le code source de cette bibliothèque ici https://github.com/DV8FromTheWorld/JDA. A noter que le dépot maven se trouve sur jcenter. Vous pouvez le trouver à cette adresse https://bintray.com/bintray/jcenter/net.dv8tion%3AJDA.
 
 ### Le code java
 
