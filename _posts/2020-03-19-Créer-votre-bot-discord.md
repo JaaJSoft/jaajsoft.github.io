@@ -2,7 +2,7 @@
 
 layout: article
 
-title: Créer son propre *bot* discord
+title: Créer son propre bot discord
 
 tags:
 
