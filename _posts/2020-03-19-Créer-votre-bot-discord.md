@@ -15,7 +15,9 @@ tags:
 author: Rémi Lecouillard
 
 ---
+
 Dans ce tutoriel nous allons voir les différentes étapes de création d'un *bot* discord. Je suppose que vous avez déjà un bagage en programmation, notamment en java. Nous nous attarderons pas sur le coté programmation pure du *bot*. Comme nous le verrons dans le tutoriel, il existe de nombreux langages et bibliothèques pour utiliser l'API de discord. Je laisse donc ce travail à la documentation de ces bibliothèques. Ici nous nous attarderons sur les grandes étapes pour avoir un *bot* fonctionnel.
+
 ## Création de votre compte
 
 Le première étape est de... créer un compte discord évidemment. Pas besoin d'un compte développeur en particulier, un simple compte comme celui que vous utilisez est suffisant. Si vous n'en n'avez pas encore vous pouvez vous rendre sur https://discordapp.com/ pour en créer un. 
@@ -25,7 +27,7 @@ De l'extérieur un *bot* discord fonctionne comme un simple compte. Dans les fai
 ### Créer votre *bot*
 Pour créer une application il faut vous rendre sur cette page https://discordapp.com/developers/applications (vous devriez y être connecté). Comme vous pouvez le voir (image ci dessous), j'ai déjà une application nommé "Le Melting *bot*". Normalement vous ne devriez en avoir aucune, les différentes applications que vous aurez créée vont s'afficher ici. Cliquez sur *New Application* entouré en rouge sur l'image.
 
-![interface création d'application](/assets/images/2020-03-19-*bot*-discord/approuge.png)
+![interface création d'application](/assets/images/2020-03-19-bot-discord/approuge.png)
 
 Donnez le nom que vous désirez à votre application. Allez ensuite dans l'onglet *bot* puis cliquez sur *Add *bot* et... Voilà, il est créé. A partir de là, vous pouvez changer le nom de votre *bot* ou lui mettre une image de profil à votre guise. Dans ce tutoriel, en ces temps de confinement lié au coronavirus, notre *bot* d’exemple s’appellera "On peut sortir ?". Se sera un *bot* très simple qui répondra "non" dés que quelqu'un demandera si on peut sortir.
 
@@ -102,7 +104,7 @@ public class Application extends ListenerAdapter {
 ```
 A partir de là, le code est assez explicite. Quand on reçoit un message, on regarde si le contenu correspond à "On peut sortir ?", on envoie ensuite dans le channel du message "Non. #RestezChezVous". Exécutez votre application, et testez la sur votre serveur. Dans notre exemple ça donne ça :
 
-![messages du *bot*](/assets/images/2020-03-19-*bot*-discord/sortiiiir.PNG)
+![messages du *bot*](/assets/images/2020-03-19-bot-discord/sortiiiir.PNG)
 
 
 Voilà ! Votre *bot* discord est créé et fonctionnel. JDA propose beaucoup de fonctionnalités que je vous laisse découvrir dans sa documentation https://ci.dv8tion.net/job/JDA/javadoc/. Je vous recommande également d'aller lire le *readme* du code source. Il explique plus en détail comment utiliser la bibliothèque.
