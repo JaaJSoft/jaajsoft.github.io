@@ -29,14 +29,14 @@ Pour créer une application il faut vous rendre sur cette page https://discordap
 
 ![interface création d'application](/assets/images/2020-03-19-bot-discord/approuge.png)
 
-Donnez le nom que vous désirez à votre application. Allez ensuite dans l'onglet *bot* puis cliquez sur *Add *bot* et... Voilà, il est créé. A partir de là, vous pouvez changer le nom de votre *bot* ou lui mettre une image de profil à votre guise. Dans ce tutoriel, en ces temps de confinement lié au coronavirus, notre *bot* d’exemple s’appellera "On peut sortir ?". Se sera un *bot* très simple qui répondra "non" dés que quelqu'un demandera si on peut sortir.
+Donnez le nom que vous désirez à votre application. Allez ensuite dans l'onglet *bot* puis cliquez sur *Add bot* et... Voilà, il est créé. A partir de là, vous pouvez changer le nom de votre *bot* ou lui mettre une image de profil à votre guise. Dans ce tutoriel, en ces temps de confinement lié au coronavirus, notre *bot* d’exemple s’appellera "On peut sortir ?". Se sera un *bot* très simple qui répondra "non" dés que quelqu'un demandera si on peut sortir.
 
 Vous devriez avoir en dessous du nom de votre *bot* écrit *token*. Affichez le, c'est cette identifiant qui vous permettra de prendre le contrôle de votre *bot* depuis l'API. Gardez le secret ! Je vous laisse explorer de vous même l'interface pour découvrir les différentes fonctionnalités.
 
 ### Ajouter votre *bot* à un serveur
 
-Pour inviter votre *bot* à un serveur, vous aurez besoin de deux choses, de son identifiant (client id) et de ses autorisations sur le serveur. Pour le premier c'est très simple allez dans l'onglet *General Information* est copié le numéro en dessous de client id. 
-Pour les autorisations allez dans l'onglet *bot*, tout en bas dans *bot* Permissions. Cochez les permissions que vous aurez besoin pour votre *bot*. Dans notre cas nous avons uniquement besoin de *send messages*, mais on peut imaginer toute sorte de *bot* qui peuvent gérer les membres, envoyer des fichiers, etc. Copiez ensuite le nombre qui est généré. 
+Pour inviter votre *bot* à un serveur, vous aurez besoin de deux choses, de son identifiant (client id) et de ses autorisations sur le serveur. Pour le premier c'est très simple allez dans l'onglet *General Information* et copiez le numéro en dessous de client id. 
+Pour les autorisations allez dans l'onglet *bot*, tout en bas dans *bot* Permissions. Cochez les permissions que vous aurez besoin pour votre *bot*. Dans notre cas nous avons uniquement besoin de *send messages*, mais on peut imaginer toutes sortes de *bot* qui peuvent gérer les membres, envoyer des fichiers, etc. Copiez ensuite le nombre qui est généré. 
 Enfin, remplacez CLIENTID et PERMISSION dans ce lien par les deux numéros que vous venez de trouver. https://discordapp.com/oauth2/authorize?&client_id=CLIENTID&scope=bot&permissions=PERMISSION
 
 Dans notre exemple le lien donne https://discordapp.com/oauth2/authorize?&client_id=690163488760529032&scope=bot&permissions=2048
@@ -80,7 +80,7 @@ Votre `build.gradle` devrait ressembler à quelque chose comme ça. Nous allons 
 
 ### Le code java
 
-Passons maintenant au code minimal pour que  que notre *bot* réponde "Non." quand nous demandons si nous pouvons sortir. Votre main devrait ressembler à quelque chose comme ça :
+Passons maintenant au code minimal pour que  que notre *bot* réponde "Non." quand nous demandons si nous pouvons sortir. Votre fonction `main` devrait ressembler à quelque chose comme ça :
 ```java
 public static void main(String[] argv) throws LoginException {
 	JDABuilder builder = new JDABuilder(AccountType.*bot*);  
