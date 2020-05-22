@@ -10,13 +10,11 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, vous allez apprendre à faire des requêtes http en python en utilisant la bibliothèque requests. L'objectif est de vous apprendre comment faire : 
+Dans ce tutoriel, vous allez apprendre à faire des requêtes http en python en utilisant la bibliothèque requests. <!--more--> L'objectif est de vous apprendre comment faire : 
 
 - Des requêtes http en python
 - Changer les header d'une requête
 - Traiter le résultat d'une requête
-
-<!--more-->
 
 ## Installation
 
