@@ -56,7 +56,7 @@ Déplacez-vous dans le dossier où vous avez installé python et faites :
 
 `shift + click droit -> ouvrir une fenêtre powershell` (sur Windows 7 pour les réfractaires au changement ça doit être cmd)
 
-Vous êtes normalement devant un terminal, dans ce terminal entrez :
+Vous êtes normalement dans un terminal, entrez alors :
 
 ```powershell
 .\python.exe -m pip install requests
@@ -64,7 +64,7 @@ Vous êtes normalement devant un terminal, dans ce terminal entrez :
 
 ### MacOS
 
-N'ayant pas de Mac, je ne peux pas tester l'installation, mais il faut aussi utiliser python et [PIP](https://pypi.org/project/pip/), et suivre les instructions pour linux afin d'installer la bibliothèque *requests*.
+N'ayant pas de Mac, je ne peux pas tester l'installation, il faut toutefois aussi utiliser python et [PIP](https://pypi.org/project/pip/), et suivre les instructions pour linux afin d'installer la bibliothèque *requests*.
 
 ## Une requête HTTP ?
 
@@ -112,9 +112,9 @@ Ce qui permet d'avoir les informations suivantes sur la ressource :
 ```json
 {'Connection': 'keep-alive', 'Content-Length': '10575', 'Server': 'GitHub.com', 'Content-Type': 'text/html; charset=utf-8', 'Strict-Transport-Security': 'max-age=31556952', 'Last-Modified': 'Fri, 20 Mar 2020 09:39:39 GMT', 'ETag': 'W/"5e748f5b-9528"', 'Access-Control-Allow-Origin': '*', 'Expires': 'Fri, 22 May 2020 09:46:06 GMT', 'Cache-Control': 'max-age=600', 'Content-Encoding': 'gzip', 'X-Proxy-Cache': 'MISS', 'X-GitHub-Request-Id': '7DD0:5D0B:292B1C:3342F8:5EC79D05', 'Accept-Ranges': 'bytes', 'Date': 'Fri, 22 May 2020 09:36:06 GMT', 'Via': '1.1 varnish', 'Age': '0', 'X-Served-By': 'cache-cdg20727-CDG', 'X-Cache': 'MISS', 'X-Cache-Hits': '0', 'X-Timer': 'S1590140167.863279,VS0,VE107', 'Vary': 'Accept-Encoding', 'X-Fastly-Request-ID': '7bccbb14a86614bdc56df3295ea37e17a144569b'}
 ```
-Très peu clair pour un humain, mais qui permet pour un navigateur d'avoir des informations très utiles sur la resource demandée.
+Très peu clair pour un humain, mais cela permet pour un navigateur d'avoir des informations très utiles sur la resource demandée.
 
-Et finalement la requête post qui s'utilise de la même façon qu'une requête get avec des paramètres sauf qu'ils sont passés dans la requête et pas avec l'url.
+Et finalement la requête *post* qui s'utilise de la même manière qu'une requête *get* sauf que les paramètres sont passés dans le corps de la requête et pas avec l'url.
 ```python
 import requests
 
@@ -125,7 +125,7 @@ print(response.status_code)
 
 ## Traiter le résultat d'une requête vers une API REST
 
-Comme exemple d'API nous allons utiliser [https://jsonplaceholder.typicode.com](https://jsonplaceholder.typicode.com), une api de test permettant d'expérimenter avec les API REST facilement.
+Comme exemple d'API nous allons utiliser [https://jsonplaceholder.typicode.com](https://jsonplaceholder.typicode.com), une API de test permettant d'expérimenter avec les API REST facilement.
 
 On va faire une requête vers [https://jsonplaceholder.typicode.com/users](https://jsonplaceholder.typicode.com/users) qui renvoie une liste d'utilisateurs au format JSON  suivant :
 ```json
@@ -179,7 +179,7 @@ On va faire une requête vers [https://jsonplaceholder.typicode.com/users](https
   ...
 ]
 ```
-La bibliothèque *requests* propose un moyen facile de traiter une réponse en JSON :
+La bibliothèque *requests* propose un moyen facile de traiter une réponse au format JSON :
 ```python
 import requests
 
@@ -190,11 +190,11 @@ if response.status_code == 200:
     for user in response_json:
         print(user["name"])
 ```
-Affiche le nom de tous les utilisateurs. On teste si le status_code est 200 pour vérifier si la requête est un succès et traiter le résultat que dans ce cas là. Il existe plusieurs code de retour décrit [ici](https://fr.wikipedia.org/wiki/Liste_des_codes_HTTP)
+Ce code affiche le nom de tous les utilisateurs. On teste si le *status_code* est 200 pour ne traiter le résultat que si la requête est un succès.. Il existe plusieurs codes de retour décrits [ici](https://fr.wikipedia.org/wiki/Liste_des_codes_HTTP).
 
 ## Changer les headers de la requête
 
-Dans certains cas il peut être utile de changer les headers d'une requête pour se faire passer pour un navigateur web et accéder à certains contenus qui refuse l'accès à leur page depuis un script.
+Dans certains cas il peut être utile de changer les headers d'une requête pour se faire passer pour un navigateur web et accéder à certains contenus dont l'accès est restreint depuis un script.
 
 Par exemple ici pour se faire passer pour Mozilla Firefox : 
 
@@ -205,5 +205,4 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:1
 response = requests.get("https://jsonplaceholder.typicode.com/users", headers=headers)
 ```
 
-Pour customiser plus ses User-Agent, il existe une bibliothèque proposant plusieurs User-Agent : [fake-useragent](https://pypi.org/project/fake-useragent)
-
+Pour personaliser plus ses *User-Agent*, il existe une bibliothèque proposant plusieurs *User-Agent* : [fake-useragent](https://pypi.org/project/fake-useragent)
