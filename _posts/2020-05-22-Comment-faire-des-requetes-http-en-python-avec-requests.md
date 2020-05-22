@@ -10,7 +10,8 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, vous allez apprendre à faire des requêtes http en python en utilisant la bibliothèque *requests*. A la fin de ce tutoriel vous saurez faire :
+Dans ce tutoriel, vous allez apprendre à faire des requêtes http en python en utilisant la bibliothèque requests. L'objectif est de vous apprendre comment faire : 
+
 - Des requêtes http en python
 - Changer les header d'une requête
 - Traiter le résultat d'une requête
@@ -29,7 +30,7 @@ Depuis un terminal, installation de python3 :
 sudo apt install python3
 ```
 
-Vous aurez ensuite besoin de pip le gestionnaire de librairie de python, il est souvent préinstallé avec python mais dans le doute :
+Vous aurez ensuite besoin de pip le gestionnaire de package de python, il est souvent préinstallé avec python mais dans le doute :
 
 ```bash
 sudo apt install python3-pip
