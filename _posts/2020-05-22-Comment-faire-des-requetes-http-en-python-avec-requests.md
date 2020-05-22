@@ -194,7 +194,7 @@ Affiche le nom de tous les utilisateurs. On teste si le status_code est 200 pour
 
 ## Changer les headers de la requête
 
-Dans certains cas il peut être utile de changer les headers d'une requête pour se faire passer pour un navigateur web et accéder à certains contenus qui refuse l'accès à leur page depuis un programme.
+Dans certains cas il peut être utile de changer les headers d'une requête pour se faire passer pour un navigateur web et accéder à certains contenus qui refuse l'accès à leur page depuis un script.
 
 Par exemple ici pour se faire passer pour Mozilla Firefox : 
 
