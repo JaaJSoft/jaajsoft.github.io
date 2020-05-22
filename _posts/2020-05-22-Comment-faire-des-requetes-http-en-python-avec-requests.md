@@ -16,6 +16,8 @@ Dans ce tutoriel, vous allez apprendre à faire des requêtes http en python en 
 - Changer les header d'une requête
 - Traiter le résultat d'une requête
 
+<!--more-->
+
 ## Installation
 
 Pour commencer, il vous faut un interpréteur python en version 3, dans mon cas j'utiliserai python 3.7.5.
