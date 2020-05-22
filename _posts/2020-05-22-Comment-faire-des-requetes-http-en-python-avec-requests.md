@@ -71,8 +71,6 @@ N'ayant pas de Mac, je ne peux pas tester l'installation, mais il faut aussi uti
 
 Source Wikipédia
 
-Décrire ce qu'est HTTP...
-
 Il existe 5 principales requêtes http
 
 - GET, permet accéder a une ressource.
