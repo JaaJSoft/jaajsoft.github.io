@@ -1,19 +1,14 @@
 ---
 
 layout: article
-
 title: Créer son propre bot discord
-
 tags:
-
-- java
-
-- discord
-
-- bot
+	- java
+	- discord
+	- bot
+	- tutoriel
 
 author: Rémi Lecouillard
-
 ---
 
 Dans ce tutoriel nous allons voir les différentes étapes de création d'un *bot* discord. Je suppose que vous avez déjà un bagage en programmation, notamment en java. Nous nous attarderons pas sur le coté programmation pure du *bot*. Comme nous le verrons dans le tutoriel, il existe de nombreux langages et bibliothèques pour utiliser l'API de discord. Je laisse donc ce travail à la documentation de ces bibliothèques. Ici nous nous attarderons sur les grandes étapes pour avoir un *bot* fonctionnel.
