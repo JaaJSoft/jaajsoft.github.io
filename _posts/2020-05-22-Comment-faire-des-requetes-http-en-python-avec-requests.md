@@ -1,6 +1,6 @@
 ---
 layout: article
-title: Python : Comment faire des requêtes http avec requests
+title: "Python : Comment faire des requêtes http avec requests"
 tags:
     - python
     - http
