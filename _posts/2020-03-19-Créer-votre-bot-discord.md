@@ -3,10 +3,10 @@
 layout: article
 title: Créer son propre bot discord
 tags:
-	- java
-	- discord
-	- bot
-	- tutoriel
+    - java
+    - discord
+    - bot
+    - tutoriel
 
 author: Rémi Lecouillard
 ---
