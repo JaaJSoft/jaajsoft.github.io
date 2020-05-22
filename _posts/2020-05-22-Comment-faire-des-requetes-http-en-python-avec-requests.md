@@ -74,7 +74,7 @@ Source Wikipédia
 
 Il existe 5 principales requêtes http
 
-- GET, permet accéder a une ressource.
+- GET, permet accéder à une ressource.
 - HEAD, permet de récupérer l'entête d'une ressource, pour par exemple connaitre la date de sa dernière modification (utile pour le système de cache d'un navigateur)
 - POST, permet d'ajouter une ressource
 - PUT, permet de mettre à jour une ressource
@@ -100,6 +100,7 @@ params = {"tag": "python"}
 response = requests.get("https://blog.jaaj.dev/archive.html", params=params)
 print(response.text)
 ```
+*requests* permet d'accéder uniquement aux headers d'une page en utilisant la requête *head* :
 
 ```python
 import requests
@@ -178,7 +179,7 @@ On va faire une requête vers [https://jsonplaceholder.typicode.com/users](https
   ...
 ]
 ```
-La bibliothèque *requests* propose un moyen facile de traiter une réponse en json :
+La bibliothèque *requests* propose un moyen facile de traiter une réponse en JSON :
 ```python
 import requests
 
@@ -189,7 +190,7 @@ if response.status_code == 200:
     for user in response_json:
         print(user["name"])
 ```
-Affiche le nom de tous les utilisateurs.
+Affiche le nom de tous les utilisateurs. On teste si le status_code est 200 pour vérifier si la requête est un succès et traiter le résultat que dans ce cas là. Il existe plusieurs code de retour décrit [ici](https://fr.wikipedia.org/wiki/Liste_des_codes_HTTP)
 
 ## Changer les headers de la requête
 
@@ -204,5 +205,5 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:1
 response = requests.get("https://jsonplaceholder.typicode.com/users", headers=headers)
 ```
 
-Pour customiser plus ses User-Agent, il existe une bibliohtèque proposant plusieurs User-Agent : [fake-useragent](https://pypi.org/project/fake-useragent)
+Pour customiser plus ses User-Agent, il existe une bibliothèque proposant plusieurs User-Agent : [fake-useragent](https://pypi.org/project/fake-useragent)
 
