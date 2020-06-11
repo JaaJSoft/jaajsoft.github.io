@@ -53,7 +53,7 @@ author:
 
 ## => GitHub Repository (if the site is hosted by GitHub)
 ##############################
-repository: jaaj-dev/jaaj-dev.github.io
+repository: jaajsoft/jaajsoft.github.io
 repository_tree: master
 
 
@@ -178,7 +178,7 @@ analytics:
 ## => Build
 ##############################
 markdown    : kramdown
-highlighter : rouge
+highlighter : blue
 permalink   : date
 
 exclude:
