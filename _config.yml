@@ -23,7 +23,7 @@ baseurl : # does not include hostname
 title   : JaaJBlog
 description: > # this means to ignore newlines until "Language & timezone"
   JaaJ : Articles, tutoriels et actualités informatiques
-image : logo.jpg
+image : logo.png
 
 
 ## => Language and Timezone
