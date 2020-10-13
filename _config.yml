@@ -36,13 +36,13 @@ timezone: Europe/Paris # see https://en.wikipedia.org/wiki/List_of_tz_database_t
 ##############################
 author:
   type      : organization # "person" (default), "organization"
-  name      : JaaJ
-  url       :
+  name      : JaaJSoft
+  url       : https://jaaj.dev
   avatar    : https://github.com/organizations/JaaJ-dev/settings/profile # path or url of avatar image (square)
-  bio       : JaaJ
+  bio       : JaaJSoft
   email     :
   facebook  : # "user_name" the last part of your profile url, e.g. https://www.facebook.com/user_name
-  twitter   : # "user_name" the last part of your profile url, e.g. https://twitter.com/user_name
+  twitter   : jaajsoft
   weibo     : # "user_id"   the last part of your profile url, e.g. https://www.weibo.com/user_id/profile?...
   telegram  : # "user_name" the last part of your profile url, e.g. https://t.me/user_name
   medium    : # "user_name" the last part of your profile url, e.g. https://medium.com/user_name
