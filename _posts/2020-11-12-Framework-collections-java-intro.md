@@ -42,7 +42,7 @@ Le Framework Collections est une architecture présente dans la librairie standa
 
 Le Framework Collections forme alors une hiérarchie de classes qui est la suivante :
 
-![](C:\Users\chevr\Documents\JaaJSoft\jaajsoft.github.io\assets\images\2020-06-04-introduction-collections\collectionsHierarchy.png)
+![](/assets/images/2020-11-12-Framework-collections-java-intro/collectionsHierarchy.png)
 
 Dans cette hiérarchie nous retrouvons deux interfaces principales représentant les grandes familles de collections : 
 
@@ -151,7 +151,7 @@ Il est souvent assez tentant de créer une *ArrayList* par défaut quand vous av
 - Ma collection pourra t'elle contenir des doublons ?
 - L'ordre des éléments sera t'il important ?
 - La collection doit elle être *Thread Safe* ?
-- Avez vous besoin d'accéder à des éléments dans la collection et comment (position, identifiant...)
+- Avez-vous besoin d'accéder à des éléments dans la collection et comment (position, identifiant...)
 - ...
 
 En se posant les bonnes questions il est possible de savoir exactement quelle collection utiliser pour répondre pleinement à vos besoins.
@@ -168,12 +168,8 @@ Le plus important est alors de retenir que cette API est construite sous une for
 
 Il est maintenant temps de s'intéresser aux collections concrètes que représentent les implémentations de cette API grâce aux articles suivants :
 
-###### Collections List (article à venir)
-
-###### Collections Set (article à venir)
-
-###### Collections Queue (article à venir)
-
-###### Collections Map (article à venir)
-
-###### Utilisations avancées des collections (article à venir)
+- Collections List (article à venir)
+- Collections Set (article à venir)
+- Collections Queue (article à venir)
+- Collections Map (article à venir)
+- Utilisations avancées des collections (article à venir)
