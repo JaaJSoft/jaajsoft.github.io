@@ -140,7 +140,7 @@ Si les itérateurs peuvent vous sembler quelque peu lourds à utiliser, il est �
 
 ```java
 for (String str : maListe) {
-	System.out.println(name);
+	System.out.println(str);
 }
 ```
 La boucle *foreach* utilise de manière implicite un itérateur et les méthodes *hasNext()* et *next()* pour parcourir tous les éléments de la collection.
