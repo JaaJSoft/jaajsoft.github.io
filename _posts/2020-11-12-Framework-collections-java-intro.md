@@ -63,7 +63,7 @@ L'interface **Collection** (à ne pas confondre avec la classe **Collections** q
 
 Cette interface définie alors les méthodes les plus générales permettant la manipulation des collections : ajout et suppression d'éléments, vérification de la présence d'un élément dans la collection, parcours de la collection... mais également deux constructeurs :
 
-- Un constructeur par défaut qui initialise une collection vide
+- Un constructeur par défaut qui initialise une collection vide.
 - Un constructeur prenant en paramètre une autre collection et qui copie tous les éléments pour créer une nouvelle collection.
 
 Cette interface propose différentes méthodes à ses implémentations telles que les suivantes :
@@ -147,25 +147,25 @@ La boucle *foreach* utilise de manière implicite un itérateur et les méthodes
 
 - **Utilisation de la diversité des collections**
 
-Il est souvent assez tentant de créer une *ArrayList* par défaut quand vous avez besoin d'une collection car c'est celle la plus courante et la plus citée en exemple. Toutefois, il est vivement conseillé d'analyser le jeu de données que vous souhaitez stocker dans une collection, se demander l'utilisation que vous aurez de cette collection et se poser les bonnes questions :
+Il est souvent assez tentant de créer une *ArrayList* par défaut quand vous avez besoin d'une collection, car c'est celle la plus courante et la plus citée en exemple. Toutefois, il est vivement conseillé d'analyser le jeu de données que vous souhaitez stocker dans une collection, se demander l'utilisation que vous aurez de cette collection et se poser les bonnes questions :
 
 - Ma collection pourra t'elle contenir des doublons ?
 - L'ordre des éléments sera t'il important ?
 - La collection doit elle être *Thread Safe* ?
-- Avez-vous besoin d'accéder à des éléments dans la collection et comment (position, identifiant...)
+- Avez-vous besoin d'accéder à des éléments dans la collection et comment (position, identifiant...) ?
 - ...
 
 En se posant les bonnes questions il est possible de savoir exactement quelle collection utiliser pour répondre pleinement à vos besoins.
 
 A l'inverse, si vous êtes certain de connaitre le nombre d'élément de votre jeu de données, que vous n'aurez pas de problèmes d'accès concurrentiel et que vous souhaitez juste stocker des éléments à des positions fixes et/ou parcourir de manière simple vos éléments, il est alors conseillé de se demander si l'utilisation d'une collection est vraiment nécessaire et utiliser un tableau traditionnel à la place.
 
-​		
+		
 
 ## Conclusion
 
 Pouvant paraitre aux premiers abords assez complexes et confuse, l'API Collection se révèle finalement très structurée et comprendre son architecture et son implémentation permet alors de maîtriser pleinement les collections.
 
-Le plus important est alors de retenir que cette API est construite sous une forme hiérarchique grâce à des interfaces au sommet qui définissent des comportements et une structure pour chaque famille de collection, et chaque implémentation est alors modelée par cette hiérarchie d'interfaces.
+Le plus important est alors de retenir que cette API est construite sous une forme hiérarchique, grâce à des interfaces au sommet qui définissent des comportements et une structure pour chaque famille de collection, et que chaque implémentation est alors modelée par cette hiérarchie d'interfaces.
 
 Il est maintenant temps de s'intéresser aux collections concrètes que représentent les implémentations de cette API grâce aux articles suivants :
 
