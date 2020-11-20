@@ -20,9 +20,11 @@ text_skin: default # "default" (default), "dark", "forest", "ocean", "chocolate"
 highlight_theme: default # "default" (default), "tomorrow", "tomorrow-night", "tomorrow-night-eighties", "tomorrow-night-blue", "tomorrow-night-bright"
 url     : https://blog.jaaj.dev
 baseurl : # does not include hostname
-title   : JaaJ blog
+title   : JaaJBlog
 description: > # this means to ignore newlines until "Language & timezone"
   JaaJ : Articles, tutoriels et actualités informatiques
+image : logo.png
+
 
 ## => Language and Timezone
 ##############################
@@ -34,13 +36,13 @@ timezone: Europe/Paris # see https://en.wikipedia.org/wiki/List_of_tz_database_t
 ##############################
 author:
   type      : organization # "person" (default), "organization"
-  name      : JaaJ
-  url       :
+  name      : JaaJSoft
+  url       : # https://jaaj.dev
   avatar    : https://github.com/organizations/JaaJ-dev/settings/profile # path or url of avatar image (square)
-  bio       : JaaJ
+  bio       : JaaJSoft
   email     :
   facebook  : # "user_name" the last part of your profile url, e.g. https://www.facebook.com/user_name
-  twitter   : # "user_name" the last part of your profile url, e.g. https://twitter.com/user_name
+  twitter   : jaajsoft
   weibo     : # "user_id"   the last part of your profile url, e.g. https://www.weibo.com/user_id/profile?...
   telegram  : # "user_name" the last part of your profile url, e.g. https://t.me/user_name
   medium    : # "user_name" the last part of your profile url, e.g. https://medium.com/user_name
@@ -53,7 +55,7 @@ author:
 
 ## => GitHub Repository (if the site is hosted by GitHub)
 ##############################
-repository: jaaj-dev/jaaj-dev.github.io
+repository: jaajsoft/jaajsoft.github.io
 repository_tree: master
 
 
