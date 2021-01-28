@@ -5,7 +5,7 @@ tags:
     - K8s
     - cluster
     - bare-metal
-	- raspberrypi
+    - raspberrypi
     - tutoriel
 
 author: Pierre Chopinet
