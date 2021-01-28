@@ -85,8 +85,8 @@ sudo install k3sup /usr/local/bin/
 Maintenant que K3sup est installé nous allons créer notre master. Choisissez un de vos serveurs qui deviendra le master de votre cluster et lancez depuis votre PC la commande suivante, avec l'adresse ip du serveur choisi et le *user* choisi. Le *user* doit avoir les droits *root*.
 
 ```bash
-SERVER_IP= 			# IP du master
-SERVER_USER=root 	# USER pour se connecter sur le master
+SERVER_IP=          # IP du master
+SERVER_USER=root    # USER pour se connecter sur le master
 
 k3sup install --no-extras --ip $SERVER_IP --user $SERVER_USER
 ```
@@ -97,10 +97,10 @@ Vous devez avoir maintenant un fichier `kubeconfig` à l'endroit où vous avez e
 Maintenant il faut ajouter vos autres serveurs en tant que *nodes* du cluster. Pour cela on utilise toujours k3sup depuis son ordinateur, avec la commande suivante :
 
 ```bash
-SERVER_IP= 			# IP du master
-SERVER_USER=root 	# USER pour se connecter sur le master
-NODE1_IP=			# IP de la 1ère node
-NODE1_user=root		# USER pour se connecter sur la 1ère node
+SERVER_IP=          # IP du master
+SERVER_USER=root    # USER pour se connecter sur le master
+NODE1_IP=           # IP de la 1ère node
+NODE1_user=root     # USER pour se connecter sur la 1ère node
 
 k3sup join --ip $NODE1_IP --user $NODE1_user --server-ip $SERVER_IP --server-user $SERVER_USER
 ```
