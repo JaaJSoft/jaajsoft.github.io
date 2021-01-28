@@ -64,7 +64,7 @@ Enfin vous devez copier cette clé SSH sur chacun de vos serveurs avec lesquels 
 ```bash
 ssh-copy-id user@host
 ```
-Pour tester si la clé SSH a été bien copié, essayer de vous connecter a ce serveur :
+Pour tester si la clé SSH a été bien copiée, essayer de vous connecter a ce serveur :
 
 ```bash
 ssh user@host
