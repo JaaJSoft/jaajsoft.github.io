@@ -153,14 +153,14 @@ Suivez le guide ici : [https://kubernetes.io/fr/docs/tasks/tools/install-kubectl
 
 ### Test du cluster
 
-Maintenant que `kubectl` est installé, nous allons pouvons tester notre cluster. Pour cela il faut définir une variable d'environnement `KUBECONFIG` correspondant à l'emplacement de notre fichier de config kubernetes généré par K3sup.
+Maintenant que `kubectl` est installé, nous allons pouvons tester notre *cluster*. Pour cela il faut définir une variable d'environnement `KUBECONFIG` correspondant à l'emplacement de notre fichier de config kubernetes généré par K3sup.
 
 ```bash
 export KUBECONFIG=/chemin/vers/votre/kubeconfig
 ```
 Vous pouvez mettre cette commande dans votre fichier `~/.bashrc` pour que la variable soit toujours définie.
 
-Maintenant, si tout c'est bien passé, en exécutant la commande suivante vous devriez pouvoir accéder à votre cluster.
+Maintenant, si tout c'est bien passé, en exécutant la commande suivante vous devriez pouvoir accéder à votre *cluster*.
 ```bash
 kubectl get nodes
 ```
@@ -173,7 +173,7 @@ xxxxxxxx3   Ready    <none>     1d   v1.19.7+k3s1
 ```
 ## La suite
 
-Maintenant que votre cluster est installé, vous pouvez commencer à déployer des services. Attention cependant, K3s ne propose pas de *loadbalancer* et de *storageclass* évolué par défaut, il faudra les installer vous-même. Un article expliquant comment faire devrait sortir prochainement. 
+Maintenant que votre *cluster* est installé, vous pouvez commencer à déployer des services. Attention cependant, K3s ne propose pas de *loadbalancer* et de *storageclass* évolués par défaut, il faudra les installer vous-même. Un article expliquant comment faire devrait sortir prochainement. 
 
 ## Sources
 
