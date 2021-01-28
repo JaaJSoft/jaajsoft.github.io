@@ -11,15 +11,15 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, nous allons voir comment déployer un cluster kubernetes bare-metal, cet à dire sans cloud provider.
+Dans ce tutoriel, nous allons voir comment déployer un *cluster* kubernetes bare-metal, c'est-à-dire sans *cloud provider*.
 
 <!--more-->
 
 ## Introduction
 
-Pour ce tutoriel vous aurez besoin d'un PC, et de plusieurs serveurs que vous voulez mettre en cluster. (Ce tutoriel peut fonctionner sur un seul serveur) 
+Pour ce tutoriel vous aurez besoin d'un PC, et de plusieurs serveurs que vous voulez mettre en *cluster*. (Ce tutoriel peut fonctionner sur un seul serveur) 
 
-Pour déployer notre cluster nous allons utiliser une version allégée de kubernetes nommée [K3s](https://k3s.io), qui est fait pour les appareils ARM comme un Raspberry PI ou des serveurs peu puissants. C'est une version simplifiée de k8s avec seulement l'essentiel, qui est plus simple à installer et maintenir. 
+Pour déployer notre *cluster* nous allons utiliser une version allégée de kubernetes nommée [K3s](https://k3s.io), qui est fait pour les appareils ARM comme un *Raspberry PI* ou des serveurs peu puissants. C'est une version simplifiée de k8s avec seulement l'essentiel, qui est plus simple à installer et maintenir. 
 
 ## Préparation des nodes
 
@@ -72,7 +72,7 @@ ssh user@host
 
 ##  Installation de K3sup
 
-Nous allons utiliser [K3sup](https://github.com/alexellis/k3sup) pour installer notre cluster, c'est un utilitaire simple et rapide pour installer et mettre à jour K3s.
+Nous allons utiliser [K3sup](https://github.com/alexellis/k3sup) pour installer notre *cluster*, c'est un utilitaire simple et rapide pour installer et mettre à jour K3s.
 Pour l'installer K3sup sur son PC  :
 
 ```bash
@@ -82,7 +82,7 @@ sudo install k3sup /usr/local/bin/
 
 ## Création du master
 
-Maintenant que K3sup est installé nous allons créer notre master. Choisissez un de vos serveurs qui deviendra le master de votre cluster et lancez depuis votre PC la commande suivante, avec l'adresse ip du serveur choisi et le *user* choisi. Le *user* doit avoir les droits *root*.
+Maintenant que K3sup est installé nous allons créer notre *master*. Choisissez un de vos serveurs qui deviendra le *master* de votre cluster et lancez depuis votre PC la commande suivante, avec l'adresse ip du serveur choisi et le *user* choisi. Le *user* doit avoir les droits *root*.
 
 ```bash
 SERVER_IP=          # IP du master
@@ -90,11 +90,11 @@ SERVER_USER=root    # USER pour se connecter sur le master
 
 k3sup install --no-extras --ip $SERVER_IP --user $SERVER_USER
 ```
-Vous devez avoir maintenant un fichier `kubeconfig` à l'endroit où vous avez exécuté ces commandes. Gardez le précieusement, il vous permettra d'interagir avec votre cluster.
+Vous devez avoir maintenant un fichier `kubeconfig` à l'endroit où vous avez exécuté ces commandes. Gardez le précieusement, il vous permettra d'interagir avec votre *cluster*.
 
 ## Ajout des nodes
 
-Maintenant il faut ajouter vos autres serveurs en tant que *nodes* du cluster. Pour cela on utilise toujours k3sup depuis son ordinateur, avec la commande suivante :
+Maintenant il faut ajouter vos autres serveurs en tant que *nodes* du *cluster*. Pour cela on utilise toujours k3sup depuis son ordinateur, avec la commande suivante :
 
 ```bash
 SERVER_IP=          # IP du master
@@ -108,7 +108,7 @@ Effectuez cette étape pour chacune des *nodes* voulues.
 
 ## Script final
 
-Voici le script complet pour réinstaller rapidement K3s, ou mettre à jour la version de kubernetes de votre cluster.
+Voici le script complet pour réinstaller rapidement K3s, ou mettre à jour la version de kubernetes de votre *cluster*.
 
 ```bash
 #!/bin/bash
@@ -134,7 +134,7 @@ k3sup join --ip $NODE2_IP --user $NODE2_user --server-ip $SERVER_IP --server-use
 
 ##  Test du cluster
 
-Pour tester si le cluster k8s est bien installé et interagir avec celui-ci nous allons avoir besoin de `kubectl`. 
+Pour tester si le *cluster* k8s est bien installé et interagir avec celui-ci nous allons avoir besoin de `kubectl`. 
 
 ### Pour Debian/Ubuntu 
 
