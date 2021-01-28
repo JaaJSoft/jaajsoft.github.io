@@ -132,7 +132,7 @@ k3sup join --ip $NODE1_IP --user $NODE1_user --server-ip $SERVER_IP --server-use
 k3sup join --ip $NODE2_IP --user $NODE2_user --server-ip $SERVER_IP --server-user $SERVER_USER
 ```
 
-##  Test du cluster
+##  Installation de kubectl et test du cluster
 
 Pour tester si le *cluster* k8s est bien installé et interagir avec celui-ci nous allons avoir besoin de `kubectl`. 
 
