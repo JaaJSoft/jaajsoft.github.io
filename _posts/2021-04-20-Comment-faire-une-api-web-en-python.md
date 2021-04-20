@@ -12,7 +12,7 @@ author: Pierre Chopinet
 ---
 
 Dans ce tutoriel, vous allez apprendre à faire une api web en python avec le Framework Flask. <!--more-->
-Le Framework flask est un Framework python permettant la réalisation d'un site web ou d'une api web. Son principal avantage est d'être simple à utiliser mais sans perdre de fonctionnalités, de plus il peut quasiment tout faire grâce à une grosse bibliothèque d'extensions.
+Le Framework flask est un Framework python permettant la réalisation d'un site web ou d'une api web. Son principal avantage est d'être simple à utiliser mais sans perdre de fonctionnalités, de plus il peut quasiment tout faire grâce à de nombreuses extensions.
 
 L'objectif de ce tutoriel est d'apprendre comment faire : 
 - Une api web en python
