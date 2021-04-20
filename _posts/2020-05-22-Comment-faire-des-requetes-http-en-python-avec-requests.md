@@ -10,7 +10,7 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, vous allez apprendre à faire des requêtes http en python en utilisant la bibliothèque requests. <!--more--> L'objectif est de vous apprendre comment faire : 
+Dans ce tutoriel, vous allez apprendre à faire des requêtes http en python en utilisant la bibliothèque requests. <!--more--> L'objectif de ce tutoriel est d'apprendre comment faire : 
 
 - Des requêtes http en python
 - Changer les header d'une requête
@@ -205,4 +205,7 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:1
 response = requests.get("https://jsonplaceholder.typicode.com/users", headers=headers)
 ```
 
-Pour personaliser plus ses *User-Agent*, il existe une bibliothèque proposant plusieurs *User-Agent* : [fake-useragent](https://pypi.org/project/fake-useragent)
+Pour personnaliser encore plus ses *User-Agent*, il existe une bibliothèque proposant plusieurs *User-Agent* : [fake-useragent](https://pypi.org/project/fake-useragent)
+
+## Voir aussi
+
