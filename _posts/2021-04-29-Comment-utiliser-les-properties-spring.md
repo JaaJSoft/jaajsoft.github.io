@@ -12,9 +12,10 @@ author: Rémi Lecouillard
 Dans ce tutoriel, vous allez apprendre à définir des properties spring et à les utiliser dans votre code Java.
 Ce tutoriel suppose que vous savez déjà set up un projet avec Spring boot et que vous avez quelques bases de programmation Java.
 
-## C'est quoi les _properties_ Spring ?
+## C'est quoi les _application properties_ Spring ?
 
-Exactement on parle des _Application Properties_, en bon français : propriétés de l'application. A l'instar des variables d'environnements ce sont des valeurs qui seront accessibles partout dans votre application, mais à la différence d'elles, elles sont propre à votre application, et accessible uniquement dans celle ci.
+Plus communément appelé _properties_, elles sont des valeurs accessibles dans toute
+votre application.
 
 Spring les utilise pour de nombreux paramètres, la plupart possèdent des valeurs par défaut mais que vous pouvez aussi redéfinir par vous-même. Vous pouvez retrouver la liste complète de ces paramètres [ici](https://docs.spring.io/spring-boot/docs/current/reference/html/appendix-application-properties.html).
 
@@ -38,8 +39,6 @@ Ces fichiers sont recherchés dans les dossiers suivants :
 
 Si vous utilisez le _Standard Directory Layout_, que se soit avec Maven ou Gradle,
 les fichiers sont généralement mis dans `src/main/resources`. Puisqu'on peut y accéder depuis le _classpath_.
-
-#### Fichier de profile
 
 ### Définir ses propres fichiers
 
