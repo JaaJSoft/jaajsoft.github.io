@@ -33,8 +33,8 @@ Ces fichiers sont recherchés dans les dossiers suivants :
 
 * La racine du classpath
 * Le package /config du classpath
-* le repertoire courant
-* le sous repertoire /config du repertoire courant
+* Le repertoire courant
+* Le sous repertoire /config du repertoire courant
 * Les sous repertoires directes du sous repertoire /config
 
 Si vous utilisez le _Standard Directory Layout_, que se soit avec Maven ou Gradle,
