@@ -160,7 +160,7 @@ database.username=foo
 database.password=bar
 ```
 
-Il suffit ensuite d'utiliser l'annotation sur une classe pour les mapper.
+Il suffit ensuite d'utiliser l'annotation sur une classe pour les *mapper*.
 
 ```java
 @ConfigurationProperties(prefix = "database")
@@ -175,7 +175,7 @@ public class Database {
 
 ## Conclusion
 
-Comme nous l'avons vue Spring offre un panel de possibilités assez large pour
+Comme nous l'avons vu Spring offre un panel de possibilités assez large pour
 déclarer et utiliser très facilement les _properties_ à votre convenance selon
 les besoins de votre application.
 
