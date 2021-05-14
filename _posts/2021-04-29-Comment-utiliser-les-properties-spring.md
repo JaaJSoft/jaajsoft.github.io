@@ -10,7 +10,7 @@ author: Rémi Lecouillard
 ---
 
 Dans ce tutoriel, vous allez apprendre à définir des properties spring et à les utiliser dans votre code Java.
-Ce tutoriel suppose que vous savez déjà set up un projet avec Spring boot et que vous avez quelques bases de programmation Java.
+Ce tutoriel suppose que vous savez déjà *set-up* un projet avec Spring boot et que vous avez quelques bases de programmation Java.
 
 ## C'est quoi les _application properties_ Spring ?
 
