@@ -112,7 +112,7 @@ Ce qui permet d'avoir les informations suivantes sur la ressource :
 ```json
 {'Connection': 'keep-alive', 'Content-Length': '10575', 'Server': 'GitHub.com', 'Content-Type': 'text/html; charset=utf-8', 'Strict-Transport-Security': 'max-age=31556952', 'Last-Modified': 'Fri, 20 Mar 2020 09:39:39 GMT', 'ETag': 'W/"5e748f5b-9528"', 'Access-Control-Allow-Origin': '*', 'Expires': 'Fri, 22 May 2020 09:46:06 GMT', 'Cache-Control': 'max-age=600', 'Content-Encoding': 'gzip', 'X-Proxy-Cache': 'MISS', 'X-GitHub-Request-Id': '7DD0:5D0B:292B1C:3342F8:5EC79D05', 'Accept-Ranges': 'bytes', 'Date': 'Fri, 22 May 2020 09:36:06 GMT', 'Via': '1.1 varnish', 'Age': '0', 'X-Served-By': 'cache-cdg20727-CDG', 'X-Cache': 'MISS', 'X-Cache-Hits': '0', 'X-Timer': 'S1590140167.863279,VS0,VE107', 'Vary': 'Accept-Encoding', 'X-Fastly-Request-ID': '7bccbb14a86614bdc56df3295ea37e17a144569b'}
 ```
-Très peu clair pour un humain, mais cela permet pour un navigateur d'avoir des informations très utiles sur la resource demandée.
+Très peu clair pour un humain, mais cela permet pour un navigateur d'avoir des informations très utiles sur la ressource demandée.
 
 Et finalement la requête *post* qui s'utilise de la même manière qu'une requête *get* sauf que les paramètres sont passés dans le corps de la requête et pas avec l'url.
 ```python
