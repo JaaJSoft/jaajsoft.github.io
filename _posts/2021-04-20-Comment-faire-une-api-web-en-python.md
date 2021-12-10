@@ -7,6 +7,7 @@ tags:
     - api
     - tutoriel
     - flask
+    - rest
 
 author: Pierre Chopinet
 ---
