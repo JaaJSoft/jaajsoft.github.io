@@ -131,7 +131,7 @@ fr: &FR
   FOLLOW_US               : "Suivez-nous sur [NAME]."
   EMAIL_ME                : "Envoyez-moi un courriel."
   EMAIL_US                : "Envoyez-nous un courriel"
-  COPYRIGHT_DATES         : "2020"
+  COPYRIGHT_DATES         : "2022"
   DONATE                  : "Faites un don de [NAME]."
 
 fr-BE:
