@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Python : Comment faire des requêtes http avec requests"
+title: "Python : Comment faire des requêtes HTTP avec requests"
 tags:
     - python
     - http
@@ -10,7 +10,7 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, vous allez apprendre à faire des requêtes http en python en utilisant la bibliothèque requests. <!--more--> L'objectif de ce tutoriel est d'apprendre comment faire : 
+Dans ce tutoriel, vous allez apprendre à faire des requêtes http en python en utilisant la bibliothèque requests. <!--more--> L'objectif de ce tutoriel est d'apprendre comment faire :
 
 - Des requêtes http en python
 - Changer les header d'une requête
@@ -108,7 +108,7 @@ import requests
 response = requests.head("https://blog.jaaj.dev")
 print(response.headers)
 ```
-Ce qui permet d'avoir les informations suivantes sur la ressource : 
+Ce qui permet d'avoir les informations suivantes sur la ressource :
 ```json
 {'Connection': 'keep-alive', 'Content-Length': '10575', 'Server': 'GitHub.com', 'Content-Type': 'text/html; charset=utf-8', 'Strict-Transport-Security': 'max-age=31556952', 'Last-Modified': 'Fri, 20 Mar 2020 09:39:39 GMT', 'ETag': 'W/"5e748f5b-9528"', 'Access-Control-Allow-Origin': '*', 'Expires': 'Fri, 22 May 2020 09:46:06 GMT', 'Cache-Control': 'max-age=600', 'Content-Encoding': 'gzip', 'X-Proxy-Cache': 'MISS', 'X-GitHub-Request-Id': '7DD0:5D0B:292B1C:3342F8:5EC79D05', 'Accept-Ranges': 'bytes', 'Date': 'Fri, 22 May 2020 09:36:06 GMT', 'Via': '1.1 varnish', 'Age': '0', 'X-Served-By': 'cache-cdg20727-CDG', 'X-Cache': 'MISS', 'X-Cache-Hits': '0', 'X-Timer': 'S1590140167.863279,VS0,VE107', 'Vary': 'Accept-Encoding', 'X-Fastly-Request-ID': '7bccbb14a86614bdc56df3295ea37e17a144569b'}
 ```
@@ -186,7 +186,7 @@ import requests
 response = requests.get("https://jsonplaceholder.typicode.com/users")
 if response.status_code == 200:
     response_json = response.json()
-    
+
     for user in response_json:
         print(user["name"])
 ```
@@ -196,7 +196,7 @@ Ce code affiche le nom de tous les utilisateurs. On teste si le *status_code* es
 
 Dans certains cas il peut être utile de changer les headers d'une requête pour se faire passer pour un navigateur web et accéder à certains contenus dont l'accès est restreint depuis un script.
 
-Par exemple ici pour se faire passer pour Mozilla Firefox : 
+Par exemple ici pour se faire passer pour Mozilla Firefox :
 
 ```python
 import requests
