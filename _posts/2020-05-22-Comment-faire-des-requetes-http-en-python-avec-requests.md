@@ -6,7 +6,6 @@ tags:
     - http
     - requests
     - tutoriel
-
 author: Pierre Chopinet
 ---
 

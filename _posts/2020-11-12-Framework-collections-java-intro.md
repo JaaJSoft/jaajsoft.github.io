@@ -4,7 +4,6 @@ title: Introduction aux collections Java
 tags:
     - java
     - collections
-
 author: Julien Chevron
 
 ---
@@ -37,14 +36,14 @@ Retenons alors le principal : Si vous avez besoin de stocker et de manipuler une
 Le Framework Collections est une architecture présente dans la bibliothèque standard de Java représentant les différentes collections. Ce Framework se constitue de trois éléments principaux :
 
 1. **Les interfaces** : Ensemble de types abstraits représentant et définissant les comportements des différentes familles de collections.
-2. **Les implémentations** : Héritant des interfaces, elles correspondent aux implémentations concrètes des collections que vous utiliserez en tant que développeurs. 
+2. **Les implémentations** : Héritant des interfaces, elles correspondent aux implémentations concrètes des collections que vous utiliserez en tant que développeurs.
 3. **Les algorithmes** : Ensemble de méthodes permettant de manipuler les collections comme par exemple des algorithmes de tri. Ces algorithmes sont dit polymorphiques car peuvent être utilisés de la même manière quelle que soit la collection utilisée.
 
 Le Framework Collections forme alors une hiérarchie de classes qui est la suivante :
 
 ![](/assets/images/2020-11-12-Framework-collections-java-intro/collectionsHierarchy.png)
 
-Dans cette hiérarchie nous retrouvons deux interfaces principales représentant les grandes familles de collections : 
+Dans cette hiérarchie nous retrouvons deux interfaces principales représentant les grandes familles de collections :
 
 1. **Collection** : Permet de gérer des groupes d'objets.
 2. **Map** : Permet de gérer des éléments en paires de type clés/valeurs.
@@ -59,7 +58,7 @@ On remarque ensuite que chaque famille de collections comportent de nombreuses i
 
 ### Interface Collection
 
-L'interface **Collection** (à ne pas confondre avec la classe **Collections** qui propose des méthodes et algorithme pour les collections)  est l'interface définissant le comportement minimal de toutes les collections (hormis les Maps). 
+L'interface **Collection** (à ne pas confondre avec la classe **Collections** qui propose des méthodes et algorithme pour les collections)  est l'interface définissant le comportement minimal de toutes les collections (hormis les Maps).
 
 Cette interface définie alors les méthodes les plus générales permettant la manipulation des collections : ajout et suppression d'éléments, vérification de la présence d'un élément dans la collection, parcours de la collection... mais également deux constructeurs :
 
@@ -159,7 +158,7 @@ En se posant les bonnes questions il est possible de savoir exactement quelle co
 
 A l'inverse, si vous êtes certain de connaitre le nombre d'élément de votre jeu de données, que vous n'aurez pas de problèmes d'accès concurrentiel et que vous souhaitez juste stocker des éléments à des positions fixes et/ou parcourir de manière simple vos éléments, il est alors conseillé de se demander si l'utilisation d'une collection est vraiment nécessaire et utiliser un tableau traditionnel à la place.
 
-		
+
 
 ## Conclusion
 
