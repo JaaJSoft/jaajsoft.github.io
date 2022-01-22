@@ -6,7 +6,6 @@ tags:
     - spring
     - properties
     - tutoriel
-
 author: Rémi Lecouillard
 ---
 

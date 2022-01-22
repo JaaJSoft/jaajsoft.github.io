@@ -7,7 +7,6 @@ tags:
     - reconnaissance
     - javascript
     - tutoriel
-
 author: Julien Chevron
 ---
 
@@ -74,7 +73,7 @@ Par défaut, la scène contient les éléments suivants :
 - **Webcam** : Entité 3DHTML représentant l'affichage de la caméra et l'affichage du résultat de la reconnaissance.
 - **Cristine** : L'hôte Sumerian
 
-Ainsi que les scripts suivants : 
+Ainsi que les scripts suivants :
 
 - **MicrophoneScript** : Initialise tous les évènement liés au microphone.
 - **RecognitionScript** : Fonctions de reconnaissance.
@@ -333,7 +332,7 @@ Si vous souhaitez en savoir plus sur le fonctionnement de la reconnaissance faci
 
 ### Fonctionnement de la reconnaissance
 
-Tous les appels de services AWS utilisent des requêtes asynchrones. Afin de synchroniser les opérations, les résultats des requêtes sont convertis en [Promise](https://javascript.info/promise-basics) (résultat d'une opération de requête asynchrone). 
+Tous les appels de services AWS utilisent des requêtes asynchrones. Afin de synchroniser les opérations, les résultats des requêtes sont convertis en [Promise](https://javascript.info/promise-basics) (résultat d'une opération de requête asynchrone).
 
 ##### Détection des émotions
 

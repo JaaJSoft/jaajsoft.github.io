@@ -7,7 +7,6 @@ tags:
     - bare-metal
     - raspberrypi
     - tutoriel
-
 author: Pierre Chopinet
 ---
 
@@ -17,9 +16,9 @@ Dans ce tutoriel, nous allons voir comment déployer un *cluster* kubernetes bar
 
 ## Introduction
 
-Pour ce tutoriel vous aurez besoin d'un PC, et de plusieurs serveurs que vous voulez mettre en *cluster*. (Ce tutoriel peut fonctionner sur un seul serveur) 
+Pour ce tutoriel vous aurez besoin d'un PC, et de plusieurs serveurs que vous voulez mettre en *cluster*. (Ce tutoriel peut fonctionner sur un seul serveur)
 
-Pour déployer notre *cluster* nous allons utiliser une version allégée de kubernetes nommée [K3s](https://k3s.io), qui est fait pour les appareils ARM comme un *Raspberry PI* ou des serveurs peu puissants. C'est une version simplifiée de k8s avec seulement l'essentiel, qui est plus simple à installer et maintenir. 
+Pour déployer notre *cluster* nous allons utiliser une version allégée de kubernetes nommée [K3s](https://k3s.io), qui est fait pour les appareils ARM comme un *Raspberry PI* ou des serveurs peu puissants. C'est une version simplifiée de k8s avec seulement l'essentiel, qui est plus simple à installer et maintenir.
 
 ## Préparation des nodes
 
@@ -28,7 +27,7 @@ Sur chacun de vos serveurs, vous allez avoir besoin d'un *user* avec les droits 
 sudo apt install openssh-client
 ```
 
-Maintenant que vous avez les outils SSH installés sur votre PC, créez une clé SSH avec la commande : 
+Maintenant que vous avez les outils SSH installés sur votre PC, créez une clé SSH avec la commande :
 
 ```bash
 ssh-keygen -b 4096
@@ -134,9 +133,9 @@ k3sup join --ip $NODE2_IP --user $NODE2_user --server-ip $SERVER_IP --server-use
 
 ##  Installation de kubectl et test du cluster
 
-Pour tester si le *cluster* k8s est bien installé et interagir avec celui-ci nous allons avoir besoin de `kubectl`. 
+Pour tester si le *cluster* k8s est bien installé et interagir avec celui-ci nous allons avoir besoin de `kubectl`.
 
-### Pour Debian/Ubuntu 
+### Pour Debian/Ubuntu
 
 ```bash
 sudo apt-get update && sudo apt-get install -y apt-transport-https
@@ -147,7 +146,7 @@ sudo apt-get install -y kubectl
 ```
 Code repris depuis la documentation officielle.
 
-### Pour d'autres OS 
+### Pour d'autres OS
 
 Suivez le guide ici : [https://kubernetes.io/fr/docs/tasks/tools/install-kubectl](https://kubernetes.io/fr/docs/tasks/tools/install-kubectl)
 
@@ -164,7 +163,7 @@ Maintenant, si tout c'est bien passé, en exécutant la commande suivante vous d
 ```bash
 kubectl get nodes
 ```
-Vous devriez voir quelque chose dans ce genre : 
+Vous devriez voir quelque chose dans ce genre :
 ```bash
 NAME        STATUS   ROLES    AGE    VERSION
 xxxxxxxx1   Ready    <none>     1d   v1.19.7+k3s1
@@ -173,7 +172,7 @@ xxxxxxxx3   Ready    <none>     1d   v1.19.7+k3s1
 ```
 ## La suite
 
-Maintenant que votre *cluster* est installé, vous pouvez commencer à déployer des services. Attention cependant, K3s ne propose pas de *loadbalancer* et de *storageclass* évolués par défaut, il faudra les installer vous-même. Un article expliquant comment faire devrait sortir prochainement. 
+Maintenant que votre *cluster* est installé, vous pouvez commencer à déployer des services. Attention cependant, K3s ne propose pas de *loadbalancer* et de *storageclass* évolués par défaut, il faudra les installer vous-même. Un article expliquant comment faire devrait sortir prochainement.
 
 ## Sources
 
