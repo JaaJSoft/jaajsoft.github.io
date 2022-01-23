@@ -10,7 +10,7 @@ author: Pierre Chopinet tags:
 
 ---
 
-Dans ce tutoriel, nous allez apprendre à sauvegarder des tableaux numpy pour
+Dans ce tutoriel, nous allons apprendre à sauvegarder des tableaux numpy pour
 ajouter de la persistence à votre application python. <!--more-->
 
 ## Notre premiere persistence
