@@ -27,7 +27,7 @@ with open('array.npy', 'wb') as f:
     np.save(f, array)
 ```
 
-Le fichier en sortie utilise un format binaire spécifique numpy. Sur la premiere
+Le fichier en sortie utilise un format binaire spécifique numpy. Sur la première
 ligne on trouve les paramètres de notre tableau persisté :
 
 ```
@@ -57,7 +57,7 @@ Et voilà on a notre première persistence de données avec numpy !
 
 ## Persistence au format texte
 
-Il arrive qu'on veuille utiliser des données traitées avec numpy avec un autre
+Il arrive qu'on veuille utiliser des données traitées avec numpy dans un autre
 langage de programmation, ou par exemple sur excel. On doit donc enregistrer nos
 données dans un format compréhensible par tous.
 
@@ -69,6 +69,9 @@ On utilise la function `savetxt` :
 array = np.array([[6, 9, 42], [4, 2, 9]])
 np.savetxt('array_float.csv', array, delimiter=',')
 ```
+
+Le _delimiter_ est le caractère au sein du fichier qui séparera nos valeurs. Les
+délimiteurs courant sont `,` et `;`.
 
 Ce qui donne le résultat suivant :
 
@@ -110,8 +113,8 @@ print(array_loaded_from_text)
 
 Si la quantité de données est conséquente, il peut être intéressant de
 compresser les données enregistrées. La fonction de sauvegarde utilisée
-précédemment `savetxt` compressera nativement les données si le fichier de
-sortie possède l'extension .gz, pour gzip ou GNU zip.
+précédemment `savetxt` permet de compresser nativement les données, si le
+fichier de sortie possède l'extension .gz (pour gzip ou GNU zip).
 
 ```python
 big_array = np.random.rand(1000, 1000) # tableau de 1000x1000
@@ -136,8 +139,8 @@ big_array_loaded = np.loadtxt('array_compressed.gz', delimiter=',')
 
 ## Persistence au format npz
 
-NumPy propose une dernière façon de persister vos données avec le format npz qui
-a l'avantage de pouvoir sauvegarder plusieurs tableaux numpy dans le même
+NumPy propose une dernière façon de persister vos données avec le format npz,
+qui a l'avantage de pouvoir sauvegarder plusieurs tableaux numpy dans le même
 fichier et contrairement au format texte, ce format supporte des tableaux à n
 dimensions
 
@@ -158,7 +161,7 @@ Ce qui donne :
 (1000, 1000)
 ```
 
-De plus, NumPy propose avec le format `npz`, de compresser facilement les
+De plus, NumPy propose avec le format `npz` de compresser facilement les
 données :
 
 ```python
