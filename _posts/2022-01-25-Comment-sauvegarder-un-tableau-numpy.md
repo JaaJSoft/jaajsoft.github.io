@@ -63,7 +63,7 @@ données dans un format compréhensible par tous.
 
 ### Sauvegarde des données
 
-On utilise la function `savetxt` :
+On utilise une autre fonction de numpy `savetxt` :
 
 ```python
 array = np.array([[6, 9, 42], [4, 2, 9]])
@@ -73,7 +73,7 @@ np.savetxt('array_float.csv', array, delimiter=',')
 Le _delimiter_ est le caractère au sein du fichier qui séparera nos valeurs. Les
 délimiteurs courant sont `,` et `;`.
 
-Ce qui donne le résultat suivant :
+Notre fichier csv contient :
 
 ```csv
 6.000000000000000000e+00,9.000000000000000000e+00,4.200000000000000000e+01
@@ -96,8 +96,7 @@ Finalement, on obtient un format en entier :
 
 ### Chargement des données
 
-Maintenant pour charger nos données enregistrées en format texte, on utilise la
-fonction `loadtxt` :
+Maintenant pour charger nos données enregistrées en format texte, on utilise `loadtxt` :
 
 ```python
 array_loaded_from_text = np.loadtxt('array_int.csv', delimiter=',', )
