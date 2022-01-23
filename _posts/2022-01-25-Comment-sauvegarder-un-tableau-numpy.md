@@ -1,5 +1,6 @@
 ---
-layout: article title: "Python : Comment sauvegarder des tableaux NumPy"
+layout: article
+title: "Python : Comment sauvegarder des tableaux NumPy"
 author: Pierre Chopinet
 tags:
 - python
