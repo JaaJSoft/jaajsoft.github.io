@@ -171,7 +171,7 @@ array_loaded_from_npz = loaded_npz['array']
 big_array_loaded_from_npz = loaded_npz['big_array']
 ```
 
-Comme pour `loadtxt` la function `load` se charge de décompresser
+Comme pour `loadtxt` la fonction `load` se charge de décompresser
 automatiquement.
 
 ## Conclusion
