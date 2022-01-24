@@ -76,7 +76,7 @@ délimiteurs courant sont `,` et `;`.
 
 Notre fichier csv contient :
 
-```csv
+```
 6.000000000000000000e+00,9.000000000000000000e+00,4.200000000000000000e+01
 4.000000000000000000e+00,2.000000000000000000e+00,9.000000000000000000e+00
 ```
@@ -90,7 +90,7 @@ np.savetxt('array_int.csv', array, delimiter=',', fmt='%i')
 
 Finalement, on obtient un format en entier :
 
-```csv
+```
 6,9,42
 4,2,9
 ```
