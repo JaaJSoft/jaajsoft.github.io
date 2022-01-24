@@ -216,7 +216,7 @@ def test2_endpoint_post():
 curl -X POST http://127.0.0.1:5000/exemple -d "param1=jeej"
 {"return1":"jeejAAA"}
 ```
-Voilà vous êtes maintenant capable de créer une api web simple mais performante. J'essaierai de faire d'autres tutoriels sur flask, par exemple pour interroger une base de données et avoir des données dynamiques.
+Voilà vous êtes maintenant capable de créer une api web simple, mais performante. J'essaierai de faire d'autres tutoriels sur flask, par exemple pour interroger une base de données et avoir des données dynamiques.
 
 ## Le code complet de ce tuto
 
