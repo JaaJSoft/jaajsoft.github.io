@@ -1,5 +1,5 @@
 ---
-layout: article title: "Créer ses propres références en $\LaTeX$"
+layout: article title: "Créer ses propres références en LaTeX"
 author: Louis Chopinet
 tags:
 - LaTeX
