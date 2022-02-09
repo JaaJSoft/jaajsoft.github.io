@@ -55,7 +55,7 @@ utilisant `\stepcounter{moncompteur}`. Ainsi, si l'on souhaite créer une
 nouvelle commande `\encadre`qui créer un cadre de texte, commençant par quelque
 chose que "Encadré n°3", on aura tout intérêt à définir un compteur `cntEncadre`
 qui sera incrémenté automatiquement par `\encadre`, et qu'on affichera après
-le "Encadré n°". C'est ce que fait le code suivant :
+le "Encadré n". C'est ce que fait le code suivant :
 
 ```latex
 \newcounter{encadre}
