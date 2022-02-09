@@ -19,7 +19,7 @@ document avec un `\label{mon label unique}`, puis pour faire référence à cet
 endroit du document à un autre endroit, on utilise `\ref{mon label unique}`. Par
 exemple, le code :
 
-```{#latex}
+```latex
 \documentclass{article}
 
 \begin{document}
@@ -57,7 +57,7 @@ chose que "Encadré n°3", on aura tout intérêt à définir un compteur `cntEn
 qui sera incrémenté automatiquement par `\encadre`, et qu'on affichera après
 le "Encadré n°". C'est ce que fait le code suivant :
 
-```{#latex}
+```latex
 \newcounter{encadre}
 \newcommand{\encadre}[1]{\stepcounter{encadre}%
 	\medskip%
@@ -73,7 +73,7 @@ le "Encadré n°". C'est ce que fait le code suivant :
 Le fonctionnement précis de cette commande n'est pas le sujet de cet article,
 seuls nous intéressent l'appel à `\stepcounter` et `\theencadre`. Le code :
 
-```{#latex}
+```latex
 \blindtext
 
 \encadre{Bonjour, je suis un encadré, le premier d'entre eux.}
@@ -106,7 +106,7 @@ incrémenté par `\refstepcounter` avant le `\label`.
 
 Ainsi, le code :
 
-```{#latex}
+```latex
 \documentclass{article}
 \usepackage{blindtext}
 
@@ -145,7 +145,7 @@ donne le résultat :
 est toujours possible, et conseillé, d'envelopper cet appel dans une commande *
 sémantique*, comme :
 
-```{#latex}
+```latex
 \newcommand{\refEncadre}[1]{%
 	\textcolor{blue}{\emph{encadré n°\ref{#1}}}%
 }
