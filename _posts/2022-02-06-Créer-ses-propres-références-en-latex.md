@@ -9,7 +9,7 @@ tags:
 ---
 
 Dans ce tutoriel, nous allons apprendre comment créer son propre système de
-références et d'étiquettes en $\LaTeX$, parallèle à ceux des sections, des
+références et d'étiquettes en LaTeX, parallèle à ceux des sections, des
 tableaux ou des équations par exemple. <!--more-->
 
 ## Introduction : étiquettes et références
@@ -160,7 +160,7 @@ auquel on fait référence (la fameuse ancre dont nous parlions précédemment).
 C'est particulièrement utile dans la table des matières par exemple. Il suffit
 d'inclure `\usepackage{hyperref}` dans le préambule pour que la magie opère. Il
 vaut cependant mieux l'appeler *en dernier*, car il fonctionnera ainsi dans le
-plus grand nombre de cas possibles (ceux du noyau de $\LaTeX$ comme les figures
+plus grand nombre de cas possibles (ceux du noyau de LaTeX comme les figures
 ou les sections, mais aussi ceux rajoutés par des *packages* comme les
 environnements de `amsmath`).
 
@@ -205,7 +205,7 @@ et y faire référence de manière très claire à un autre endroit :
 
 ## Conclusion
 
-Comme la plupart des _packages_ $\LaTeX$, la meilleure manière d'apprendre à
+Comme la plupart des _packages_ LaTeX, la meilleure manière d'apprendre à
 utiliser `hyperref` est de tester constamment de nouvelles manières de faire
 
 Adaptez ce qui précède à vos nouveaux documents : ce qui a marché pour des
