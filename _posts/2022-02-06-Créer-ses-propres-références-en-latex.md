@@ -216,7 +216,7 @@ et y faire référence de manière très claire à un autre endroit :
 ## Conclusion
 
 Comme la plupart des _packages_ LaTeX, la meilleure manière d'apprendre à
-utiliser `hyperref` est de tester constamment de nouvelles manières de faire
+utiliser `hyperref` est de tester constamment de nouvelles manières de faire.
 
 Adaptez ce qui précède à vos nouveaux documents : ce qui a marché pour des
 encadrés, marchera pour des définitions ce qui a marché pour des définitions
