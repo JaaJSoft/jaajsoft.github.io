@@ -51,7 +51,7 @@ En fait, chaque type de référence (section, figure, table ou équation par
 exemple) utilise un compteur, qui sert à dénombrer le nombre de sections, de
 figures, de tables ou d'équations. Lorsque vous écrivez `\section{...}`, le
 compteur de sections est incrémenté : on fait habituellement cela en
-utilisant `\stepcounter{moncompteur}`. Ainsi, si l'on souhaite créer une
+utilisant `\\stepcounter{moncompteur}`. Ainsi, si l'on souhaite créer une
 nouvelle commande `\encadre`qui créer un cadre de texte, commençant par quelque
 chose que "Encadré n°3", on aura tout intérêt à définir un compteur `cntEncadre`
 qui sera incrémenté automatiquement par `\encadre`, et qu'on affichera après
