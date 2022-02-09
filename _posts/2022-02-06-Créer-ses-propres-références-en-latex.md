@@ -57,18 +57,20 @@ chose que "Encadré n°3", on aura tout intérêt à définir un compteur `cntEn
 qui sera incrémenté automatiquement par `\encadre`, et qu'on affichera après
 le "Encadré n°". C'est ce que fait le code suivant :
 
+{% raw %}
 ```latex
 \newcounter{encadre}
 \newcommand{\encadre}[1]{\stepcounter{encadre}%
 	\medskip%
 	\noindent\hspace{-\fboxsep}\fbox\{%
-		\parbox{\linewidth}\{%
+		\parbox{\linewidth}{%
 			\textbf{Encadré n°\theencadre~:} #1
-		\}%
-	\}%
+		}%
+	}%
 	\medskip%
 }
 ```
+{% endraw %}
 
 Le fonctionnement précis de cette commande n'est pas le sujet de cet article,
 seuls nous intéressent l'appel à `\stepcounter` et `\theencadre`. Le code :
@@ -105,6 +107,7 @@ appeler `\ref{identifiant}`, qui renverra la valeur du dernier compteur
 incrémenté par `\refstepcounter` avant le `\label`.
 
 Ainsi, le code :
+{% raw %}
 
 ```latex
 \documentclass{article}
@@ -137,6 +140,7 @@ Cela a été approfondi dans l'encadré \ref{une étiquette différente !}.
 
 \end{document}
 ```
+{% endraw %}
 
 donne le résultat :
 ![image 3](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image3.jpg)
@@ -144,12 +148,13 @@ donne le résultat :
 *Remarque* : nous écrivons toujours "encadré" avant d'appeler `\ref`, mais il
 est toujours possible, et conseillé, d'envelopper cet appel dans une commande *
 sémantique*, comme :
-
+{% raw %}
 ```latex
 \newcommand{\refEncadre}[1]{%
 	\textcolor{blue}{\emph{encadré n°\ref{#1}}}%
 }
 ```
+{% endraw %}
 
 ## Utilisation de `hyperref` pour créer des liens
 
