@@ -202,3 +202,21 @@ on peut définir à un endroit :
 et y faire référence de manière très claire à un autre endroit :
 
 ![image 7](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image7.jpg)
+
+## Conclusion
+
+Comme la plupart des _packages_ $\LaTeX$, la meilleure manière d'apprendre à
+utiliser `hyperref` est de tester constamment de nouvelles manières de faire
+
+Adaptez ce qui précède à vos nouveaux documents : ce qui a marché pour des
+encadrés, marchera pour des définitions ce qui a marché pour des définitions
+peut servir à transformer une variable mathématique en lien l'endroit où elle a
+été fixé par exemple !
+
+Et si cela ne marche pas, il faut n'y voir qu'une occasion de mieux comprendre
+`hyperrref`.
+
+## Voir aussi
+
+- [Documentation de hyperref](https://ctan.org/pkg/hyperref)
+- [GitHub de hyperref](https://github.com/latex3/hyperref)
