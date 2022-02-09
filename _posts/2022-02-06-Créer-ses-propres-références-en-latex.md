@@ -1,7 +1,7 @@
 ---
 layout: article
 title: "Créer ses propres références en LaTeX"
-author: Pierre Chopinet
+author: Louis Chopinet
 tags:
 - LaTeX
 - tutoriel
@@ -9,7 +9,7 @@ tags:
 ---
 
 Dans ce tutoriel, nous allons apprendre comment créer son propre système de
-références et d'étiquettes en LaTeX, parallèle à ceux des sections, des
+références et d'étiquettes en $\LaTeX$, parallèle à ceux des sections, des
 tableaux ou des équations par exemple. <!--more-->
 
 ## Introduction : étiquettes et références
@@ -53,19 +53,19 @@ figures, de tables ou d'équations. Lorsque vous écrivez `\section{...}`, le
 compteur de sections est incrémenté : on fait habituellement cela en
 utilisant `\stepcounter{moncompteur}`. Ainsi, si l'on souhaite créer une
 nouvelle commande `\encadre`qui créer un cadre de texte, commençant par quelque
-chose que "Encadré numéro 3", on aura tout intérêt à définir un compteur `cntEncadre`
+chose que "Encadré n°3", on aura tout intérêt à définir un compteur `cntEncadre`
 qui sera incrémenté automatiquement par `\encadre`, et qu'on affichera après
-le "Encadré numéro". C'est ce que fait le code suivant :
+le "Encadré n°". C'est ce que fait le code suivant :
 
 ```latex
 \newcounter{encadre}
 \newcommand{\encadre}[1]{\stepcounter{encadre}%
 	\medskip%
-	\noindent\hspace{-\fboxsep}\fbox{%
-		\parbox{\linewidth}{%
+	\noindent\hspace{-\fboxsep}\fbox\{%
+		\parbox{\linewidth}\{%
 			\textbf{Encadré n°\theencadre~:} #1
-		}%
-	}%
+		\}%
+	\}%
 	\medskip%
 }
 ```
@@ -160,7 +160,7 @@ auquel on fait référence (la fameuse ancre dont nous parlions précédemment).
 C'est particulièrement utile dans la table des matières par exemple. Il suffit
 d'inclure `\usepackage{hyperref}` dans le préambule pour que la magie opère. Il
 vaut cependant mieux l'appeler *en dernier*, car il fonctionnera ainsi dans le
-plus grand nombre de cas possibles (ceux du noyau de LaTeX comme les figures
+plus grand nombre de cas possibles (ceux du noyau de $\LaTeX$ comme les figures
 ou les sections, mais aussi ceux rajoutés par des *packages* comme les
 environnements de `amsmath`).
 
@@ -205,7 +205,7 @@ et y faire référence de manière très claire à un autre endroit :
 
 ## Conclusion
 
-Comme la plupart des _packages_ LaTeX, la meilleure manière d'apprendre à
+Comme la plupart des _packages_ $\LaTeX$, la meilleure manière d'apprendre à
 utiliser `hyperref` est de tester constamment de nouvelles manières de faire
 
 Adaptez ce qui précède à vos nouveaux documents : ce qui a marché pour des
