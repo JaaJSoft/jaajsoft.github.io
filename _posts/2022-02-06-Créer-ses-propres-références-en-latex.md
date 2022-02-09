@@ -1,7 +1,7 @@
 ---
 layout: article
 title: "Créer ses propres références en LaTeX"
-author: Louis Chopinet
+author: Pierre Chopinet
 tags:
 - LaTeX
 - tutoriel
