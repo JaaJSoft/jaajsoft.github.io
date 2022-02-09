@@ -9,7 +9,7 @@ tags:
 ---
 
 Dans ce tutoriel, nous allons apprendre comment créer son propre système de
-références et d'étiquettes en $\LaTeX$, parallèle à ceux des sections, des
+références et d'étiquettes en LaTeX, parallèle à ceux des sections, des
 tableaux ou des équations par exemple. <!--more-->
 
 ## Introduction : étiquettes et références
@@ -38,11 +38,13 @@ Blabla
 ```
 
 donne le résultat :
+
 ![image 1](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image1.jpg)
 
 Si vous utilisez le *package* `hyperref`, dont nous reparlerons, ces références
 sont transformées, dans un pdf, en liens vers l'endroit où vous avez placé votre
 étiquette. On obtient, toutes choses égales par ailleurs :
+
 ![image 2](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image2.jpg)
 
 ## Prérequis : utilisation des compteurs
@@ -88,6 +90,7 @@ seuls nous intéressent l'appel à `\stepcounter` et `\theencadre`. Le code :
 ```
 
 donne le résultat :
+
 ![image 3](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image3.jpg)
 
 ## Utiliser `\refstepcounter` pour créer une étiquette
@@ -143,6 +146,7 @@ Cela a été approfondi dans l'encadré \ref{une étiquette différente !}.
 {% endraw %}
 
 donne le résultat :
+
 ![image 3](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image3.jpg)
 
 *Remarque* : nous écrivons toujours "encadré" avant d'appeler `\ref`, mais il
@@ -171,6 +175,7 @@ environnements de `amsmath`).
 
 Le même code que précédemment, auquel on rajoute cet appel à `hyperref` donne
 ainsi le résultat :
+
 ![image 5](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image5.jpg)
 
 Cliquer sur les parties encadrées en rouge mène directement jusqu'aux encadrés
