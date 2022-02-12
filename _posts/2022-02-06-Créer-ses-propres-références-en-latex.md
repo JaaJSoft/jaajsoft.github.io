@@ -200,18 +200,18 @@ remplacement" et non la valeur du compteur utilisé.
 Utiliser `\hyperref[une étiquette différente !]{cet encadré}` permet
 d'utiliser "cet encadré" comme lien :
 
-![image 5](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image5.jpg)
+![image 6](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image6.jpg)
 
 Cela permet d'écrire des documents faciles à lire et à comprendre. En utilisant
 les options de `hyperref` ou en définissant des macros sémantiques qui
 appellent (par exemple) `\hyperref[#1]{#2}` après un formatage adéquat du texte,
 on peut définir à un endroit :
 
-![image 6](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image6.jpg)
+![image 8](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image7.jpg)
 
 et y faire référence de manière très claire à un autre endroit :
 
-![image 7](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image7.jpg)
+![image 8](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image8.jpg)
 
 ## Conclusion
 
