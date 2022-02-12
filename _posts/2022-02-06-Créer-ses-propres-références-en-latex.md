@@ -193,8 +193,8 @@ utilisé) un terme comme "section", "figure" ou "équation", selon le contexte
 dans lequel a été appelé `\label` (juste après une section, dans une figure ou
 dans une équation par exemple).
 
-Pour notre cas, on utilisera
-plutôt `\hyperref[identifiant]{texte de remplacement}` qui fonctionne exactement
+Dans notre cas, l'environnement `encadre` n'est pas connu de `hyperref`. On utilisera
+donc plutôt `\hyperref[identifiant]{texte de remplacement}` qui fonctionne exactement
 comme `\ref{identifiant}`, à cela près que le texte affiché est "texte de
 remplacement" et non la valeur du compteur utilisé.
 Utiliser `\hyperref[une étiquette différente !]{cet encadré}` permet
