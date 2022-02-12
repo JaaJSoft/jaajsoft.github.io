@@ -220,7 +220,7 @@ utiliser `hyperref` est de tester constamment de nouvelles manières de faire.
 
 Adaptez ce qui précède à vos nouveaux documents : ce qui a marché pour des
 encadrés, marchera pour des définitions, ce qui a marché pour des définitions
-peut servir à transformer une variable mathématique en lien l'endroit où elle a
+peut servir à transformer une variable mathématique en lien vers l'endroit où elle a
 été fixé par exemple !
 
 Et si cela ne marche pas, il faut n'y voir qu'une occasion de mieux comprendre
