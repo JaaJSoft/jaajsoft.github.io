@@ -179,7 +179,7 @@ ainsi le résultat :
 ![image 5](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image5.jpg)
 
 Cliquer sur les parties encadrées en rouge mène directement jusqu'aux encadrés
-en question (il est possible de changer l'apparence des liens, *cf.* la document
+en question (il est possible de changer l'apparence des liens, *cf.* la documentation
 de `hyperref`).
 
 Cela est particulièrement utile lorsqu'on utilise des notions complexes qui ont
