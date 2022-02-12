@@ -147,7 +147,7 @@ Cela a été approfondi dans l'encadré \ref{une étiquette différente !}.
 
 donne le résultat :
 
-![image 3](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image3.jpg)
+![image 4](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image3.jpg)
 
 *Remarque* : nous écrivons toujours "encadré" avant d'appeler `\ref`, mais il
 est toujours possible, et conseillé, d'envelopper cet appel dans une commande *
