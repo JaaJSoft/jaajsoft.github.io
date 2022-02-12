@@ -9,7 +9,7 @@ tags:
 ---
 
 Dans ce tutoriel, nous allons apprendre comment créer son propre système de
-références et d'étiquettes en LaTeX, parallèle à ceux des sections, des
+références et d'étiquettes en LaTeX, parallèle aux systèmes des sections, des
 tableaux ou des équations par exemple. <!--more-->
 
 ## Introduction : étiquettes et références
