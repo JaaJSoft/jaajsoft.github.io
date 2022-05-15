@@ -9,7 +9,7 @@ tags:
 ---
 
 Dans ce tutoriel, nous allons apprendre comment créer son propre système de
-références et d'étiquettes en LaTeX, parallèle à ceux des sections, des
+références et d'étiquettes en LaTeX, parallèle aux systèmes des sections, des
 tableaux ou des équations par exemple. <!--more-->
 
 ## Introduction : étiquettes et références
@@ -147,7 +147,7 @@ Cela a été approfondi dans l'encadré \ref{une étiquette différente !}.
 
 donne le résultat :
 
-![image 3](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image3.jpg)
+![image 4](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image4.jpg)
 
 *Remarque* : nous écrivons toujours "encadré" avant d'appeler `\ref`, mais il
 est toujours possible, et conseillé, d'envelopper cet appel dans une commande *
@@ -179,7 +179,7 @@ ainsi le résultat :
 ![image 5](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image5.jpg)
 
 Cliquer sur les parties encadrées en rouge mène directement jusqu'aux encadrés
-en question (il est possible de changer l'apparence des liens, *cf.* la document
+en question (il est possible de changer l'apparence des liens, *cf.* la documentation
 de `hyperref`).
 
 Cela est particulièrement utile lorsqu'on utilise des notions complexes qui ont
@@ -193,25 +193,25 @@ utilisé) un terme comme "section", "figure" ou "équation", selon le contexte
 dans lequel a été appelé `\label` (juste après une section, dans une figure ou
 dans une équation par exemple).
 
-Pour notre cas, on utilisera
-plutôt `\hyperref[identifiant]{texte de remplacement}` qui fonctionne exactement
+Dans notre cas, l'environnement `encadre` n'est pas connu de `hyperref`. On utilisera
+donc plutôt `\hyperref[identifiant]{texte de remplacement}` qui fonctionne exactement
 comme `\ref{identifiant}`, à cela près que le texte affiché est "texte de
 remplacement" et non la valeur du compteur utilisé.
 Utiliser `\hyperref[une étiquette différente !]{cet encadré}` permet
 d'utiliser "cet encadré" comme lien :
 
-![image 5](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image5.jpg)
+![image 6](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image6.jpg)
 
 Cela permet d'écrire des documents faciles à lire et à comprendre. En utilisant
 les options de `hyperref` ou en définissant des macros sémantiques qui
 appellent (par exemple) `\hyperref[#1]{#2}` après un formatage adéquat du texte,
 on peut définir à un endroit :
 
-![image 6](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image6.jpg)
+![image 8](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image7.jpg)
 
 et y faire référence de manière très claire à un autre endroit :
 
-![image 7](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image7.jpg)
+![image 8](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image8.jpg)
 
 ## Conclusion
 
@@ -220,7 +220,7 @@ utiliser `hyperref` est de tester constamment de nouvelles manières de faire.
 
 Adaptez ce qui précède à vos nouveaux documents : ce qui a marché pour des
 encadrés, marchera pour des définitions, ce qui a marché pour des définitions
-peut servir à transformer une variable mathématique en lien l'endroit où elle a
+peut servir à transformer une variable mathématique en lien vers l'endroit où elle a
 été fixé par exemple !
 
 Et si cela ne marche pas, il faut n'y voir qu'une occasion de mieux comprendre
