@@ -66,7 +66,7 @@ Vous êtes normalement dans un terminal, entrez alors :
 
 ### MacOS
 
-N'ayant pas de Mac, je ne peux pas tester l'installation, il faut toutefois aussi utiliser python et [PIP](https://pypi.org/project/pip/), et suivre les instructions pour linux afin d'installer la bibliothèque *requests*.
+N'ayant pas de Mac, je ne peux pas tester l'installation, il faut toutefois aussi utiliser python et [PIP](https://pypi.org/project/pip/), et suivre les instructions pour linux afin d'installer *flask*.
 
 ## Une requête HTTP ?
 
