@@ -176,7 +176,7 @@ Maintenant que votre *cluster* est installé, vous pouvez commencer à déployer
 
 ## Sources
 
-[https://github.com/alexellis/k3sup](https://github.com/alexellis/k3sup)
-[https://k3s.io](https://k3s.io/)
-[https://github.com/k3s-io/k3s](https://github.com/k3s-io/k3s)
-[https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/](https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/)
+- [https://github.com/alexellis/k3sup](https://github.com/alexellis/k3sup)
+- [https://k3s.io](https://k3s.io/)
+- [https://github.com/k3s-io/k3s](https://github.com/k3s-io/k3s)
+- [https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/](https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/)
