@@ -89,7 +89,7 @@ SERVER_USER=root    # USER pour se connecter sur le master
 
 k3sup install --no-extras --ip $SERVER_IP --user $SERVER_USER
 ```
-Vous devez avoir maintenant un fichier `kubeconfig` à l'endroit où vous avez exécuté ces commandes. Gardez le précieusement, il vous permettra d'interagir avec votre *cluster*.
+Vous devez avoir maintenant un fichier `kubeconfig` à l'endroit où vous avez exécuté ces commandes. Gardez-le précieusement, il vous permettra d'interagir avec votre *cluster*.
 
 ## Ajout des nodes
 
@@ -179,4 +179,4 @@ Maintenant que votre *cluster* est installé, vous pouvez commencer à déployer
 - [https://github.com/alexellis/k3sup](https://github.com/alexellis/k3sup)
 - [https://k3s.io](https://k3s.io/)
 - [https://github.com/k3s-io/k3s](https://github.com/k3s-io/k3s)
-- [https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/](https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/)
+- [Https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/](https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/)
