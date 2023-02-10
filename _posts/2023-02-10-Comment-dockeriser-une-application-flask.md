@@ -51,6 +51,8 @@ Autrement dit : _Docker_ permet de faire abstraction de son OS, et de pouvoir
 partager le même environnement entre sa machine de développement et son/ses
 serveurs en production.
 
+Pour installer _docker_ suivez le guide officiel [ici](https://docs.docker.com/get-docker/)
+
 ## Gunicorn
 
 Par défaut, le serveur utilisé par flask est dédié au développement en local de
