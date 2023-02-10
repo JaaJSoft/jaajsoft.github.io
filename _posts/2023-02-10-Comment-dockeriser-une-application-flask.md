@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Comment dockeriser une api web flask"
+title: "Comment Dockeriser une application flask"
 author: Pierre Chopinet
 tags:
 
@@ -11,18 +11,18 @@ tags:
 
 ---
 
-Dans ce tutoriel, nous allons apprendre comment dockeriser son api _flask_
+Dans ce tutoriel, nous allons apprendre comment _dockeriser_ son api _flask_
 avec _docker_ et _gunicorn_.
 <!--more-->
 
 L'objectif de ce tutoriel est d'apprendre comment :
 
-- Apprendre les bases de docker
-- _Dockeriser_ son api flask
+- Apprendre les bases de _docker_
+- _Dockeriser_ son api _flask_
 
 ## Flask
 
-Pré-requis, savoir développer une application flask "simple". Si ce n'est pas le
+Pré-requis, savoir développer une application _flask_ "simple". Si ce n'est pas le
 cas n'hésitez pas à aller voir notre tutoriel sur le sujet :
 
 [Python : Comment faire une api web avec Flask](https://blog.jaaj.dev/2021/04/20/Comment-faire-une-api-web-en-python.html)
@@ -47,7 +47,7 @@ D'après [Wikipedia](https://fr.wikipedia.org/wiki/Docker_(logiciel)) :
 > que ce soit sur la machine locale, un cloud privé ou public, une machine nue,
 > etc.
 
-Autrement dit : Docker permet de faire abstraction de son OS, et de pouvoir
+Autrement dit : _Docker_ permet de faire abstraction de son OS, et de pouvoir
 partager le même environnement entre sa machine de développement et son/ses
 serveurs en production.
 
@@ -56,15 +56,15 @@ serveurs en production.
 Par défaut, le serveur utilisé par flask est dédié au développement en local de
 son application, et n'est pas adapté à être utilisé en production. Il faut
 utiliser un autre serveur web HTTP pour gérer les requêtes à notre application.
-Gunicorn est l'un des serveurs web HTTP les plus simples et les plus légers pour
-flask.
+_Gunicorn_ est l'un des serveurs web HTTP les plus simples et les plus légers pour
+_flask_.
 
-On installe gunicorn en local à l'aide de pip :
+On installe _gunicorn_ en local à l'aide de _pip_ :
 ```bash
 pip3 install gunicorn
 ```
 
-Pour lancer son application
+Pour lancer son application :
 ```bash
 #!/bin/sh
 
@@ -76,51 +76,51 @@ gunicorn -w 4 "app:app" -b 0.0.0.0:8000 -t 0
 - Le deuxieme `app` correspond à la variable définie dans le fichier
   précédent (`app = Flask(__name__)`)
 
-Enregistrez cette commande dans un script bash nommé `run.sh` à la racine de
+Enregistrez cette commande dans un script _bash_ nommé `run.sh` à la racine de
 votre projet.
 
-Pour la suite du tutoriel, il est aussi nécessaire d'avoir un fichier `requirement.txt` à la racine de son projet avec les dépendances nécessaires au bon fonctionnement de son application flask. Au minimum, on a besoin de :
+Pour la suite du tutoriel, il est aussi nécessaire d'avoir un fichier `requirement.txt` à la racine de son projet avec les dépendances nécessaires au bon fonctionnement de son application _flask_. Au minimum, on a besoin de :
 ```
 flask~=2.1.2
 gunicorn
 ```
-Maintenant tout doit être bon du côté de python, on attaque docker !
+Maintenant tout doit être bon du côté de _python_, on attaque _docker_ !
 
 ## Création de notre image docker
 
 Pour créer notre conteneur docker, nous avons besoin de définir comment
-construire une image docker. Pour cela nous allons utiliser un fichier
+construire une image _docker_. Pour cela nous allons utiliser un fichier
 nommé `dockerfile`.
 
 Un Dockerfile est un fichier texte qui contient toutes les commandes à exécuter
 pour construire une image.
 Créez ce fichier à la racine de votre projet.
 
-Nous allons baser notre image docker sur Alpine, une distribution légère dédiée
+Nous allons baser notre image docker sur _Alpine_, une distribution légère dédiée
 au
 conteneur docker. Cette distribution permet de réduire sensiblement la taille
-des images docker.
+des images _docker_.
 
 ```dockerfile
 FROM alpine
 ```
 
 On choisit l'emplacement de notre application (nommé le dossier de travail par
-la suite), à partir de la racine du système de fichier virtuel du conteneur
+la suite), à partir de la racine du système de fichier virtuel du conteneur :
 
 ```dockerfile
 WORKDIR /app
 ```
 
-On installe ensuite python 3 et les différentes dépendances nécessaires pour
-flask :
+On installe ensuite _python 3_ et les différentes dépendances nécessaires pour
+_flask_ :
 
 ```dockerfile
 RUN apk add --update --no-cache python3 py3-pip gcc musl-dev python3-dev libffi-dev openssl-dev
 RUN python3 -m ensurepip # permet d'être sur que pip est bien présent avec python
 ```
 
-On copie le code de notre application python vers le dossier de travail défini
+On copie le code de notre application _python_ vers le dossier de travail défini
 précédemment :
 
 ```dockerfile
@@ -129,16 +129,16 @@ COPY . .
 
 Par défaut cette commande va copier l'ensemble de votre repertoire local dans le
 dossier de travail du conteneur ! Or certains fichiers ne sont pas forcément
-nécessaires dans notre docker et même pour certains fichiers sont dangereux
-d'avoir dans le conteneur, comme des fichiers de CI avec des tokens de
+nécessaires dans notre _docker_ et même pour certains fichiers sont dangereux
+d'avoir dans le conteneur, comme des fichiers de _CI_ avec des _tokens_ de
 déploiement.
 
-Pour régler ce petit problème, il est possible comme avec git de créer un
-fichier pour blacklister des fichiers. Au meme niveau que votre Dockerfile,
+Pour régler ce petit problème, il est possible comme avec _git_ de créer un
+fichier pour blacklister des fichiers. Au meme niveau que votre _Dockerfile_,
 créez un fichier nommé : `.dockerignore`
 
 Ajoutez dedans tous les fichiers à ne pas inclure dans le conteneur, dans mon
-cas je retire mes fichiers relatifs à git :
+cas je retire mes fichiers relatifs à _git_ :
 
 ```dockerignore
 .gitignore
@@ -152,14 +152,14 @@ Enfin j'installe les dépendances définies précédemment :
 RUN pip3 install -r requirements.txt
 ```
 
-Je rends executable notre script pour lancer gunicorn et notre application :
+Je rends executable notre script pour lancer _gunicorn_ et notre application :
 
 ```dockerfile
 RUN chmod +x run.sh
 ```
 
-Cette commande définie quel port va être exposé par notre docker, ici on met
-donc le port sur lequel gunicorn est lancé, le 8000.
+Cette commande définie quel port va être exposé par notre _docker_, ici on met
+donc le port sur lequel _gunicorn_ est lancé, le 8000.
 
 ```dockerfile
 EXPOSE 8000
@@ -226,5 +226,6 @@ et/ou à la déployer quelque part.
 
 ## Voir aussi
 
+- [Documentation Docker](https://docs.docker.com/get-started/)
 - [Python : Comment faire une api web avec Flask](https://blog.jaaj.dev/2021/04/20/Comment-faire-une-api-web-en-python.html)
 - [Python : Comment faire des requêtes HTTP avec requests](https://blog.jaaj.dev/2020/05/22/Comment-faire-des-requetes-http-en-python-avec-requests.html)
