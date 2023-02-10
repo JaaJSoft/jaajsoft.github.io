@@ -140,7 +140,7 @@ créez un fichier nommé : `.dockerignore`
 Ajoutez dedans tous les fichiers à ne pas inclure dans le conteneur, dans mon
 cas je retire mes fichiers relatifs à _git_ :
 
-```dockerignore
+```
 .gitignore
 .git
 README.md
@@ -172,7 +172,7 @@ notre cas, notre script de lancement.
 CMD ["./run.sh"]
 ```
 
-Et voilà notre dockerfile est terminé
+Et voilà notre dockerfile est terminé.
 
 ## Le dockerfile complet :
 
