@@ -159,8 +159,8 @@ plusieurs routes possibles ?
 
 Pour régler ce problème, nous allons utiliser une fonctionnalité intégrée à
 Flask pour faire du _routing_ par rapport à notre URL.
-On crée un nouvel *endpoint* qu'on pourra appeler avec l'
-URL : `http://127.0.0.1:5000/test`
+On crée un nouvel *endpoint* qu'on pourra appeler avec
+l'URL : `http://127.0.0.1:5000/test`
 
 ```python
 @app.route('/test')
@@ -278,7 +278,7 @@ Voilà vous êtes maintenant capable de créer une api web simple, mais
 performante. D'autres tutoriels sur flask seront prochainement disponibles : par exemple pour
 interroger une base de données et avoir des données dynamiques ou docker son application flask.
 
-## Le code complet de ce tuto
+## Le code complet de ce tutoriel
 
 ```python
 from flask import Flask
