@@ -26,7 +26,7 @@ L'hôte pourra activer sur demande la webcam, afin de détecter vos émotions et
 
 Tout ce projet sera réalisé sur [AWS Sumerian](https://aws.amazon.com/fr/sumerian/), à l'aide des [technologies AWS](https://aws.amazon.com/) et du [SDK AWS](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/) pour JavaScript
 
-### Pré requis
+### Prérequis
 
 - Webcam, microphone et haut-parleurs
 - Connectez-vous à Sumerian à l'aide de votre [compte AWS](https://signin.aws.amazon.com/signin?client_id=signup&redirect_uri=https%3A%2F%2Fportal.aws.amazon.com%2Fbilling%2Fsignup%2Fresume&page=resolve)
@@ -37,9 +37,9 @@ Tout ce projet sera réalisé sur [AWS Sumerian](https://aws.amazon.com/fr/sumer
 
 ### Technologies
 
-- [Amazon Sumerian](https://aws.amazon.com/sumerian/) :  Utilisé pour créer la scène, gérer les interactions avec l'utilisateur et afficher un hôte virtuel avec lequel vous pouvez interagir comme un chatbot.
-- [Amazon Lex](https://aws.amazon.com/lex/) : Service de création de chatbot vocal et textuel. Ce service sera utilisé pour intéragir avec l'hôte à l'aide de votre micrphone afin de discuter avec et lui donner des instructions.
-- [Amazon Rekognition](https://aws.amazon.com/rekognition/) :  Service de reconnaissance d'images et de vidéos permettant la reconnaissance faciale, l'analyse des émotions.
+- [Amazon Sumerian](https://aws.amazon.com/sumerian/) : Utilisé pour créer la scène, gérer les interactions avec l'utilisateur et afficher un hôte virtuel avec lequel vous pouvez interagir comme un chatbot.
+- [Amazon Lex](https://aws.amazon.com/lex/) : Service de création de chatbot vocal et textuel. Ce service sera utilisé pour interagir avec l'hôte à l'aide de votre microphone afin de discuter avec et lui donner des instructions.
+- [Amazon Rekognition](https://aws.amazon.com/rekognition/) : Service de reconnaissance d'images et de vidéos permettant la reconnaissance faciale, l'analyse des émotions.
 - [Amazon DynamoDB](https://aws.amazon.com/lex/) : Base de données AWS qui sera utilisée pour enregistrer l'ID de la face et les noms d'utilisateur.
 - [Tracking.js](https://trackingjs.com/) : Bibliothèque JavaScript basée sur OpenCV pour détecter les visages sur les vidéos et les images.
 
@@ -63,7 +63,7 @@ Par défaut, vous ne pourrez accéder qu'à Lex et à Polly. Pour ajouter les dr
 
 Pour importer les ressources défaut sur Sumerian, suivez la section *Re-Importing an Exported Sumerian Bundle* de [ce tutoriel](https://www.andreasjakl.com/download-export-or-backup-amazon-sumerian-scenes-part-6/) en important les [ressources par défaut](../ download / sumerianhostrecognition-bundle.zip).
 
-Cette scène a également besoin de quelques [fichiers](../ download / filesToS3.zip) pour fonctionner. Pour ce faire, allez sur [S3](https://console.aws.amazon.com/s3/), créez un [nouveau bucket](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/create-bucket.html) et [importez](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/upload-objects.html) le dossier **scripts**. Assurez-vous de le dossier public pour permettre à Sumerian d'y accéder.
+Cette scène a également besoin de quelques [fichiers](../ download / filesToS3.zip) pour fonctionner. Pour ce faire, allez sur [S3](https://console.aws.amazon.com/s3/), créez un [nouveau bucket](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/create-bucket.html) et [importez](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/upload-objects.html) le dossier **scripts**. Assurez-vous de rendre le dossier public pour permettre à Sumerian d'y accéder.
 
 ![public](/assets/images/220619_Reconnaissance/public.png)
 
@@ -75,7 +75,7 @@ Par défaut, la scène contient les éléments suivants :
 
 Ainsi que les scripts suivants :
 
-- **MicrophoneScript** : Initialise tous les évènement liés au microphone.
+- **MicrophoneScript** : Initialise tous les évènements liés au microphone.
 - **RecognitionScript** : Fonctions de reconnaissance.
 - **SwitchOnWebcamScript**/**SwitchOffWebcamScript** : Fonction permettant l'activation et la désactivation du flux vidéo.
 - **WebcamScript** : Initialise l'évènement d'activation de la webcam.
@@ -88,7 +88,7 @@ Maintenant que les bases de la scène sont configurées, nous allons commencer p
 
 Dans notre cas, le chatbot Lex sera principalement utilisé pour demander à l'hôte d'activer et de désactiver la webcam afin de démarrer la reconnaissance faciale.
 
-Commençons par créer le chatbot en vous rendant sur votre [console Lex](https://console.aws.amazon.com/lex) et suivez les instructions suivantes:
+Commençons par créer le chatbot en vous rendant sur votre [console Lex](https://console.aws.amazon.com/lex) et suivez les instructions suivantes :
 
 1. Dans la section **Bots**, cliquez sur le bouton **Create**
 2. Sélectionnez un bot **Custom** sur la page **Create your bot**
@@ -98,14 +98,14 @@ Commençons par créer le chatbot en vous rendant sur votre [console Lex](https:
 
 L'étape suivante consiste à créer un **Intent** (action personnalisable reconnue par le chatbot). Cliquez simplement sur le bouton **Create Intent** et nommez-le (par exemple, *ChangeCameraStatus* dans notre cas).
 
-Nous voulons maintenant connaître dans quel état l'utilisateur veut mettre sa webcam (allumée ou éteinte). Cet état de la webcam peut être géré par un **Slot**. Cliquez sur le bouton **+** à côté de **Slot types** et configurez le slot en lui attribuant un nom et deux valeurs: **On** et **Off**. Cliquez ensuite sur le bouton **Add slot to Intent**.
+Nous voulons maintenant connaître dans quel état l'utilisateur souhaite mettre sa webcam (allumée ou éteinte). Cet état de la webcam peut être géré par un **Slot**. Cliquez sur le bouton **+** à côté de **Slot types** et configurez le slot en lui attribuant un nom et deux valeurs : **On** et **Off**. Cliquez ensuite sur le bouton **Add slot to Intent**.
 
 ![createSlot](/assets/images/220619_Reconnaissance/createSlot.png)
 
-Il ne reste plus qu'à configurer le chatbot en ajoutant des fonctionnalités à l'Intent:
+Il ne reste plus qu'à configurer le chatbot en ajoutant des fonctionnalités à l'Intent :
 
 1. Ajoutez le slot à l’Intent, attribuez lui un nom ...
-2. Ajouter des expressions reconnue par le chatbot en utilisant le nom du slot comme paramètre dans les expressions
+2. Ajouter des expressions reconnues par le chatbot en utilisant le nom du slot comme paramètre dans les expressions
 3. Ajouter des réponses à utiliser lorsque le bot reçoit la demande de l'utilisateur
 
 ![intentAndSlotConf2](/assets/images/220619_Reconnaissance/intentAndSlotConf2.png)
@@ -126,7 +126,7 @@ Une fois le composant de dialogue ajouté, ajoutez le **Behaviour** ci-dessous �
 
 ![hostLexBehaviour](/assets/images/220619_Reconnaissance/hostLexBehaviour.png)
 
-Ce Behaviour fonctionne comme ceci :
+Ce _Behaviour_ fonctionne comme ceci :
 
 1. **AWS Ready** : Attend que le SDK AWS soit chargé
 2. **Intro Speech** : Lit un discours d'introduction pour présenter l'hôte
@@ -169,11 +169,11 @@ sumerian.SystemBus.addListener( `${sumerian.SystemBusMessage.LEX_RESPONSE}.${ctx
 
 Après cela, la fonction **onLexResponse** doit détecter le moment où l'utilisateur appelle l'Intent de Lex de modifier l'état de la webcam et émet le message correct (*switchOn* ou *switchOff*).
 
-Ensuite, afin que le bouton de camera puisse lui aussi émettre les messages *switchOn* et *switchOff* quand il est appuyé ou relâché, il suffit de créer un composant Script à l'entité **WebcamButton** et de lui ajouter le script **WebcamScript**.
+Ensuite, afin que le bouton de caméra puisse lui aussi émettre les messages *switchOn* et *switchOff* quand il est appuyé ou relâché, il suffit de créer un composant Script à l'entité **WebcamButton** et de lui ajouter le script **WebcamScript**.
 
 ![addWebcamScript](/assets/images/220619_Reconnaissance/addWebcamScript.png)
 
-Ce script définie une variable globale *cameraOn* afin de sauvegarder l'état de la caméra dans tout le programme (allumée ou éteinte) et émet le message *switchOn* ou *switchOff* en fonction de l'état de la caméra quand le bouton est pressé.
+Ce script défini une variable globale *cameraOn* afin de sauvegarder l'état de la caméra dans tout le programme (allumée ou éteinte) et émet le message *switchOn* ou *switchOff* en fonction de l'état de la caméra quand le bouton est pressé.
 
 ```javascript
 if(Boolean(ctx.worldData.cameraOn)){
@@ -191,11 +191,11 @@ Enfin, ces deux messages doivent être reçus par un nouveau Behaviour. Attachez
 2. **Switch on/off** : Exécute respectivement les scripts **SwitchOnWebcamScript** et **SwitchOffWebcamScript**.
 3. **Change Recognition State** : Exécute le script **RecognitionScript** (que nous allons configurer plus tard).
 
-Faites attention à bien définir l'état **Webcam On** comme état initial en cliquant sur l'étant puis sur **Set As Initial State**.
+Faites attention à bien définir l'état **Webcam On** comme l'état initial en cliquant sur l'étant puis sur **Set As Initial State**.
 
 ![setInitialState](/assets/images/220619_Reconnaissance/setInitialState.png)
 
-Les scripts activant la webcam utilisent l'[API WebRTC](https://webrtc.github.io/samples/) pour diffuser le flux de la webcam sur l'entité 3DHTML appelée **Webcam**. Une fois la webcam activée, la variable de contexte **ctx.worldData.cameraOn** passe à *true* pour sauvegarder l'état actuel de la caméra au seins de tout le programme. Pour fonctionner, copiez le code ci dessous dans la fonction **switchOnWebcam** dans le script **SwitchOnWebcamScript**.
+Les scripts activant la webcam utilisent l'[API WebRTC](https://webrtc.github.io/samples/) pour diffuser le flux de la webcam sur l'entité 3DHTML appelée **Webcam**. Une fois la webcam activée, la variable de contexte **ctx.worldData.cameraOn** passe à *true* pour sauvegarder l'état actuel de la caméra au sein de tout le programme. Pour fonctionner, copiez le code ci-dessous dans la fonction **switchOnWebcam** dans le script **SwitchOnWebcamScript**.
 
 ```javascript
 function switchOnWebcam(ctx){
@@ -218,7 +218,7 @@ function switchOnWebcam(ctx){
 }
 ```
 
-A l'inverse, lorsque la caméra est désactivée, la variable de contexte **ctx.worldData.cameraOn** passe à *false* et la diffusion du flux vidéo est arrêtée. Pour fonctionner, copiez le code ci dessous dans la fonction **switchOffWebcam** dans le script **SwitchOfWebcamScript**.
+À l'inverse, lorsque la caméra est désactivée, la variable de contexte **ctx.worldData.cameraOn** passe à *false* et la diffusion du flux vidéo est arrêtée. Pour fonctionner, copiez le code ci-dessous dans la fonction **switchOffWebcam** dans le script **SwitchOfWebcamScript**.
 
 ```javascript
 function switchOffWebcam(ctx){
@@ -239,19 +239,19 @@ Si vous rencontrez un problème tel qu'un affichage orange, l'hôte ne comprenan
 
 La dernière partie consiste à utiliser le flux de la webcam pour détecter votre visage et à appeler AWS Rekognition pour votre visage et vos émitions
 
-Pour résumer le système, lorsque la webcam est activée, le script de reconnaissance crée un [intervalle JavaScript](https://www.w3schools.com/jsref/met_win_setinterval.asp) qui crée une capture d'écran de la webcam dans un canevas, détecte les visages sur ce canvas et si un visage est détecté, appele le service AWS Rekognition pour faire la reconnaissance.
+Pour résumer le système, lorsque la webcam est activée, le script de reconnaissance crée un [intervalle JavaScript](https://www.w3schools.com/jsref/met_win_setinterval.asp) qui crée une capture d'écran de la webcam dans un canevas, détecte les visages sur ce canvas et si un visage est détecté, appelle le service AWS Rekognition pour faire la reconnaissance.
 
 ![recoDiagram](/assets/images/220619_Reconnaissance/recoDiagram.png)
 
 ### Création du système de reconnaissance
 
-Le système de reconnaissance n'est pas compliqué à mettre en œuvre. Suivez simplement [ce tutoriel](https://aws.amazon.com/blogs/machine-learning/build-your-own-face-recognition-service-using-amazon-rekognition/) pour créer le système, puis alimentez le collection de reconnaissance avec quelques images.
+Le système de reconnaissance n'est pas compliqué à mettre en œuvre. Suivez simplement [ce tutoriel](https://aws.amazon.com/blogs/machine-learning/build-your-own-face-recognition-service-using-amazon-rekognition/) pour créer le système, puis alimentez la collection de reconnaissance avec quelques images.
 
-Gardez en mémoire l' **ID de la collection** et le **nom de la table DynamoDB** contenant les **FaceID** (identifiant unique de reconnaissance faciale) et les noms d'utilisateurs, pour les étapes suivantes.
+Gardez en mémoire l'**ID de la collection** et le **nom de la table DynamoDB** contenant les **FaceID** (identifiant unique de reconnaissance faciale) et les noms d'utilisateurs, pour les étapes suivantes.
 
 ### Implémentation de la détéction
 
-Commencez cette étape en ajoutant le script **RecognitionScript** à l'entité **Webcam** en lui ajoutant un composant script, et configurez-le avec l'ID de collection et  la table DynamoDB créée juste avant.
+Commencez cette étape en ajoutant le script **RecognitionScript** à l'entité **Webcam** en lui ajoutant un composant script, et configurez-le avec l'ID de collection et la table DynamoDB créée juste avant.
 
 ![addRecoScript](/assets/images/220619_Reconnaissance/addRecoScript.png)
 
@@ -261,7 +261,7 @@ La détection faciale est effectuée par la bibliothèque **Tracking.js**. Le sc
 
 Avant de commencer à mettre en œuvre la détection faciale, jetez un coup d'œil au script lorsqu'il est ouvert : il contient déjà toutes les fonctions nécessaires à la reconnaissance faciale à l'aide d'AWS Rekognition.
 
-Afin d'instancier les différents objets utilisés lors de la reconnaissance, copiez le code ci dessous dans la fonction **setup** du script **RecognitionScript**.
+Afin d'instancier les différents objets utilisés lors de la reconnaissance, copiez le code ci-dessous dans la fonction **setup** du script **RecognitionScript**.
 
 ```js
 rekognition = new AWS.Rekognition();
@@ -372,7 +372,7 @@ La principale émotion détectée est maintenant contenue dans la variable **max
 
 ##### Reconnaissance faciale
 
-La fonction de reconnaissance faciale appelle à nouveau AWS Rekognition avec la fonction [searchFacesByImage](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Rekognition.html#searchFacesByImage-property). Cette fonction prend comme paramètres l'image binaire, le seuil de confiance et le nombre maximal de visage à détecter et l'ID de collection.
+La fonction de reconnaissance faciale appelle à nouveau AWS Rekognition avec la fonction [searchFacesByImage](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Rekognition.html#searchFacesByImage-property). Cette fonction prend comme paramètres l'image binaire, le seuil de confiance et le nombre maximal de visages à détecter et l'ID de collection.
 
 ```js
 function facialRecognition(img, collection, threshold, maxFaces){
@@ -424,7 +424,7 @@ Enfin, le nom reçu par la requête DynamoDB est obtenu par cette instruction.
 name = promise.Item.Fullname.S;
 ```
 
-Lorsque toutes les informations de reconnaissance sont renseignées, il suffit au script d’afficher le résultat sur l’entité 3DHTML **Dialog** et de faire en sorte que l’hôte prononce votre nom. Pour modifier le discours de l'hôte, il suffit de modifier le *Speech* de de l'hôte comme ci-dessous.
+Lorsque toutes les informations de reconnaissance sont renseignées, il suffit au script d’afficher le résultat sur l’entité 3DHTML **Dialog** et de faire en sorte que l’hôte prononce votre nom. Pour modifier le discours de l'hôte, il suffit de modifier le *Speech* de l'hôte comme ci-dessous.
 
 ```javascript
 function modifySpeech(text, ctx) {
@@ -439,7 +439,7 @@ function modifySpeech(text, ctx) {
 
 # Conclusion
 
-Vous avez désormais ajouté tout ce dont vous avez besoin pour obtenir un hôte virtuel capable de reconnaître votre visage et vos émotions. Lancez votre scène et ouvrez la console de débogage à partir de votre navigateur pour voir s’il y'a des erreurs.
+Vous avez désormais ajouté tout ce dont vous avez besoin pour obtenir un hôte virtuel capable de reconnaître votre visage et vos émotions. Lancez votre scène et ouvrez la console de débogage à partir de votre navigateur pour voir s’il y a des erreurs.
 
 Pour parler avec l'hôte, maintenez la barre d'espace ou le bouton du microphone enfoncé pendant que vous parlez.
 

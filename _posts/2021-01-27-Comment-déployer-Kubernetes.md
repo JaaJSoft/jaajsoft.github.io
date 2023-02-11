@@ -10,7 +10,7 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, nous allons voir comment déployer un *cluster* kubernetes bare-metal, c'est-à-dire sans *cloud provider*.
+Dans ce tutoriel, nous allons voir comment déployer un *cluster* kubernetes bare metal, c'est-à-dire sans *cloud provider*.
 
 <!--more-->
 
@@ -18,11 +18,11 @@ Dans ce tutoriel, nous allons voir comment déployer un *cluster* kubernetes bar
 
 Pour ce tutoriel vous aurez besoin d'un PC, et de plusieurs serveurs que vous voulez mettre en *cluster*. (Ce tutoriel peut fonctionner sur un seul serveur)
 
-Pour déployer notre *cluster* nous allons utiliser une version allégée de kubernetes nommée [K3s](https://k3s.io), qui est fait pour les appareils ARM comme un *Raspberry PI* ou des serveurs peu puissants. C'est une version simplifiée de k8s avec seulement l'essentiel, qui est plus simple à installer et maintenir.
+Pour déployer notre *cluster,* nous allons utiliser une version allégée de kubernetes nommée [K3s](https://k3s.io), qui est fait pour les appareils ARM comme un *Raspberry PI* ou des serveurs peu puissants. C'est une version simplifiée de k8s avec seulement l'essentiel qui est plus simple à installer et maintenir.
 
 ## Préparation des nodes
 
-Sur chacun de vos serveurs, vous allez avoir besoin d'un *user* avec les droits *root*, et de votre clé SSH sur chacun d'entre eux. Il vous faudra sur votre ordinateur le paquet suivant : `openssh-client`, il est par défaut installé sur Ubuntu mais dans le doute :
+Sur chacun de vos serveurs, vous allez avoir besoin d'un *user* avec les droits *root*, et de votre clé SSH sur chacun d'entre eux. Il vous faudra sur votre ordinateur le paquet suivant : `openssh-client`, il est par défaut installé sur Ubuntu, mais dans le doute :
 ```bash
 sudo apt install openssh-client
 ```
@@ -59,7 +59,7 @@ The key's randomart image is:
 +----[SHA256]-----+
 ```
 
-Enfin vous devez copier cette clé SSH sur chacun de vos serveurs avec lesquels vous voulez faire un cluster. Pour cela nous allons utiliser `ssh-copy-id` pour chaque serveur :
+Enfin, vous devez copier cette clé SSH sur chacun de vos serveurs avec lesquels vous voulez faire un cluster. Pour cela nous allons utiliser `ssh-copy-id` pour chaque serveur :
 ```bash
 ssh-copy-id user@host
 ```
@@ -72,7 +72,7 @@ ssh user@host
 ##  Installation de K3sup
 
 Nous allons utiliser [K3sup](https://github.com/alexellis/k3sup) pour installer notre *cluster*, c'est un utilitaire simple et rapide pour installer et mettre à jour K3s.
-Pour l'installer K3sup sur son PC  :
+Pour l'installer K3sup sur son PC :
 
 ```bash
 curl -sLS https://get.k3sup.dev | sh
@@ -81,7 +81,7 @@ sudo install k3sup /usr/local/bin/
 
 ## Création du master
 
-Maintenant que K3sup est installé nous allons créer notre *master*. Choisissez un de vos serveurs qui deviendra le *master* de votre cluster et lancez depuis votre PC la commande suivante, avec l'adresse ip du serveur choisi et le *user* choisi. Le *user* doit avoir les droits *root*.
+Maintenant que K3sup est installé nous allons créer notre *master*. Choisissez un de vos serveurs qui deviendra le *master* de votre cluster et lancez depuis votre PC la commande suivante, avec l'adresse ip du serveur choisi et l'*user* choisi. Cet *user* doit avoir les droits *root*.
 
 ```bash
 SERVER_IP=          # IP du master
@@ -159,7 +159,7 @@ export KUBECONFIG=/chemin/vers/votre/kubeconfig
 ```
 Vous pouvez mettre cette commande dans votre fichier `~/.bashrc` pour que la variable soit toujours définie.
 
-Maintenant, si tout c'est bien passé, en exécutant la commande suivante vous devriez pouvoir accéder à votre *cluster*.
+Maintenant, si tout s'est bien passé, en exécutant la commande suivante, vous devriez pouvoir accéder à votre *cluster*.
 ```bash
 kubectl get nodes
 ```

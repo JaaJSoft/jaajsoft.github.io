@@ -100,7 +100,7 @@ Nous allons utiliser des compteurs pour créer nos propres
 cousine `\stepcounter`, seulement elle place une sorte d'ancre là où elle a été
 appelée afin d'y avoir accès ailleurs dans le document, par exemple lors de
 l'appel à un `\ref`. Par défaut, cet appel à `\ref` renverra la valeur qu'avait
-le compteur quand elle a été placé. Si nous remplaçons `\stepcounter{encadre}`
+le compteur quand elle a été placée. Si nous remplaçons `\stepcounter{encadre}`
 par `\refstepcounter{encadre}` dans le code précédent, tout fonctionne très
 bien, mais le document pdf contiendra désormais une ancre au début de chaque
 encadré. Pour aller chercher cette ancre, nous avons besoin de la nommer par une
@@ -150,7 +150,7 @@ donne le résultat :
 ![image 4](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image4.jpg)
 
 *Remarque* : nous écrivons toujours "encadré" avant d'appeler `\ref`, mais il
-est toujours possible, et conseillé, d'envelopper cet appel dans une commande *
+est toujours possible et conseillé, d'envelopper cet appel dans une commande *
 sémantique*, comme :
 {% raw %}
 ```latex

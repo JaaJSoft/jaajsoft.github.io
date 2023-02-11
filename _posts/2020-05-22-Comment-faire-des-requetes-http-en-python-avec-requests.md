@@ -17,7 +17,7 @@ Dans ce tutoriel, vous allez apprendre à faire des requêtes http en python en 
 
 ## Installation
 
-Pour commencer, il vous faut un interpréteur python en version 3, dans mon cas j'utiliserai python 3.7.5.
+Pour commencer, il vous faut un interpréteur python en version 3, dans mon cas, j'utiliserai python 3.7.5.
 
 ### Linux - Ubuntu (& toutes distributions utilisant APT comme gestionnaire de paquets)
 
@@ -29,7 +29,7 @@ Depuis un terminal, installation de python3 :
 sudo apt install python3
 ```
 
-Vous aurez ensuite besoin de pip le gestionnaire de package de python, il est souvent préinstallé avec python mais dans le doute :
+Vous aurez ensuite besoin de pip le gestionnaire de package de python, il est souvent préinstallé avec python, mais dans le doute :
 
 ```bash
 sudo apt install python3-pip
@@ -126,7 +126,7 @@ print(response.status_code)
 
 Comme exemple d'API nous allons utiliser [https://jsonplaceholder.typicode.com](https://jsonplaceholder.typicode.com), une API de test permettant d'expérimenter avec les API REST facilement.
 
-On va faire une requête vers [https://jsonplaceholder.typicode.com/users](https://jsonplaceholder.typicode.com/users) qui renvoie une liste d'utilisateurs au format JSON  suivant :
+On va faire une requête vers [https://jsonplaceholder.typicode.com/users](https://jsonplaceholder.typicode.com/users) qui renvoie une liste d'utilisateurs au format JSON suivant :
 ```json
 [
   {
@@ -189,11 +189,11 @@ if response.status_code == 200:
     for user in response_json:
         print(user["name"])
 ```
-Ce code affiche le nom de tous les utilisateurs. On teste si le *status_code* est 200 pour ne traiter le résultat que si la requête est un succès.. Il existe plusieurs codes de retour décrits [ici](https://fr.wikipedia.org/wiki/Liste_des_codes_HTTP).
+Ce code affiche le nom de tous les utilisateurs. On teste si le *status_code* est 200 pour ne traiter le résultat que si la requête est un succès. Il existe plusieurs codes de retour décrits [ici](https://fr.wikipedia.org/wiki/Liste_des_codes_HTTP).
 
 ## Changer les headers de la requête
 
-Dans certains cas il peut être utile de changer les headers d'une requête pour se faire passer pour un navigateur web et accéder à certains contenus dont l'accès est restreint depuis un script.
+Dans certains cas, il peut être utile de changer les headers d'une requête pour se faire passer pour un navigateur web et accéder à certains contenus dont l'accès est restreint depuis un script.
 
 Par exemple ici pour se faire passer pour Mozilla Firefox :
 

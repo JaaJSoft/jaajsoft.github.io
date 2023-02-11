@@ -51,7 +51,7 @@ Autrement dit : _Docker_ permet de faire abstraction de son OS, et de pouvoir
 partager le même environnement entre sa machine de développement et son/ses
 serveurs en production.
 
-Pour installer _docker_ suivez le guide officiel [ici](https://docs.docker.com/get-docker/)
+Pour installer _docker_, suivez le guide officiel [ici](https://docs.docker.com/get-docker/)
 
 ## Gunicorn
 
@@ -136,7 +136,7 @@ d'avoir dans le conteneur, comme des fichiers de _CI_ avec des _tokens_ de
 déploiement.
 
 Pour régler ce petit problème, il est possible comme avec _git_ de créer un
-fichier pour blacklister des fichiers. Au meme niveau que votre _Dockerfile_,
+fichier pour blacklister des fichiers. Au même niveau que votre _Dockerfile_,
 créez un fichier nommé : `.dockerignore`
 
 Ajoutez dedans tous les fichiers à ne pas inclure dans le conteneur, dans mon

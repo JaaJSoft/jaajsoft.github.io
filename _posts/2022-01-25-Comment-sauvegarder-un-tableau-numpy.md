@@ -29,7 +29,7 @@ with open('array.npy', 'wb') as f:
 ```
 
 Le fichier en sortie utilise un format binaire spécifique numpy. Sur la première
-ligne on trouve les paramètres de notre tableau persisté :
+ligne, on trouve les paramètres de notre tableau persisté :
 
 ```
 �NUMPYv{'descr': '<i8', 'fortran_order': False, 'shape': (2,), }
@@ -130,7 +130,7 @@ np.savetxt('array_compressed.gz', big_array, delimiter=',', fmt='%i')
 Le gain de place est très intéressant, cependant l'enregistrement et le
 chargement des données sauvegardées au format gz sera plus long.
 
-Le chargement se fait de la meme façon que précédemment, la fonction `loadtxt`
+Le chargement se fait de la même façon que précédemment, la fonction `loadtxt`
 se charge de décompresser pour nous les données.
 
 ```python

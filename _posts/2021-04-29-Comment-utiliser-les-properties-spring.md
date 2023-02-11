@@ -10,9 +10,9 @@ author: Rémi Lecouillard
 ---
 
 Dans ce tutoriel, vous allez apprendre à définir des properties spring et à les utiliser dans votre projet Java. <!--more-->
-Ce tutoriel suppose que avez déjà un projet avec Spring boot fonctionnel et des bases de programmation en Java.
+Ce tutoriel suppose que vous avez déjà un projet avec Spring boot fonctionnel et des bases de programmation en Java.
 
-## C'est quoi les _application properties_ Spring ?
+## Qu'est-ce que les _applications properties_ Spring ?
 
 Plus communément appelées _properties_, elles sont des valeurs accessibles dans toute
 votre application.
@@ -37,14 +37,14 @@ Ces fichiers sont recherchés dans les dossiers suivants :
 * Le sous repertoire /config du repertoire courant
 * Les sous repertoires directes du sous repertoire /config
 
-Si vous utilisez le _Standard Directory Layout_, que se soit avec Maven ou Gradle,
+Si vous utilisez le _Standard Directory Layout_, que ce soit avec Maven ou Gradle,
 les fichiers sont généralement mis dans `src/main/resources`. Puisqu'on peut y accéder depuis le _classpath_.
 
 ### Définir ses propres fichiers
 
 Si vous voulez accéder à des *properties* définies dans un fichier comportant un
 autre nom, c'est très simple. Il suffit d'utiliser l'annotation `@PropertySource`
-comme ci dessous :
+comme ci-dessous :
 
 ```java
 @Configuration
@@ -88,12 +88,12 @@ public class PropertiesWithJavaConfig {
 
 Dans ce cas, si la *property* `db.provider` a été préalablement défini par mongodb par
 exemple, le fichier `persistence-mongodb.properties` sera chargé. Si elle n'est pas
-définie ce sera la valeur après le ':' qui sera utilisée. À savoir qu'utiliser le
+définie, ce sera la valeur après le ':' qui sera utilisée. À savoir qu'utiliser le
 ':' est optionnel, mais si la _property_ n'est jamais déclarée une exception sera levée.
 
 ### Les différents formats de fichier
 
-Il existe deux formats de fichiers possibles pour définir les _properties_:
+Il existe deux formats de fichiers possibles pour définir les _properties_ :
 - Le format *properties* java :
 ```properties
 app.name=MyApp
