@@ -114,11 +114,12 @@ Ce qui permet d'avoir les informations suivantes sur la ressource :
 Très peu clair pour un humain, mais cela permet pour un navigateur d'avoir des informations très utiles sur la ressource demandée.
 
 Et finalement la requête *post* qui s'utilise de la même manière qu'une requête *get* sauf que les paramètres sont passés dans le corps de la requête et pas avec l'url.
+Pour passer un json en paramètre dans le _body_ :
 ```python
 import requests
 
-params = {"example": "test"}
-response = requests.post("https://blog.jaaj.dev/archive.html", params=params)
+data = {"example": "test"}
+response = requests.post("https://blog.jaaj.dev/archive.html", json=data)
 print(response.status_code)
 ```
 
