@@ -18,7 +18,7 @@ ajouter de la persistence à votre application python. <!--more-->
 
 ### Sauvegarde des données
 
-Pour sauvegarder votre tableau NumPy on utilise le comportement natif de python
+Pour sauvegarder votre tableau NumPy, on utilise le comportement natif de python
 pour l'ouverture d'un fichier, et on appelle la function save de NumPy :
 
 ```python
@@ -39,7 +39,7 @@ La suite du fichier est composé d'octets correspondant aux valeurs du tableau.
 
 ### Chargement des données
 
-Après avoir sauvegardé nos données, il faut pouvoir les charger. Pour cela on
+Après avoir sauvegardé nos données, il faut pouvoir les charger. Pour cela, on
 utilise la fonction `load` de numpy :
 
 ```python
@@ -54,7 +54,7 @@ Ce qui donne le résultat suivant :
 [6 9]
 ```
 
-Et voilà on a notre première persistence de données avec numpy !
+Et voilà, on a notre première persistence de données avec numpy !
 
 ## Persistence au format texte
 
@@ -72,7 +72,7 @@ np.savetxt('array_float.csv', array, delimiter=',')
 ```
 
 Le _delimiter_ est le caractère au sein du fichier qui séparera nos valeurs. Les
-délimiteurs courant sont `,` et `;`.
+délimiteurs courants sont `,` et `;`.
 
 Notre fichier csv contient :
 
@@ -176,7 +176,7 @@ automatiquement.
 
 ## Conclusion
 
-Voilà vous êtes maintenant capable de faire persister vos données numpy.
+Voilà, vous êtes maintenant capable de faire persister vos données numpy.
 
 ## Voir aussi
 

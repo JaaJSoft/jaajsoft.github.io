@@ -73,7 +73,7 @@ Source Wikipédia
 
 Il existe 5 principales requêtes http
 
-- GET, permet accéder à une ressource.
+- GET, permet d'accéder à une ressource.
 - HEAD, permet de récupérer l'entête d'une ressource, pour par exemple connaitre la date de sa dernière modification (utile pour le système de cache d'un navigateur)
 - POST, permet d'ajouter une ressource
 - PUT, permet de mettre à jour une ressource
@@ -125,7 +125,7 @@ print(response.status_code)
 
 ## Traiter le résultat d'une requête vers une API REST
 
-Comme exemple d'API nous allons utiliser [https://jsonplaceholder.typicode.com](https://jsonplaceholder.typicode.com), une API de test permettant d'expérimenter avec les API REST facilement.
+Comme exemple d'API, nous allons utiliser [https://jsonplaceholder.typicode.com](https://jsonplaceholder.typicode.com), une API de test permettant d'expérimenter avec les API REST facilement.
 
 On va faire une requête vers [https://jsonplaceholder.typicode.com/users](https://jsonplaceholder.typicode.com/users) qui renvoie une liste d'utilisateurs au format JSON suivant :
 ```json

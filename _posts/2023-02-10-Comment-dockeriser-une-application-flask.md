@@ -91,7 +91,7 @@ Maintenant tout doit être bon du côté de _python_, on attaque _docker_ !
 ## Création de notre image docker
 
 Pour créer notre conteneur docker, nous avons besoin de définir comment
-construire une image _docker_. Pour cela nous allons utiliser un fichier
+construire une image _docker_. Pour cela, nous allons utiliser un fichier
 nommé `dockerfile`.
 
 Un Dockerfile est un fichier texte qui contient toutes les commandes à exécuter
@@ -140,7 +140,7 @@ fichier pour blacklister des fichiers. Au même niveau que votre _Dockerfile_,
 créez un fichier nommé : `.dockerignore`
 
 Ajoutez dedans tous les fichiers à ne pas inclure dans le conteneur, dans mon
-cas je retire mes fichiers relatifs à _git_ :
+cas, je retire mes fichiers relatifs à _git_ :
 
 ```
 .gitignore
@@ -148,7 +148,7 @@ cas je retire mes fichiers relatifs à _git_ :
 README.md
 ```
 
-Enfin j'installe les dépendances définies précédemment :
+Enfin, j'installe les dépendances définies précédemment :
 
 ```dockerfile
 RUN pip3 install -r requirements.txt
@@ -167,7 +167,7 @@ donc le port sur lequel _gunicorn_ est lancé, le 8000.
 EXPOSE 8000
 ```
 
-Enfin j'indique quelle commande lancer au démarrage de notre conteneur, dans
+Enfin, j'indique quelle commande lancer au démarrage de notre conteneur, dans
 notre cas, notre script de lancement.
 
 ```dockerfile

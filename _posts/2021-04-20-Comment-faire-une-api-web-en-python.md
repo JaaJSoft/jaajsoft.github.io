@@ -25,7 +25,7 @@ L'objectif de ce tutoriel est d'apprendre comment faire :
 
 ## Installation
 
-Pour commencer, il vous faut un interpréteur python en version 3, dans mon cas
+Pour commencer, il vous faut un interpréteur python en version 3, dans mon cas,
 j'utiliserai python 3.8
 
 ### Linux - Ubuntu (& toutes distributions utilisant APT comme gestionnaire de paquets)
@@ -92,7 +92,7 @@ Source Wikipédia.
 
 Il existe 5 principales requêtes HTTP :
 
-- GET, permet accéder à une ressource.
+- GET, permet d'accéder à une ressource.
 - HEAD, permet de récupérer l'entête d'une ressource, pour par exemple connaitre
   la date de sa dernière modification (utile pour le système de cache d'un
   navigateur)
@@ -138,7 +138,7 @@ Ou sinon :
 python -m flask run
 ```
 
-Si vous allez sur `http://127.0.0.1:5000/` avec votre navigateur web vous
+Si vous allez sur `http://127.0.0.1:5000/` avec votre navigateur web, vous
 devriez avoir :
 
 ```
@@ -274,7 +274,7 @@ curl -X POST http://127.0.0.1:5000/exemple -d "param1=jeej"
 {"return1":"jeejAAA"}
 ```
 
-Voilà vous êtes maintenant capable de créer une api web simple, mais
+Voilà, vous êtes maintenant capable de créer une api web simple, mais
 performante. D'autres tutoriels sur flask seront prochainement disponibles : par exemple pour
 interroger une base de données et avoir des données dynamiques ou docker son application flask.
 

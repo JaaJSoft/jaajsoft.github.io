@@ -16,7 +16,7 @@ Dans ce tutoriel, nous allons voir comment déployer un *cluster* kubernetes bar
 
 ## Introduction
 
-Pour ce tutoriel vous aurez besoin d'un PC, et de plusieurs serveurs que vous voulez mettre en *cluster*. (Ce tutoriel peut fonctionner sur un seul serveur)
+Pour ce tutoriel, vous aurez besoin d'un PC, et de plusieurs serveurs que vous voulez mettre en *cluster*. (Ce tutoriel peut fonctionner sur un seul serveur)
 
 Pour déployer notre *cluster,* nous allons utiliser une version allégée de kubernetes nommée [K3s](https://k3s.io), qui est fait pour les appareils ARM comme un *Raspberry PI* ou des serveurs peu puissants. C'est une version simplifiée de k8s avec seulement l'essentiel qui est plus simple à installer et maintenir.
 
@@ -59,7 +59,7 @@ The key's randomart image is:
 +----[SHA256]-----+
 ```
 
-Enfin, vous devez copier cette clé SSH sur chacun de vos serveurs avec lesquels vous voulez faire un cluster. Pour cela nous allons utiliser `ssh-copy-id` pour chaque serveur :
+Enfin, vous devez copier cette clé SSH sur chacun de vos serveurs avec lesquels vous voulez faire un cluster. Pour cela, nous allons utiliser `ssh-copy-id` pour chaque serveur :
 ```bash
 ssh-copy-id user@host
 ```
@@ -81,7 +81,7 @@ sudo install k3sup /usr/local/bin/
 
 ## Création du master
 
-Maintenant que K3sup est installé nous allons créer notre *master*. Choisissez un de vos serveurs qui deviendra le *master* de votre cluster et lancez depuis votre PC la commande suivante, avec l'adresse ip du serveur choisi et l'*user* choisi. Cet *user* doit avoir les droits *root*.
+Maintenant que K3sup est installé, nous allons créer notre *master*. Choisissez un de vos serveurs qui deviendra le *master* de votre cluster et lancez depuis votre PC la commande suivante, avec l'adresse ip du serveur choisi et l'*user* choisi. Cet *user* doit avoir les droits *root*.
 
 ```bash
 SERVER_IP=          # IP du master
@@ -93,7 +93,7 @@ Vous devez avoir maintenant un fichier `kubeconfig` à l'endroit où vous avez e
 
 ## Ajout des nodes
 
-Maintenant il faut ajouter vos autres serveurs en tant que *nodes* du *cluster*. Pour cela on utilise toujours k3sup depuis son ordinateur, avec la commande suivante :
+Maintenant, il faut ajouter vos autres serveurs en tant que *nodes* du *cluster*. Pour cela, on utilise toujours k3sup depuis son ordinateur, avec la commande suivante :
 
 ```bash
 SERVER_IP=          # IP du master
@@ -133,7 +133,7 @@ k3sup join --ip $NODE2_IP --user $NODE2_user --server-ip $SERVER_IP --server-use
 
 ##  Installation de kubectl et test du cluster
 
-Pour tester si le *cluster* k8s est bien installé et interagir avec celui-ci nous allons avoir besoin de `kubectl`.
+Pour tester si le *cluster* k8s est bien installé et interagir avec celui-ci, nous allons avoir besoin de `kubectl`.
 
 ### Pour Debian/Ubuntu
 
@@ -152,7 +152,7 @@ Suivez le guide ici : [https://kubernetes.io/fr/docs/tasks/tools/install-kubectl
 
 ### Test du cluster
 
-Maintenant que `kubectl` est installé, nous allons pouvons tester notre *cluster*. Pour cela il faut définir une variable d'environnement `KUBECONFIG` correspondant à l'emplacement de notre fichier de config kubernetes généré par K3sup.
+Maintenant que `kubectl` est installé, nous allons pouvons tester notre *cluster*. Pour cela, il faut définir une variable d'environnement `KUBECONFIG` correspondant à l'emplacement de notre fichier de config kubernetes généré par K3sup.
 
 ```bash
 export KUBECONFIG=/chemin/vers/votre/kubeconfig
