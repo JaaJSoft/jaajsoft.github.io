@@ -10,6 +10,7 @@ tags:
 - persistence
 - tutoriel
 - excel
+- csv
 
 ---
 
@@ -47,6 +48,8 @@ Finalement, on obtient un format en entier :
 6,9,42
 4,2,9
 ```
+
+Par défaut, l'index du dataframe est exporté. Ce qu'on ne veut pas forcément
 
 ### Chargement des données
 
