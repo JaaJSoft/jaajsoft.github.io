@@ -104,7 +104,7 @@ conteneur docker. Cette distribution permet de réduire sensiblement la taille
 des images _docker_.
 
 ```dockerfile
-FROM alpine
+FROM python:3.12-alpine
 ```
 
 On choisit l'emplacement de notre application (nommé le dossier de travail par
@@ -119,7 +119,6 @@ _flask_ :
 
 ```dockerfile
 RUN apk add --update --no-cache python3 py3-pip gcc musl-dev python3-dev libffi-dev openssl-dev
-RUN python3 -m ensurepip # permet d'être sur que pip est bien présent avec python
 ```
 
 On copie le code de notre application _python_ vers le dossier de travail défini
@@ -179,15 +178,14 @@ Et voilà notre dockerfile est terminé.
 ## Le dockerfile complet :
 
 ```dockerfile
-FROM alpine
+FROM python:3.12-alpine
 
 WORKDIR /app
 
 RUN apk add --update --no-cache python3 py3-pip gcc musl-dev python3-dev libffi-dev openssl-dev
-RUN python3 -m ensurepip
 
 COPY . .
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r requirements.txt --break-system-packages
 
 RUN chmod +x run.sh
 
