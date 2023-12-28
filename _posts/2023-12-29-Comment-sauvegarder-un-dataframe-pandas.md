@@ -124,7 +124,7 @@ df.to_csv(
 
 ### Chargement des données depuis un csv
 
-Maintenant qu'on sait exporter nos données vers un fichier `csv`.
+Maintenant qu'on sait exporter nos données vers un fichier csv.
 Comment charger les données depuis ce même format ?
 
 Pour cela, nous allons utiliser la fonction `read_csv` de pandas :
