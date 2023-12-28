@@ -101,7 +101,9 @@ df.to_csv(
      header=False
 )
 ```
-Sans index ni header : 
+
+Sans index ni header :
+
 ```csv
 1;6;10;14
 2;7;11;15
@@ -109,16 +111,29 @@ Sans index ni header :
 4;9;13;17
 ```
 
+Il est aussi possible de choisir quelles colonnes exporter avec l'aide du paramètre `columns=` :
+
+```python
+df.to_csv(
+    "export_columns.csv",
+    sep=';',
+    index=False,
+    columns=["A", "C"]
+)
+```
+
 ### Chargement des données depuis un csv
 
 Maintenant qu'on sait exporter nos données vers un fichier `csv`.
-Comment charger les données depuis ce même format ? 
+Comment charger les données depuis ce même format ?
 
 Pour cela, nous allons utiliser la fonction `read_csv` de pandas :
+
 ```python
 new_df = pd.read_csv("export_without_index.csv", sep=';')
 print(new_df.to_string())
 ```
+
 On passe comme pour l'export le format de notre séparateur.
 
 ```
@@ -143,6 +158,7 @@ print(new_df.to_string())
 ```
 
 Et voilà, pandas charge correctement le dataframe en utilisant les noms des colonnes que nous avons définies :
+
 ```
    A  B   C   D
 0  1  6  10  14
@@ -159,29 +175,56 @@ Excel est utilisé partout de nos jours, il peut être pratique d'extraire nos d
 afin de le partager à d'autres équipes.
 Ou à l'inverse d'autres équipes non techniques peuvent nous fournir des données au format excel
 
+### Pré-requis
+
+Afin d'utiliser excel avec pandas, il est nécessaire d'installer le paquet `openpyxl` :
+
+```Bash
+pip3 install openpyxl # (ou python3 -m pip)
+```
+
 ### Sauvegarde des données vers un excel
 
 On utilise une autre méthode pandas `to_excel` :
 
 ```python
-
+df.to_excel(
+    "export.xlsx",
+    sheet_name="export",
+    index=False
+)
 ```
+
+Toutes les options présentées précédemment sont aussi disponibles : `header=`, `index=`, etc. ! 
+(Sauf le séparateur `sep=` qui est spécifique au format csv)
 
 ### Chargement des données depuis un excel
 
+Pour charger des données depuis un excel comme avec un csv, on utilise une fonction de pandas `read_excel`.
+
 ```python
-
-
+excel_df = pd.read_excel(
+    "export.xlsx",
+    sheet_name="export" # Pour spécifier depuis quelle feuille
+)
+print(excel_df.to_string())
 ```
 
+Le paramètre `sheet_name` permet de spécifier depuis quelle feuille lire les données.
+
+Ce qui donne bien le résultat attendu :
+
 ```
-[[ 6.  9. 42.]
- [ 4.  2.  9.]]
+   A  B   C   D
+0  1  6  10  14
+1  2  7  11  15
+2  3  8  12  16
+3  4  9  13  17
 ```
 
 ## Conclusion
 
-Voilà, vous êtes maintenant capable de faire persister vos données pandas en excel ou en csv.
+Voilà, vous êtes maintenant capable de sauvegarder et charger vos _dataframes_ pandas avec excel ou des fichiers csv.
 
 ## Voir aussi
 
