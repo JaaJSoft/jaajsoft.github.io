@@ -49,7 +49,10 @@ Ce qui donne le dataframe suivant :
 Pour exporter vers un csv, on utilise la méthode `to_csv` sur le _dataframe_ :
 
 ```python
-df.to_csv("export.csv", sep=';')
+df.to_csv(
+    "export.csv", 
+    sep=';'
+)
 ```
 
 Le `sep` est le caractère au sein du fichier qui sépare nos valeurs. Les
@@ -70,7 +73,11 @@ Comme on peut le voir, par défaut l'index du dataframe est exporté. Ce qui n'e
 Pour régler ça on passe l'option `index=False` à la méthode :
 
 ```python
-df.to_csv("export_without_index.csv", sep=';', index=False)
+df.to_csv(
+     "export_without_index.csv",
+     sep=';',
+     index=False
+)
 ```
 
 Ce qui donne le résultat voulu, sans l'index de notre _dataframe_ :
@@ -87,7 +94,12 @@ On peut de la même façon ne pas exporter le _header_ de notre _dataframe_ en p
 méthode :
 
 ```python
-df.to_csv("export_without_header.csv", sep=';', index=False, header=False)
+df.to_csv(
+     "export_without_header.csv",
+     sep=';', 
+     index=False,
+     header=False
+)
 ```
 Sans index ni header : 
 ```csv
@@ -100,15 +112,44 @@ Sans index ni header :
 ### Chargement des données depuis un csv
 
 Maintenant qu'on sait exporter nos données vers un fichier `csv`.
-Comment charger les données depuis ce même format ?
+Comment charger les données depuis ce même format ? 
 
-...
-
+Pour cela, nous allons utiliser la fonction `read_csv` de pandas :
 ```python
+new_df = pd.read_csv("export_without_index.csv", sep=';')
+print(new_df.to_string())
+```
+On passe comme pour l'export le format de notre séparateur.
 
 ```
+   A  B   C   D
+0  1  6  10  14
+1  2  7  11  15
+2  3  8  12  16
+3  4  9  13  17
+```
 
-Si on a pas de header dans le fichier
+Cependant, comme nous l'avons vu précédemment, il est possible d'avoir des fichiers `csv` sans _headers_ !
+Pour régler ça, on peut passer en paramètre de la fonction _pandas_ les noms des colonnes :
+
+```python
+new_df = pd.read_csv(
+     "export_without_header.csv",
+     sep='3',
+     header=None,
+     names=['A', 'B', 'C', 'D']
+)
+print(new_df.to_string())
+```
+
+Et voilà, pandas charge correctement le dataframe en utilisant les noms des colonnes que nous avons définies :
+```
+   A  B   C   D
+0  1  6  10  14
+1  2  7  11  15
+2  3  8  12  16
+3  4  9  13  17
+```
 
 Et voilà, on a notre première persistence de données avec pandas !
 
