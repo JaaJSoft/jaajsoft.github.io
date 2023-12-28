@@ -172,7 +172,7 @@ Super, on a notre première persistence de données avec pandas !
 
 Excel est utilisé partout de nos jours, il peut être pratique d'extraire nos données de notre dataframe au format excel
 afin de le partager à d'autres équipes.
-Ou à l'inverse d'autres équipes non techniques peuvent nous fournir des données au format excel
+Ou à l'inverse d'autres équipes non techniques peuvent nous fournir des données au format excel.
 
 ### Pré-requis
 
