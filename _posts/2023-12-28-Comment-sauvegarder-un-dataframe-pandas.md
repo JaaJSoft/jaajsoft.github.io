@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Python : Comment sauvegarder des dataframes Pandas"
+title: "Python : Comment utiliser des dataframes Pandas avec Excel ou du csv"
 author: Pierre Chopinet
 tags:
 
