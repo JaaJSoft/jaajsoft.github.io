@@ -223,7 +223,7 @@ Ce qui donne bien le résultat attendu :
 
 ## Conclusion
 
-Voilà, vous êtes maintenant capable de sauvegarder et charger vos _dataframes_ pandas avec excel ou des fichiers csv.
+Voilà, vous êtes maintenant capable de sauvegarder et charger vos _dataframes_ pandas avec des fichiers excel ou csv.
 
 ## Voir aussi
 
