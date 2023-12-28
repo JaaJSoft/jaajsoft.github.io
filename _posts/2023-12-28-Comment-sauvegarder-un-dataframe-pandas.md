@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Python : Comment utiliser un dataframe Pandas avec Excel ou du csv"
+title: "Python : Comment utiliser un dataframe Pandas avec Excel (ou du CSV)"
 author: Pierre Chopinet
 tags:
 
