@@ -19,7 +19,7 @@ ajouter de la persistence à vos applications python ou _notebooks_ jupyter. <!-
 
 ## Notre premiere persistence
 
-Pour notre première persistence, nous allons utiliser le format de fichier `csv`. Format texte simple, mais très
+Pour notre première persistence, nous allons utiliser le format de fichier `.csv`. Format texte simple, mais très
 pratique pour de la _datascience_.
 
 Dans l'intégralité de ce guide, nous allons utiliser un dataframe de test nommé 'df' que nous initialisons de la façon
@@ -185,7 +185,7 @@ pip3 install openpyxl # (ou python3 -m pip)
 
 ### Sauvegarde des données vers un excel
 
-On utilise une autre méthode pandas `to_excel` :
+On utilise une autre méthode pandas sur notre _dataframe_ nommée `to_excel` :
 
 ```python
 df.to_excel(
@@ -195,7 +195,7 @@ df.to_excel(
 )
 ```
 
-Toutes les options présentées précédemment sont aussi disponibles : `header=`, `index=`, etc. ! 
+Toutes les options présentées précédemment avec le format csv sont aussi disponibles : `header=`, `index=`, etc. ! 
 (Sauf le séparateur `sep=` qui est spécifique au format csv)
 
 ### Chargement des données depuis un excel
