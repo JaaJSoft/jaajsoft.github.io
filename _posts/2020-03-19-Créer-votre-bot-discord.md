@@ -34,7 +34,7 @@ Enfin, remplacez CLIENTID et PERMISSION dans ce lien par les deux numéros que v
 
 Dans notre exemple le lien donne https://discordapp.com/oauth2/authorize?&client_id=690163488760529032&scope=bot&permissions=2048
 
-Ouvrez tout simplement ce lien dans votre navigateur, vous pourrez alors choisir dans quel serveur l'ajouter. (Et oui vous pouvez ajouter notre exemple à votre serveur bande de petit coquin). Vous devriez normalement voir le message indiquant la venue de votre *bot*.
+Ouvrez tout simplement ce lien dans votre navigateur, vous pourrez alors choisir dans quel serveur l'ajouter. (Et oui, vous pouvez ajouter notre exemple à votre serveur bande de petit coquin). Vous devriez normalement voir le message indiquant la venue de votre *bot*.
 
 > Mais il est tout nul, il ne fait rien ce *bot* :'(
 
@@ -42,7 +42,7 @@ Oui, on y vient, dans la partie suivante, nous verrons comment piloter notre *bo
 
 ## Hello Discord
 
-Dans ce tutoriel, nous allons utiliser java, gradle et Intellij pour coder notre *bot*. À savoir qu'il est possible de coder un *bot* discord dans de nombreux langages (python, javascript, C++, etc.) . Libre à vous d’utiliser votre langage favori. Vous pouvez trouver toutes les bibliothèques conformes à l'API discord ici : https://discordapp.com/developers/docs/topics/community-resources.
+Dans ce tutoriel, nous allons utiliser java, gradle et Intellij pour coder notre *bot*. À savoir qu'il est possible de coder un *bot* discord dans de nombreux langages (python, javascript, C++, etc.). Libre à vous d’utiliser votre langage favori. Vous pouvez trouver toutes les bibliothèques conformes à l'API discord ici : https://discordapp.com/developers/docs/topics/community-resources.
 
 ### Création du projet et importation de la bibliothèque JDA
 
@@ -82,7 +82,7 @@ public static void main(String[] argv) throws LoginException {
 	builder.build();
 }
 ```
-Vous devez mettre en paramètre de `setToken` le *token* de votre application que nous avons vu plus haut. Il est préférable de le passer par les arguments du programme pour éviter d'écrire en dur le *token* dans le code (il doit resté secret). L'objet Application passé en argument de `addEventListeners` va être de type `ListenerAdapter`. Regardons à quoi il ressemble :
+Vous devez mettre en paramètre de `setToken` le *token* de votre application que nous avons vu plus haut. Il est préférable de le passer par les arguments du programme pour éviter d'écrire en dur le *token* dans le code (il doit rester secret). L'objet Application passé en argument de `addEventListeners` va être de type `ListenerAdapter`. Regardons à quoi il ressemble :
 
 ```java
 public class Application extends ListenerAdapter {

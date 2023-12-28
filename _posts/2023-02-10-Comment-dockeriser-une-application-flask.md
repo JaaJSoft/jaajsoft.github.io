@@ -91,7 +91,7 @@ Maintenant tout doit être bon du côté de _python_, on attaque _docker_ !
 ## Création de notre image docker
 
 Pour créer notre conteneur docker, nous avons besoin de définir comment
-construire une image _docker_. Pour cela nous allons utiliser un fichier
+construire une image _docker_. Pour cela, nous allons utiliser un fichier
 nommé `dockerfile`.
 
 Un Dockerfile est un fichier texte qui contient toutes les commandes à exécuter
@@ -104,7 +104,7 @@ conteneur docker. Cette distribution permet de réduire sensiblement la taille
 des images _docker_.
 
 ```dockerfile
-FROM alpine
+FROM python:3.12-alpine
 ```
 
 On choisit l'emplacement de notre application (nommé le dossier de travail par
@@ -119,7 +119,6 @@ _flask_ :
 
 ```dockerfile
 RUN apk add --update --no-cache python3 py3-pip gcc musl-dev python3-dev libffi-dev openssl-dev
-RUN python3 -m ensurepip # permet d'être sur que pip est bien présent avec python
 ```
 
 On copie le code de notre application _python_ vers le dossier de travail défini
@@ -140,7 +139,7 @@ fichier pour blacklister des fichiers. Au même niveau que votre _Dockerfile_,
 créez un fichier nommé : `.dockerignore`
 
 Ajoutez dedans tous les fichiers à ne pas inclure dans le conteneur, dans mon
-cas je retire mes fichiers relatifs à _git_ :
+cas, je retire mes fichiers relatifs à _git_ :
 
 ```
 .gitignore
@@ -148,7 +147,7 @@ cas je retire mes fichiers relatifs à _git_ :
 README.md
 ```
 
-Enfin j'installe les dépendances définies précédemment :
+Enfin, j'installe les dépendances définies précédemment :
 
 ```dockerfile
 RUN pip3 install -r requirements.txt
@@ -167,7 +166,7 @@ donc le port sur lequel _gunicorn_ est lancé, le 8000.
 EXPOSE 8000
 ```
 
-Enfin j'indique quelle commande lancer au démarrage de notre conteneur, dans
+Enfin, j'indique quelle commande lancer au démarrage de notre conteneur, dans
 notre cas, notre script de lancement.
 
 ```dockerfile
@@ -179,15 +178,14 @@ Et voilà notre dockerfile est terminé.
 ## Le dockerfile complet :
 
 ```dockerfile
-FROM alpine
+FROM python:3.12-alpine
 
 WORKDIR /app
 
 RUN apk add --update --no-cache python3 py3-pip gcc musl-dev python3-dev libffi-dev openssl-dev
-RUN python3 -m ensurepip
 
 COPY . .
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r requirements.txt --break-system-packages
 
 RUN chmod +x run.sh
 

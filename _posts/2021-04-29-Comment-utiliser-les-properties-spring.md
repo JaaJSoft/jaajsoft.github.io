@@ -74,7 +74,7 @@ public class PropertiesWithJavaConfig {
 Il est intéressant de noter qu'en cas de conflit de nom, c'est la dernière _property_
 lue qui est utilisée.
 
-Si vous voulez configurer les noms de vos fichiers, c'est possible. Pour cela
+Si vous voulez configurer les noms de vos fichiers, c'est possible. Pour cela,
 il faut utiliser les placeholders.
 
 ```java
@@ -120,7 +120,7 @@ Il existe principalement trois manières différentes d'accéder aux *properties
 ### L'annotation @Value
 
 On peut accéder à une property très facilement en l'injectant via l'annotation @Value.
-Ici par exemple si on veut accéder à la property keycloak.url il faudra marquer :
+Ici par exemple si on veut accéder à la property keycloak.url, il faudra marquer :
 
 ```java
 @Value( "${keycloak.url}" )

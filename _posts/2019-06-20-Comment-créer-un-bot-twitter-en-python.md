@@ -19,7 +19,7 @@ Exemple de bot : [CryptageBot](https://twitter.com/cryptagebot)
 
 Pour commencer, il vous faut un interpréteur python en version 3, dans mon cas, j'utiliserai python 3.5.
 
-Je recommande d'utiliser linux pour ce tutoriel, mais cela peut fonctionner sous Windows. Si vous êtes sur Windows vous pouvez aussi utiliser le Windows Subsystem for Linux ([wsl](https://docs.microsoft.com/en-us/windows/wsl/install-win10)) pour avoir un linux dans votre Windows.
+Je recommande d'utiliser linux pour ce tutoriel, mais cela peut fonctionner sous Windows. Si vous êtes sur Windows, vous pouvez aussi utiliser le Windows Subsystem for Linux ([wsl](https://docs.microsoft.com/en-us/windows/wsl/install-win10)) pour avoir un linux dans votre Windows.
 
 ### Linux - Ubuntu (& toutes distributions utilisant apt comme gestionnaire de paquets)
 
@@ -49,7 +49,7 @@ Si vous avez une erreur vous disant que vous n'avez pas assez de permissions, fa
 pip3 install --user tweepy
 ```
 
-Et voilà vous avez tout ce qu'il faut pour créer un bot sur Ubuntu.
+Et voilà, vous avez tout ce qu'il faut pour créer un bot sur Ubuntu.
 
 ### Windows
 
@@ -65,7 +65,7 @@ Vous êtes normalement devant un terminal, dans ce terminal powershell :
 .\python.exe -m pip install tweepy
 ```
 
-Et voilà vous êtes prêt.
+Et voilà, vous êtes prêt.
 
 ### MacOS
 
@@ -79,7 +79,7 @@ Une fois le compte créé et que vous êtes connecté avec, allez sur :
 
 [https://developer.twitter.com](https://developer.twitter.com)
 
-Pour pouvoir créer des applications, il faut avoir un compte twitter developer.!
+Pour pouvoir créer des applications, il faut avoir un compte twitter _developer_ !
 
 ![2019-06-20_twitter_apply](/assets/images/2019-06-20_twitter_apply.png)
 
@@ -140,7 +140,7 @@ def auth():
     return api,auth
 ```
 
-Avec cette fonction vous pouvez maintenant vous connecter à twitter depuis python !
+Avec cette fonction, vous pouvez maintenant vous connecter à twitter depuis python !
 
 Faites attention avec vos clés et tokens "secret", ils ne doivent surtout pas être publics, ou quelqu'un pourrait usurper l'identité de votre bot. Vous pouvez aussi stocker vos clés dans un fichier et lire ce fichier dans votre fonction auth.
 
@@ -258,7 +258,7 @@ twitterStream = Stream(auth, listener())
 twitterStream.filter(track=["saucisse"])
 ```
 
-Notez que cette version peut planter de temps en temps, pour régler ce problème vous pouvez mettre en place une gestion des exceptions pour gérer les soucis que vous rencontrez. Une autre solution, est de faire un script bash, qui teste si le programme a planté et si oui le relance.
+Notez que cette version peut planter de temps en temps, pour régler ce problème, vous pouvez mettre en place une gestion des exceptions pour gérer les soucis que vous rencontrez. Une autre solution, est de faire un script bash, qui teste si le programme a planté et si oui, le relance.
 
 Par exemple une petite fonction bash présent dans mon projet [Automation Scripts](https://github.com/pchopinet/Automation-Scripts) :
 
@@ -299,7 +299,7 @@ python3 bot.py
 
 ## Pour aller plus loin
 
-Notre bot reste basique, il y a de nombreuses façons de l'améliorer par exemple des filtres plus complexes, une analyse du tweet pour faire des réponses dynamiques, etc...
+Notre bot reste basique, il y a de nombreuses façons de l'améliorer par exemple des filtres plus complexes, une analyse du tweet pour faire des réponses dynamiques, etc.
 
 Lire la doc tweepy : [http://tweepy.readthedocs.io/]( http://tweepy.readthedocs.io/)
 
