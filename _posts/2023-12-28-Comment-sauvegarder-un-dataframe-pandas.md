@@ -178,7 +178,7 @@ Ou à l'inverse d'autres équipes non techniques peuvent nous fournir des donné
 
 Afin d'utiliser excel avec pandas, il est nécessaire d'installer le paquet `openpyxl` :
 
-```Bash
+```shell
 pip3 install openpyxl # (ou python3 -m pip)
 ```
 
