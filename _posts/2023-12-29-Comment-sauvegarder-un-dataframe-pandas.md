@@ -46,35 +46,61 @@ Ce qui donne le dataframe suivant :
 
 ### Sauvegarde des données vers un csv
 
-
-
-Le _delimiter_ est le caractère au sein du fichier qui sépare nos valeurs. Les
-délimiteurs courants sont `,` et `;`.
-...
-Notre fichier csv contient :
-
-```
-6.000000000000000000e+00,9.000000000000000000e+00,4.200000000000000000e+01
-4.000000000000000000e+00,2.000000000000000000e+00,9.000000000000000000e+00
-```
-
-Les nombres sont enregistrés par défaut en nombre flottant, pour régler ça, on
-spécifie un format à notre export :
+Pour exporter vers un csv, on utilise la méthode `to_csv` sur le _dataframe_ :
 
 ```python
-
+df.to_csv("export.csv", sep=';')
 ```
 
-Finalement, on obtient un format en entier :
+Le `sep` est le caractère au sein du fichier qui sépare nos valeurs. Les
+délimiteurs courants sont `,` (défaut) et `;` (standard en France).
 
-```
-6,9,42
-4,2,9
+Notre fichier csv exporté contient :
+
+```csv
+;A;B;C;D
+0;1;6;10;14
+1;2;7;11;15
+2;3;8;12;16
+3;4;9;13;17
 ```
 
-Par défaut, l'index du dataframe est exporté. Ce qu'on ne veut pas forcément
+Comme on peut le voir, par défaut l'index du dataframe est exporté. Ce qui n'est pas forcément le comportement voulu...
+
+Pour régler ça on passe l'option `index=False` à la méthode :
+
+```python
+df.to_csv("export_without_index.csv", sep=';', index=False)
+```
+
+Ce qui donne le résultat voulu, sans l'index de notre _dataframe_ :
+
+```csv
+A;B;C;D
+1;6;10;14
+2;7;11;15
+3;8;12;16
+4;9;13;17
+```
+
+On peut de la même façon ne pas exporter le _header_ de notre _dataframe_ en passant l'option `header=False` à la
+méthode :
+
+```python
+df.to_csv("export_without_header.csv", sep=';', index=False, header=False)
+```
+Sans index ni header : 
+```csv
+1;6;10;14
+2;7;11;15
+3;8;12;16
+4;9;13;17
+```
 
 ### Chargement des données depuis un csv
+
+Maintenant qu'on sait exporter nos données vers un fichier `csv`.
+Comment charger les données depuis ce même format ?
 
 ...
 
