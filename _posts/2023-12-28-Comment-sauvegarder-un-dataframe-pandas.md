@@ -22,7 +22,7 @@ ajouter de la persistence à vos applications python ou _notebooks_ jupyter. <!-
 Pour notre première persistence, nous allons utiliser le format de fichier `.csv`. Format texte simple, mais très
 pratique pour de la _datascience_.
 
-Dans l'intégralité de ce guide, nous allons utiliser un dataframe de test nommé 'df' que nous initialisons de la façon
+Dans l'intégralité de ce guide, nous allons utiliser un dataframe de test nommé `df` que nous initialisons de la façon
 suivante :
 
 ```python
@@ -60,7 +60,7 @@ délimiteurs courants sont `,` (défaut) et `;` (standard en France).
 
 Notre fichier csv exporté contient :
 
-```csv
+```
 ;A;B;C;D
 0;1;6;10;14
 1;2;7;11;15
@@ -82,7 +82,7 @@ df.to_csv(
 
 Ce qui donne le résultat voulu, sans l'index de notre _dataframe_ :
 
-```csv
+```
 A;B;C;D
 1;6;10;14
 2;7;11;15
@@ -104,7 +104,7 @@ df.to_csv(
 
 Sans index ni header :
 
-```csv
+```
 1;6;10;14
 2;7;11;15
 3;8;12;16
