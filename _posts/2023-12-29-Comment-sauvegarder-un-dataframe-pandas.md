@@ -133,7 +133,6 @@ Pour cela, nous allons utiliser la fonction `read_csv` de pandas :
 new_df = pd.read_csv("export_without_index.csv", sep=';')
 print(new_df.to_string())
 ```
-
 On passe comme pour l'export le format de notre séparateur.
 
 ```
@@ -157,7 +156,7 @@ new_df = pd.read_csv(
 print(new_df.to_string())
 ```
 
-Et voilà, pandas charge correctement le dataframe en utilisant les noms des colonnes que nous avons définies :
+Et voilà, pandas charge correctement le _dataframe_ en utilisant les noms des colonnes que nous avons définies :
 
 ```
    A  B   C   D
@@ -167,7 +166,7 @@ Et voilà, pandas charge correctement le dataframe en utilisant les noms des col
 3  4  9  13  17
 ```
 
-Et voilà, on a notre première persistence de données avec pandas !
+Super, on a notre première persistence de données avec pandas !
 
 ## Persistence au format excel
 
@@ -185,7 +184,7 @@ pip3 install openpyxl # (ou python3 -m pip)
 
 ### Sauvegarde des données vers un excel
 
-On utilise une autre méthode pandas sur notre _dataframe_ nommée `to_excel` :
+On utilise une autre méthode pandas sur notre _dataframe_, nommée `to_excel` :
 
 ```python
 df.to_excel(
