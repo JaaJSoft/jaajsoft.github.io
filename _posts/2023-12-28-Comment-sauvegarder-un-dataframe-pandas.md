@@ -50,7 +50,7 @@ Pour exporter vers un csv, on utilise la méthode `to_csv` sur le _dataframe_ :
 
 ```python
 df.to_csv(
-    "export.csv", 
+    "export.csv",
     sep=';'
 )
 ```
@@ -96,7 +96,7 @@ méthode :
 ```python
 df.to_csv(
      "export_without_header.csv",
-     sep=';', 
+     sep=';',
      index=False,
      header=False
 )
@@ -194,7 +194,7 @@ df.to_excel(
 )
 ```
 
-Toutes les options présentées précédemment avec le format csv sont aussi disponibles : `header=`, `index=`, etc. ! 
+Toutes les options présentées précédemment avec le format csv sont aussi disponibles : `header=`, `index=`, etc. !
 (Sauf le séparateur `sep=` qui est spécifique au format csv)
 
 ### Chargement des données depuis un excel
@@ -228,5 +228,6 @@ Voilà, vous êtes maintenant capable de sauvegarder et charger vos _dataframes_
 ## Voir aussi
 
 - [La documentation de Pandas](https://pandas.pydata.org/docs/)
-- [Comment sauvegarder des tableaux NumPy](https://blog.jaaj.dev/2022/01/25/Comment-sauvegarder-un-tableau-numpy.html)
-- [Comment faire des requêtes HTTP en python avec requests](https://blog.jaaj.dev/2020/05/22/Comment-faire-des-requetes-http-en-python-avec-requests.html)
+- [Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
+- [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+- [Comment faire une api avec flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})

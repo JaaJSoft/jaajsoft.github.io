@@ -178,4 +178,4 @@ Comme nous l'avons vu Spring offre un panel de possibilit√©s assez large pour d√
 ## Voir aussi
 
 - [La doc de spring sur la configuration externe](https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-external-config-files)
-- [Introduction aux collections Java](https://blog.jaaj.dev/2020/11/12/Framework-collections-java-intro.html)
+- [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})

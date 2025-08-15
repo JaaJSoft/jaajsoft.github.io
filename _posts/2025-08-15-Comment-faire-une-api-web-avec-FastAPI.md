@@ -333,7 +333,8 @@ def test2_endpoint_post(data: Data):
 ```
 
 ## Voir aussi
-- [Comment faire une api avec flask](https://blog.jaaj.dev/2021/04/20/Comment-faire-une-api-web-en-python.html)
-- [Comment dockeriser une application flask](https://blog.jaaj.dev/2023/02/10/Comment-dockeriser-une-application-flask.html)
-- [Comment faire des requêtes HTTP en python avec requests](https://blog.jaaj.dev/2020/05/22/Comment-faire-des-requetes-http-en-python-avec-requests.html)
+- [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
+- [Comment dockeriser une API FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
+- [Comment faire une api avec flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
+- [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 - [La doc de FastAPI](https://fastapi.tiangolo.com/)

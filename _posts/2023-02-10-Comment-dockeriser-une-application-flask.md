@@ -25,7 +25,7 @@ L'objectif de ce tutoriel est d'apprendre comment :
 Pré-requis, savoir développer une application _flask_ "simple". Si ce n'est pas le
 cas n'hésitez pas à aller voir notre tutoriel sur le sujet :
 
-[Python : Comment faire une api web avec Flask](https://blog.jaaj.dev/2021/04/20/Comment-faire-une-api-web-en-python.html)
+[Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
 
 ## Docker
 
@@ -227,5 +227,5 @@ et/ou à la déployer quelque part.
 ## Voir aussi
 
 - [Documentation Docker](https://docs.docker.com/get-started/)
-- [Python : Comment faire une api web avec Flask](https://blog.jaaj.dev/2021/04/20/Comment-faire-une-api-web-en-python.html)
-- [Python : Comment faire des requêtes HTTP avec requests](https://blog.jaaj.dev/2020/05/22/Comment-faire-des-requetes-http-en-python-avec-requests.html)
+- [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
+- [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
