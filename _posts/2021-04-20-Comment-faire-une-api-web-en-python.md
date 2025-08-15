@@ -321,4 +321,5 @@ def test2_endpoint_post():
 - [Comment dockeriser une application flask](https://blog.jaaj.dev/2023/02/10/Comment-dockeriser-une-application-flask.html)
 - [Comment faire des requêtes HTTP en python avec requests](https://blog.jaaj.dev/2020/05/22/Comment-faire-des-requetes-http-en-python-avec-requests.html)
 - [Comment créer un bot twitter en python avec tweepy](https://blog.jaaj.dev/2019/06/20/Comment-cr%C3%A9er-un-bot-twitter-en-python.html)
+- [Comment faire une api web avec FastAPI](https://blog.jaaj.dev/2025/08/15/Comment-faire-une-api-web-avec-FastAPI.html)
 - [La doc de flask](https://flask.palletsprojects.com/en/1.1.x/)
