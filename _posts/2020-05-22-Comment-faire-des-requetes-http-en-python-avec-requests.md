@@ -9,11 +9,16 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, vous allez apprendre à faire des requêtes http en python en utilisant la bibliothèque requests. <!--more--> L'objectif de ce tutoriel est d'apprendre comment faire :
+Dans ce tutoriel, vous allez apprendre à faire des requêtes HTTP en Python en utilisant la bibliothèque requests. <!--more--> L'objectif de ce tutoriel est d'apprendre comment faire :
 
-- Des requêtes http en python
-- Changer les header d'une requête
-- Traiter le résultat d'une requête
+- Faire des requêtes HTTP (GET, POST, PUT, DELETE, HEAD)
+- Passer des paramètres d'URL (params), un corps de requête (data vs json) et des headers
+- Gérer les timeouts et les erreurs (raise_for_status, exceptions)
+- Traiter le résultat d'une requête (texte, JSON, encodage)
+- Utiliser des sessions, cookies et mécanismes d'authentification
+- Envoyer des fichiers et télécharger en streaming
+- Configurer des retries, des proxies et la vérification SSL
+- Appliquer de bonnes pratiques (pagination, rate limiting)
 
 ## Installation
 
@@ -108,7 +113,7 @@ response = requests.head("https://blog.jaaj.dev")
 print(response.headers)
 ```
 Ce qui permet d'avoir les informations suivantes sur la ressource :
-```json
+```text
 {'Connection': 'keep-alive', 'Content-Length': '10575', 'Server': 'GitHub.com', 'Content-Type': 'text/html; charset=utf-8', 'Strict-Transport-Security': 'max-age=31556952', 'Last-Modified': 'Fri, 20 Mar 2020 09:39:39 GMT', 'ETag': 'W/"5e748f5b-9528"', 'Access-Control-Allow-Origin': '*', 'Expires': 'Fri, 22 May 2020 09:46:06 GMT', 'Cache-Control': 'max-age=600', 'Content-Encoding': 'gzip', 'X-Proxy-Cache': 'MISS', 'X-GitHub-Request-Id': '7DD0:5D0B:292B1C:3342F8:5EC79D05', 'Accept-Ranges': 'bytes', 'Date': 'Fri, 22 May 2020 09:36:06 GMT', 'Via': '1.1 varnish', 'Age': '0', 'X-Served-By': 'cache-cdg20727-CDG', 'X-Cache': 'MISS', 'X-Cache-Hits': '0', 'X-Timer': 'S1590140167.863279,VS0,VE107', 'Vary': 'Accept-Encoding', 'X-Fastly-Request-ID': '7bccbb14a86614bdc56df3295ea37e17a144569b'}
 ```
 Très peu clair pour un humain, mais cela permet pour un navigateur d'avoir des informations très utiles sur la ressource demandée.
@@ -128,7 +133,7 @@ print(response.status_code)
 Comme exemple d'API, nous allons utiliser [https://jsonplaceholder.typicode.com](https://jsonplaceholder.typicode.com), une API de test permettant d'expérimenter avec les API REST facilement.
 
 On va faire une requête vers [https://jsonplaceholder.typicode.com/users](https://jsonplaceholder.typicode.com/users) qui renvoie une liste d'utilisateurs au format JSON suivant :
-```json
+```text
 [
   {
     "id": 1,
@@ -208,4 +213,12 @@ response = requests.get("https://jsonplaceholder.typicode.com/users", headers=he
 Pour personnaliser encore plus ses *User-Agent*, il existe une bibliothèque proposant plusieurs *User-Agent* : [fake-useragent](https://pypi.org/project/fake-useragent)
 
 ## Voir aussi
+
+- Documentation officielle requests: https://requests.readthedocs.io/
+- [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
+- [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
+- [Comment dockeriser une API FastAPI]({% post_url 2025-08-22-Comment-dockeriser-une-api-web-avec-FastAPI %})
+- [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-29-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
+- [Comment Dockeriser une application flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %})
+- [Python : Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
 
