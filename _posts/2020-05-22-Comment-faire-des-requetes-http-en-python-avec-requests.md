@@ -217,8 +217,5 @@ Pour personnaliser encore plus ses *User-Agent*, il existe une bibliothèque pro
 - Documentation officielle requests: https://requests.readthedocs.io/
 - [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
 - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
-- [Comment dockeriser une API FastAPI]({% post_url 2025-08-22-Comment-dockeriser-une-api-web-avec-FastAPI %})
-- [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-29-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
-- [Comment Dockeriser une application flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %})
-- [Python : Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
+- [Python : Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})**
 
