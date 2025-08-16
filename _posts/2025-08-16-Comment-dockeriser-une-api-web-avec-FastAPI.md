@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Comment dockeriser une API FastAPI"
+title: "Comment dockeriser une application FastAPI"
 author: Pierre Chopinet
 tags:
 - python
