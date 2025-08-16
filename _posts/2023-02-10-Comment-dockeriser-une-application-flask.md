@@ -8,6 +8,7 @@ tags:
 - flask
 - docker
 - tutoriel
+- devops
 
 ---
 
