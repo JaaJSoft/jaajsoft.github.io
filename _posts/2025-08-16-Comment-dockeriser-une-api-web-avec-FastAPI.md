@@ -62,7 +62,7 @@ def info_status():
 
 ### requirements.txt
 
-```txt
+```
 fastapi
 uvicorn[standard]
 ```
