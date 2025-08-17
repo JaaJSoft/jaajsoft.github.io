@@ -8,12 +8,14 @@ tags:
 - api
 - docker
 - multistage
-- healthcheck
+- alpine
 - tutoriel
 - devops
 ---
 
-Dans ce tutoriel, nous allons apprendre à dockeriser une API web développée avec FastAPI, en utilisant un Dockerfile multi‑étapes (builder + image finale Alpine) optimisé pour la taille et la vitesse d'installation. <!--more-->
+Dans ce tutoriel, nous allons apprendre à dockeriser une API web développée avec FastAPI, en utilisant un Dockerfile multi‑étapes (builder + image finale Alpine) optimisé pour la taille et la vitesse d'installation.
+
+<!--more-->
 
 Objectifs :
 
@@ -202,6 +204,7 @@ docker inspect --format='{{json .State.Health}}' fastapi-app | jq
 ## Aller plus loin
 
 - Article précédent : [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
+- [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
 - Ajoutez un reverse proxy (Nginx, Traefik) devant votre API.
 - Utilisez des variables d'environnement et des secrets.
 - Intégrez un CI/CD pour builder et pousser automatiquement vos images.
