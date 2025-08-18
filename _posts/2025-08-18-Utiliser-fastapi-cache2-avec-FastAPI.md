@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Ajouter un cache à notre api web FastAPI avec redis"
+title: "Ajouter un cache à notre application FastAPI avec redis"
 author: Pierre Chopinet
 tags:
 - python
