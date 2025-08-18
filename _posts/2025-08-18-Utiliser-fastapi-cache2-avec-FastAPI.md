@@ -216,7 +216,7 @@ curl -X DELETE "http://127.0.0.1:8000/cache/clear?namespace=v1"
 curl "http://127.0.0.1:8000/slow?q=1"   # lente à nouveau (cache vidé)
 ```
 
-### `key_builder` personnalisé (optionnel)
+### key_builder personnalisé (optionnel)
 
 Dans certains cas, on veut pouvoir customiser notre clé de cache.
 FastAPI propose un key_builder qui permet de faire cela.
