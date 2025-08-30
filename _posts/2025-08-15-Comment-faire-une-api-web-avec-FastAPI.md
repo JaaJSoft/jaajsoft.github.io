@@ -268,6 +268,8 @@ curl -X POST http://127.0.0.1:8000/test \
 {"param1":"jeej"}
 ```
 
+> Remarque : pour envoyer des fichiers via un POST (`multipart/form-data`), voir l'article [Comment envoyer des fichiers avec FastAPI]({% post_url 2025-08-30-Comment-envoyer-des-fichiers-avec-FastAPI %}).
+
 ### Exemple d'un POST avec un traitement simpliste
 
 ```python

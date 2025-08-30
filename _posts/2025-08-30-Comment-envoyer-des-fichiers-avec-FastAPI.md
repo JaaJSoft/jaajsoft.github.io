@@ -17,7 +17,7 @@ Dans ce tutoriel, nous allons voir comment passer (uploader) des fichiers à une
 
 Pré‑requis (recommandé) :
 
-- [Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
+- Côté serveur : [Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - Côté client : [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 
 ## Pourquoi "multipart/form-data" ?
