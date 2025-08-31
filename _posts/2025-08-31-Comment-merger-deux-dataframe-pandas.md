@@ -258,7 +258,7 @@ Utile pour vérifier ce qui matche/ne matche pas.
 
 ---
 
-## 6) validate pour sécuriser le type de relation
+## 6) validate pour vérifier le type de relation
 
 `validate` permet de détecter des cardinalités inattendues :
 
@@ -281,9 +281,9 @@ Si la contrainte n’est pas respectée, pandas lève une `MergeError`.
 
 ---
 
-## 7) Joindre via l’index (left_index/right_index) et DataFrame.join
+## 7) Join via l’index (left_index/right_index) et DataFrame.join
 
-Vous pouvez joindre sur l’index plutôt que sur des colonnes :
+Vous pouvez join sur l’index plutôt que sur des colonnes :
 
 ```python
 clients_idx = clients.set_index("client_id")
