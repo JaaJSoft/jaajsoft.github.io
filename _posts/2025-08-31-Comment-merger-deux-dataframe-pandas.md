@@ -328,6 +328,25 @@ montants = commandes.groupby("id_client", as_index=False)["montant"].sum()
 clients_total = clients.merge(montants, left_on="client_id", right_on="id_client", how="left")
 ```
 
+Sortie :
+
+montants
+```
+   id_client  montant
+0          1     70.0
+1          2     99.9
+2          5     15.5
+```
+
+clients_total
+```
+   client_id    nom  ville  id_client  montant
+0          1  Alice   Lyon        1.0     70.0
+1          2    Bob  Paris        2.0     99.9
+2          3  Chloé  Lille        NaN      NaN
+3          4  David   Lyon        NaN      NaN
+```
+
 ---
 
 ## 9) Valeurs manquantes et lignes orphelines
@@ -348,6 +367,14 @@ outer_audit = pd.merge(
 orphelins_cmd = outer_audit[outer_audit["_merge"] == "right_only"]  # commandes sans client
 ```
 
+Sortie :
+
+orphelins_cmd
+```
+   client_id  nom  ville  id_client  commande_id  montant      _merge
+5        NaN  NaN    NaN        5.0        104.0     15.5  right_only
+```
+
 ---
 
 ## 10) merge vs join vs concat
@@ -366,6 +393,30 @@ all_clients = pd.concat([clients, pd.DataFrame({"client_id": [6], "nom": ["Emma"
 left = clients.set_index("client_id").sort_index()
 right = commandes.set_index("id_client").sort_index()
 horizontal = pd.concat([left, right], axis=1)
+```
+
+Sortie :
+
+all_clients
+```
+   client_id    nom  ville
+0          1  Alice   Lyon
+1          2    Bob  Paris
+2          3  Chloé  Lille
+3          4  David   Lyon
+4          6   Emma   Nice
+```
+
+horizontal
+```
+             nom  ville  commande_id  montant
+client_id
+1           Alice   Lyon        101.0     50.0
+1           Alice   Lyon        102.0     20.0
+2             Bob  Paris        103.0     99.9
+3           Chloé  Lille          NaN      NaN
+4           David   Lyon          NaN      NaN
+5             NaN    NaN        104.0     15.5
 ```
 
 ---
