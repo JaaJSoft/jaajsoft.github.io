@@ -217,6 +217,16 @@ res = pd.merge(
     left_on="client_id", right_on="id_client",
     suffixes=("_client", "_cmd"),
 )
+print(res)
+```
+
+Sortie :
+
+```
+   client_id    nom  ville  id_client  commande_id  montant
+0          1  Alice   Lyon          1          101     50.0
+1          1  Alice   Lyon          1          102     20.0
+2          2    Bob  Paris          2          103     99.9
 ```
 
 ---
@@ -233,6 +243,15 @@ outer_audit = pd.merge(
     indicator=True,
 )
 print(outer_audit["_merge"].value_counts())
+```
+
+Sortie :
+
+```
+both          3
+left_only     2
+right_only    1
+Name: _merge, dtype: int64
 ```
 
 Utile pour vérifier ce qui matche/ne matche pas.
@@ -279,6 +298,17 @@ res_idx = pd.merge(
 
 # équivalent pratique côté DataFrame
 res_join = clients_idx.join(commandes_idx, how="inner")
+```
+
+Sortie :
+
+res_idx
+```
+             nom  ville  commande_id  montant
+client_id
+1           Alice   Lyon          101     50.0
+1           Alice   Lyon          102     20.0
+2             Bob  Paris          103     99.9
 ```
 
 `DataFrame.join` est un alias pratique pour joindre sur l’index (ou en mixant index/colonne avec `on=`).
