@@ -134,7 +134,7 @@ multi = pd.merge(
 
 ---
 
-## 4) Colonnes homonymes et `suffixes`
+## 4) Colonnes homonymes et suffixes
 
 Quand des colonnes (autres que les clés) portent le même nom des deux côtés, pandas ajoute par défaut `_x` et `_y`. Vous pouvez contrôler cela avec `suffixes` :
 
@@ -149,7 +149,7 @@ res = pd.merge(
 
 ---
 
-## 5) `indicator=True` pour auditer la jointure
+## 5) indicator=True pour auditer la jointure
 
 Ajoute une colonne `_merge` indiquant la provenance de chaque ligne : `left_only`, `right_only`, `both`.
 
@@ -167,7 +167,7 @@ Utile pour vérifier ce qui matche/ne matche pas.
 
 ---
 
-## 6) `validate` pour sécuriser le type de relation
+## 6) validate pour sécuriser le type de relation
 
 `validate` permet de détecter des cardinalités inattendues :
 
@@ -190,7 +190,7 @@ Si la contrainte n’est pas respectée, pandas lève une `MergeError`.
 
 ---
 
-## 7) Joindre via l’index (`left_index`/`right_index`) et `DataFrame.join`
+## 7) Joindre via l’index (left_index/right_index) et DataFrame.join
 
 Vous pouvez joindre sur l’index plutôt que sur des colonnes :
 
@@ -318,7 +318,7 @@ print("\nJOIN INDEX:\n", join_idx, sep="")
 
 ---
 
-## FAQ rapide
+## FAQ
 
 - Erreur `You are trying to merge on object and int64 columns` : convertissez les types (`astype`).
 - Résultat plus grand que prévu : vous avez une jointure many-to-many. Ajoutez `validate="one_to_many"` ou dédoublonnez/agrégez.
