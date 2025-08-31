@@ -50,7 +50,7 @@ print(clients)
 print(commandes)
 ```
 
-Sortie (indicative) :
+Sortie :
 
 ```
    client_id    nom  ville
@@ -86,6 +86,15 @@ inner = pd.merge(
 print(inner)
 ```
 
+Sortie :
+
+```
+   client_id    nom  ville  id_client  commande_id  montant
+0          1  Alice   Lyon          1          101     50.0
+1          1  Alice   Lyon          1          102     20.0
+2          2    Bob  Paris          2          103     99.9
+```
+
 Résultat : seules les lignes avec correspondance des deux côtés (clients 1 et 2).
 
 ---
@@ -106,11 +115,65 @@ right = pd.merge(clients, commandes, how="right", left_on="client_id", right_on=
 outer = pd.merge(clients, commandes, how="outer", left_on="client_id", right_on="id_client")
 ```
 
+Sortie :
+
+LEFT
+```
+   client_id    nom  ville  id_client  commande_id  montant
+0          1  Alice   Lyon        1.0        101.0     50.0
+1          1  Alice   Lyon        1.0        102.0     20.0
+2          2    Bob  Paris        2.0        103.0     99.9
+3          3  Chloé  Lille        NaN          NaN      NaN
+4          4  David   Lyon        NaN          NaN      NaN
+```
+
+RIGHT
+```
+   client_id    nom  ville  id_client  commande_id  montant
+0        1.0  Alice   Lyon          1          101     50.0
+1        1.0  Alice   Lyon          1          102     20.0
+2        2.0    Bob  Paris          2          103     99.9
+3        NaN    NaN    NaN          5          104     15.5
+```
+
+OUTER
+```
+   client_id    nom  ville  id_client  commande_id  montant
+0        1.0  Alice   Lyon        1.0        101.0     50.0
+1        1.0  Alice   Lyon        1.0        102.0     20.0
+2        2.0    Bob  Paris        2.0        103.0     99.9
+3        3.0  Chloé  Lille        NaN          NaN      NaN
+4        4.0  David   Lyon        NaN          NaN      NaN
+5        NaN    NaN    NaN        5.0        104.0     15.5
+```
+
 Produit cartésien :
 
 ```python
 # Sans clé: toutes les combinaisons (seulement si ça a du sens)
 cross = pd.merge(clients, commandes, how="cross")
+```
+
+Sortie :
+
+```
+    client_id    nom  ville  id_client  commande_id  montant
+0           1  Alice   Lyon          1          101     50.0
+1           1  Alice   Lyon          1          102     20.0
+2           1  Alice   Lyon          2          103     99.9
+3           1  Alice   Lyon          5          104     15.5
+4           2    Bob  Paris          1          101     50.0
+5           2    Bob  Paris          1          102     20.0
+6           2    Bob  Paris          2          103     99.9
+7           2    Bob  Paris          5          104     15.5
+8           3  Chloé  Lille          1          101     50.0
+9           3  Chloé  Lille          1          102     20.0
+10          3  Chloé  Lille          2          103     99.9
+11          3  Chloé  Lille          5          104     15.5
+12          4  David   Lyon          1          101     50.0
+13          4  David   Lyon          1          102     20.0
+14          4  David   Lyon          2          103     99.9
+15          4  David   Lyon          5          104     15.5
 ```
 
 ---
@@ -127,9 +190,18 @@ commandes2 = commandes.assign(pays=["FR", "FR", "FR", "FR"])  # même pays pour 
 multi = pd.merge(
     clients2, commandes2,
     how="inner",
-    left_on=["client_id", "ville", "pays"],
-    right_on=["id_client", "ville", "pays"],
+    left_on=["client_id", "pays"],
+    right_on=["id_client", "pays"],
 )
+```
+
+Sortie :
+
+```
+   client_id    nom  ville pays_x  id_client  commande_id  montant pays_y
+0          1  Alice   Lyon     FR          1          101     50.0     FR
+1          1  Alice   Lyon     FR          1          102     20.0     FR
+2          2    Bob  Paris     FR          2          103     99.9     FR
 ```
 
 ---
