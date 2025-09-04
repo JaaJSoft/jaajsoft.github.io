@@ -142,7 +142,7 @@ with requests.Session() as s:
     r.raise_for_status()
 ```
 
-## 6) Bonnes pratiques et pièges courants
+## 6) Bonnes pratiques
 
 - Utilisez un context manager : `with requests.Session() as s:` pour garantir la fermeture propre des connexions (appel implicite à `close()`).
 - Définissez des timeouts à chaque requête (ou enveloppez vos méthodes pour un timeout par défaut).
