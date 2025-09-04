@@ -13,12 +13,7 @@ Dans ce tutoriel, vous allez apprendre à faire des requêtes HTTP en Python en 
 
 - Faire des requêtes HTTP (GET, POST, PUT, DELETE, HEAD)
 - Passer des paramètres d'URL (params), un corps de requête (data vs json) et des headers
-- Gérer les timeouts et les erreurs (raise_for_status, exceptions)
 - Traiter le résultat d'une requête (texte, JSON, encodage)
-- Utiliser des sessions, cookies et mécanismes d'authentification
-- Envoyer des fichiers et télécharger en streaming
-- Configurer des retries, des proxies et la vérification SSL
-- Appliquer de bonnes pratiques (pagination, rate limiting)
 
 ## Installation
 
