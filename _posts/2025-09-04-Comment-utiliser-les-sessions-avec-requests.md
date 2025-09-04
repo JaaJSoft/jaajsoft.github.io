@@ -151,7 +151,7 @@ with requests.Session() as s:
 - N’exposez pas de session globale modifiable dans une librairie ; préférez l’injection (passer la session) ou une fabrique qui crée une session configurée.
 - Pensez à journaliser (`logging`) les URLs cibles, statuts et latences.
 
-## 9) Modèle de client réutilisable
+## 7) Modèle de client réutilisable
 
 Exemple d’un petit client API qui encapsule une session configurée :
 
