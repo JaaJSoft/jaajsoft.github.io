@@ -25,7 +25,7 @@ Dans cet article, on voit :
 
 > Astuce : si vous débutez avec requests, commencez par l’article de base « [Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %}) », puis revenez ici pour optimiser vos appels.
 
-## 1) Pourquoi utiliser `requests.Session` ?
+## 1) Pourquoi utiliser requests.Session ?
 
 Sans session, chaque appel `requests.get/post/...` ouvre une nouvelle connexion TCP/TLS, ce qui coûte du temps (handshake) et des ressources.
 Une `Session` :
@@ -72,7 +72,7 @@ with requests.Session() as s:
 - `s.headers.update(...)` permet de définir un jeu d’en‑têtes par défaut.
 - `s.auth` évite de répéter l’authentification à chaque appel.
 
-## 3) Cookies persistants et `RequestsCookieJar`
+## 3) Cookies persistants et RequestsCookieJar
 
 La session gère un `cookiejar` persistant tant que la session vit.
 
@@ -90,7 +90,7 @@ with requests.Session() as s:
 
 Pratique pour des parcours d’authentification basés sur cookies (login form) ou des données plus persistantes (ex. token, paniers, configuration).
 
-## 4) Retries et pooling via `HTTPAdapter`
+## 4) Retries et pooling via HTTPAdapter
 
 Par défaut, requests n’applique pas de retries automatiques. En session, on peut brancher un `HTTPAdapter` pour :
 
@@ -125,7 +125,7 @@ Notes :
 - `allowed_methods` s’applique aux méthodes idempotentes. N’activez `POST` que si votre API le supporte sans effet secondaire.
 - `pool_connections` et `pool_maxsize` contrôlent la taille du pool.
 
-## 5) Timeouts, proxies et SSL
+## 5) Timeouts & proxies
 
 Toujours mettre un timeout pour éviter de bloquer indéfiniment.
 
