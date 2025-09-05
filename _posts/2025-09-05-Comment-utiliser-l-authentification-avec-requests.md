@@ -344,11 +344,22 @@ proxies = {
 requests.get("https://api.example.com/", proxies=proxies, timeout=10)
 ```
 
-- Via variables d’environnement (HTTP(S)_PROXY) – pratique en ligne de commande :
+- Via variables d’environnement powershell (HTTP(S)_PROXY) – pratique en ligne de commande :
 
 ```powershell
 $env:HTTPS_PROXY = "http://user:pass@proxy.local:8080"
 python mon_script.py
+```
+
+- En Bash :
+
+```bash
+export HTTPS_PROXY="http://user:pass@proxy.local:8080"
+# Optionnellement aussi pour HTTP non chiffré
+export HTTP_PROXY="http://user:pass@proxy.local:8080"
+python mon_script.py
+# Ou pour une seule commande sans polluer l'environnement global :
+HTTPS_PROXY="http://user:pass@proxy.local:8080" python mon_script.py
 ```
 
 ---
