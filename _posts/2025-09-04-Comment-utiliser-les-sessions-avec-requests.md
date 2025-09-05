@@ -217,4 +217,5 @@ En résumé, `requests.Session` est un incontournable pour toute intégration HT
 
 Pour aller plus loin :
 - [Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+- [Python : Comment utiliser les différents modes d'authentification avec requests]({% post_url 2025-09-05-Comment-utiliser-l-authentification-avec-requests %})
 - Documentation officielle requests : [https://requests.readthedocs.io](https://requests.readthedocs.io)
