@@ -358,9 +358,9 @@ python mon_script.py
 - Basic : `auth=(user, pass)` ou `HTTPBasicAuth`.
 - Digest : `HTTPDigestAuth`.
 - Bearer : en‑tête `Authorization: Bearer <token>` (souvent OAuth2/JWT).
-- OAuth2 : `OAuth2Session` (client_credentials, authorization_code, refresh_token).
-- API Key : header (préféré) ou query param.
 - OAuth1 : `requests-oauthlib` + `OAuth1`.
+- OAuth2 : `requests-oauthlib` + `OAuth2Session` (client_credentials, authorization_code, refresh_token).
+- API Key : header (préféré) ou query param.
 - Custom : classe `AuthBase`.
 
 ---
