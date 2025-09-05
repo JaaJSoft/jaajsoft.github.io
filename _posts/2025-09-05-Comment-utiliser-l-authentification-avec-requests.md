@@ -371,4 +371,4 @@ python mon_script.py
 - [Python : Comment utiliser les sessions avec requests pour optimiser vos appels HTTP]({% post_url 2025-09-04-Comment-utiliser-les-sessions-avec-requests %})
 - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
-- Documentation officielle requests : https://requests.readthedocs.io
+- Documentation officielle requests : [https://requests.readthedocs.io](https://requests.readthedocs.io)
