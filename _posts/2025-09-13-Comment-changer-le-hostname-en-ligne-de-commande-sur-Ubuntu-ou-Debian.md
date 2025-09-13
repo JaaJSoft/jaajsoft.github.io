@@ -48,7 +48,7 @@ uname -n       # affiche le nodename du noyau
 cat /etc/hostname
 ```
 
-> Note: `hostnamectl` est fourni par systemd. Il est disponible sur Ubuntu/Debian modernes. Si vous n’avez pas `hostnamectl`, voir la section "Sans systemd" plus bas.
+> Note : `hostnamectl` est fourni par systemd. Il est disponible sur Ubuntu/Debian modernes. Si vous n’avez pas `hostnamectl`, voir la section "Sans systemd" plus bas.
 
 ---
 
@@ -67,7 +67,7 @@ hostnamectl status
 hostname
 ```
 
-> Note: Le changement est immédiat pour les nouveaux shells. Un shell déjà ouvert peut garder l’ancien prompt jusqu’à l’ouverture d’une nouvelle session (ou rechargement de l’invite).
+> Note : Le changement est immédiat pour les nouveaux shells. Un shell déjà ouvert peut garder l’ancien prompt jusqu’à l’ouverture d’une nouvelle session (ou rechargement de l’invite).
 
 ### 2.1) Définir un "pretty hostname"
 
@@ -77,7 +77,7 @@ Le pretty hostname permet un nom d’affichage avec espaces/majuscule :
 sudo hostnamectl set-hostname "Mon Serveur de Paris" --pretty
 ```
 
-> Note: Le "pretty" n’est pas utilisé par la résolution DNS. Pour les usages réseau/scripts, utilisez le hostname statique sans espaces.
+> Note : Le "pretty" n’est pas utilisé par la résolution DNS. Pour les usages réseau/scripts, utilisez le hostname statique sans espaces.
 
 ### 2.2) Définir un transient hostname
 
@@ -87,7 +87,7 @@ Le transient hostname est fourni par DHCP/NM et n’est pas persistant. Pour le 
 sudo hostnamectl set-hostname mon-serveur-temp --transient
 ```
 
-> Note: Le transient est réinitialisé au redémarrage ou par le client réseau. Préférez le "static" pour un nom stable.
+> Note : Le transient est réinitialisé au redémarrage ou par le client réseau. Préférez le "static" pour un nom stable.
 
 ---
 
@@ -113,7 +113,7 @@ Sur certaines distributions, on préfère mettre le FQDN puis l’alias court :
 127.0.1.1   mon-serveur.exemple.local mon-serveur
 ```
 
-> Note: Ne remplacez pas la ligne `127.0.0.1 localhost`. Ajoutez une entrée séparée pour votre hostname (souvent `127.0.1.1` sur Debian/Ubuntu).
+> Note : Ne remplacez pas la ligne `127.0.0.1 localhost`. Ajoutez une entrée séparée pour votre hostname (souvent `127.0.1.1` sur Debian/Ubuntu).
 
 ---
 
@@ -135,7 +135,7 @@ echo "mon-serveur" | sudo tee /etc/hostname
 sudo hostname mon-serveur
 ```
 
-> Note: La commande `hostname` modifie le nom courant jusqu’au prochain reboot. Le fichier `/etc/hostname` garantit la persistance au redémarrage.
+> Note : La commande `hostname` modifie le nom courant jusqu’au prochain reboot. Le fichier `/etc/hostname` garantit la persistance au redémarrage.
 
 ---
 
@@ -160,7 +160,7 @@ La plupart du temps, non. `hostnamectl` applique immédiatement le nouveau nom. 
 sudo systemctl restart systemd-hostnamed
 ```
 
-> Note: Des sessions SSH en cours peuvent continuer d’afficher l’ancien hostname dans le prompt. Ouvrez une nouvelle session pour voir le changement.
+> Note : Des sessions SSH en cours peuvent continuer d’afficher l’ancien hostname dans le prompt. Ouvrez une nouvelle session pour voir le changement.
 
 ---
 
