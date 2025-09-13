@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Comment Dockeriser une application flask"
+title: "Comment dockeriser une application flask"
 author: Pierre Chopinet
 tags:
 

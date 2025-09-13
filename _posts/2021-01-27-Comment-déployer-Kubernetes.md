@@ -2,10 +2,12 @@
 layout: article
 title: "K8s : Comment déployer un cluster kubernetes bare-metal"
 tags:
-    - K8s
+    - kubernetes
+    - linux
     - cluster
     - bare-metal
-    - raspberrypi
+    - sysadmin
+    - raspberry-pi
     - tutoriel
 author: Pierre Chopinet
 ---

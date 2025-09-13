@@ -2,7 +2,6 @@
 layout: article
 title: "Linux : Comment changer le hostname en ligne de commande (Ubuntu/Debian)"
 author: Pierre Chopinet
-description: "Tutoriel pas à pas pour changer le hostname (nom d’hôte) sous Ubuntu et Debian en ligne de commande : hostnamectl, /etc/hosts, FQDN, bonnes pratiques et pièges à éviter."
 tags:
   - linux
   - ubuntu
