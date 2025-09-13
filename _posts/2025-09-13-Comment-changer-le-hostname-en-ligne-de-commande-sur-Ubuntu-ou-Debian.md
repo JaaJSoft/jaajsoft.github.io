@@ -52,7 +52,7 @@ cat /etc/hostname
 
 ---
 
-## 2) Changer le hostname avec `hostnamectl` (méthode recommandée)
+## 2) Changer le hostname avec hostnamectl (méthode recommandée)
 
 Pour définir un nom d’hôte persistant ("static hostname") :
 
