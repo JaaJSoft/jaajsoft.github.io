@@ -190,10 +190,10 @@ sudo systemctl restart systemd-hostnamed
 
 ## Pour aller plus loin
 
-- [Ubuntu (manpage) — hostnamectl (24.04 LTS « noble »)](https://manpages.ubuntu.com/manpages/noble/en/man1/hostnamectl.1.html)
-- [Debian Wiki — Hostname](https://wiki.debian.org/Hostname)
-- [Debian Wiki — Changer le hostname](https://wiki.debian.org/HowTo/ChangeHostname)
-- [systemd — Documentation hostnamectl](https://www.freedesktop.org/software/systemd/man/latest/hostnamectl.html)
-- [systemd — hostnamed.service (bus D‑Bus du hostname)](https://www.freedesktop.org/software/systemd/man/latest/hostnamed.service.html)
-- [cloud-init — preserve_hostname et gestion du hostname](https://cloudinit.readthedocs.io/en/latest/reference/config.html#preserve-hostname)
-- [Docker — option --hostname pour les conteneurs](https://docs.docker.com/reference/cli/docker/container/run/#hostname)
+- [Ubuntu (manpage) - hostnamectl (24.04 LTS « noble »)](https://manpages.ubuntu.com/manpages/noble/en/man1/hostnamectl.1.html)
+- [Debian Wiki - Hostname](https://wiki.debian.org/Hostname)
+- [Debian Wiki - Changer le hostname](https://wiki.debian.org/HowTo/ChangeHostname)
+- [systemd - Documentation hostnamectl](https://www.freedesktop.org/software/systemd/man/latest/hostnamectl.html)
+- [systemd - hostnamed.service (bus D‑Bus du hostname)](https://www.freedesktop.org/software/systemd/man/latest/hostnamed.service.html)
+- [cloud-init - preserve_hostname et gestion du hostname](https://cloudinit.readthedocs.io/en/latest/reference/config.html#preserve-hostname)
+- [Docker - option --hostname pour les conteneurs](https://docs.docker.com/reference/cli/docker/container/run/#hostname)
