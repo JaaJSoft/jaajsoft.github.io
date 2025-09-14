@@ -38,7 +38,7 @@ pip install Flask-Caching
 
 ---
 
-## 2. Démarrer vite avec SimpleCache (mémoire)
+## 2. Premier cache en mémoire avec SimpleCache
 
 Objectif : mettre en place rapidement un cache en mémoire pour voir le
 fonctionnement (init, cache de routes, memoize), tout en gardant à l’esprit ses
@@ -116,7 +116,7 @@ Points clés :
 
 ## 3. Clés personnalisées et cache par utilisateur
 
-Dans certains cas, on veut cnstruire des clés de cache spécifiques au contexte (utilisateur, paramètres) pour servir la bonne donnée à la bonne personne.
+Dans certains cas, on veut construire des clés de cache spécifiques au contexte (utilisateur, paramètres) pour servir la bonne donnée à la bonne personne.
 
 Pour des pages personnalisées, évitez d’utiliser le même cache pour tout le
 monde. On peut ajouter un préfixe par utilisateur (id, rôle, etc.).
