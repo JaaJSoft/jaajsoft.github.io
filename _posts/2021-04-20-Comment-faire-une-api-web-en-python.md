@@ -318,6 +318,7 @@ def test2_endpoint_post():
 
 ## Voir aussi
 
+- [Comment utiliser un cache avec Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
 - [Comment dockeriser une application flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %})
 - [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 - [Comment créer un bot twitter en python avec tweepy]({% post_url 2019-06-20-Comment-créer-un-bot-twitter-en-python %})

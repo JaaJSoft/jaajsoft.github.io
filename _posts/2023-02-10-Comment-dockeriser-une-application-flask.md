@@ -228,5 +228,6 @@ et/ou à la déployer quelque part.
 ## Voir aussi
 
 - [Documentation Docker](https://docs.docker.com/get-started/)
+- [Comment utiliser un cache avec Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
 - [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
 - [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
