@@ -222,11 +222,11 @@ cache = Cache(app)
 ## 7. TTLs, tailles et formats
 
 - Choisissez des TTL (timeouts) par type de données :
-  - Métadonnées quasi statiques: 10–60 min
-  - Listes paginées: 30–120 s
-  - Détails utilisateurs: 60–300 s
-- Sérialisation: Flask-Caching gère la sérialisation via le backend. Si vous
-  utilisez un cache bas niveau, stockez du JSON:
+  - Métadonnées quasi statiques : 10–60 min
+  - Listes paginées : 30–120 s
+  - Détails utilisateurs : 60–300 s
+- Sérialisation : Flask-Caching gère la sérialisation des fonctions. Cependant, si vous
+  utilisez le cache en mode bas niveau, essayez de stocker du JSON :
 
 ```python
 import json
