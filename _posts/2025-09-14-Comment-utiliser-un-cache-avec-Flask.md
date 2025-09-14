@@ -1,11 +1,12 @@
 ---
 layout: article
-title: "Comment utiliser un cache avec Flask"
+title: "Comment ajouter un cache à notre application Flask"
 author: Pierre Chopinet
 tags:
   - python
   - flask
   - cache
+  - redis
   - performance
   - tutoriel
 ---
