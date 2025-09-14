@@ -36,7 +36,7 @@ tutoriel.
 pip install Flask-Caching
 ```
 
---
+---
 
 ## 2. Démarrer vite avec SimpleCache (mémoire)
 
@@ -116,8 +116,7 @@ Points clés :
 
 ## 3. Clés personnalisées et cache par utilisateur
 
-Dans certains cas, on veut cnstruire des clés de cache spécifiques au contexte (
-utilisateur, paramètres) pour servir la bonne donnée à la bonne personne.
+Dans certains cas, on veut cnstruire des clés de cache spécifiques au contexte (utilisateur, paramètres) pour servir la bonne donnée à la bonne personne.
 
 Pour des pages personnalisées, évitez d’utiliser le même cache pour tout le
 monde. On peut ajouter un préfixe par utilisateur (id, rôle, etc.).
@@ -187,10 +186,10 @@ cache.clear()
 
 ## 6. Passer en production avec Redis
 
-En production, utilisez un backend partagé comme Redis pour que tous les workers
+En production, on veut utiliser un backend partagé comme Redis pour que tous les workers
 (et toutes les machines) partagent le même cache.
 
-Installation:
+Installation :
 
 ```bash
 # Redis côté serveur (exemple Ubuntu/Debian)
@@ -218,7 +217,7 @@ cache = Cache(app)
 ```
 
 > Avec des conteneurs/docker compose, référencez le service Redis via son nom de service
-(`redis:6379`). Pensez à la persistance et à la sécurité (auth, réseau).
+(`redis:6379`).
 
 ## 7. TTLs, tailles et formats
 
@@ -242,12 +241,12 @@ value = json.loads(cache.get("key") or "null")
 - Clés trop générales : vous servez la mauvaise donnée au mauvais utilisateur.
 - Ne pas oublier `query_string=True` si la réponse dépend de la query string.
 - Attention sur les invalidations trop agressive (clear global) → préférez `delete_memoized` ciblé.
-- Cacher des opérations dépendantes d’un header (ex: langue). Dans ce cas,
+- Cachez des opérations dépendantes d’un header (ex: langue). Dans ce cas,
   intégrez la langue dans la clé ou évitez le cache.
 
---
+---
 
-## 9. Exemple complet minimal (Redis)
+## 9. Exemple complet (Redis)
 
 ```python
 from flask import Flask
@@ -288,11 +287,11 @@ if __name__ == "__main__":
 
 ## Conclusion
 
-Avec très peu de code, Flask-Caching apporte un gain de performance notable.
-Commencez par `SimpleCache` pour le développement, puis passez à Redis en
-production pour partager le cache entre tous les workers. Définissez des TTL
-adaptés, construisez des clés fiables (utilisateur, paramètres) et soyez
-intentionnel sur l’invalidation.
+Avec très peu de code, Flask-Caching apporte un gain de performance notable sur nos api.
+Que ça soit avec `SimpleCache` pour le développement, ou Redis en
+production pour partager le cache entre tous les workers.
+N'oubliez pas de définir des TTL
+adaptés, ainsi que de construire des clés intelligentes et adaptées au contexte (utilisateur, paramètres).
 
 ## Voir aussi
 
