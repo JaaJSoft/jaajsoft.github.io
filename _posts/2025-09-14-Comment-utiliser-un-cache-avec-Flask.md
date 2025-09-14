@@ -295,8 +295,8 @@ adaptés, ainsi que de construire des clés intelligentes et adaptées au contex
 
 ## Voir aussi
 
-- [Flask-Caching](https://flask-caching.readthedocs.io/)
-- [Redis](https://redis.io/)
+- [La doc de Flask-Caching](https://flask-caching.readthedocs.io/)
+- [La doc de Redis](https://redis.io/)
 - [Python : Comment faire des requêtes HTTP avec requests]({% post_url  2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 - [Comment utiliser les sessions avec requests]({% post_url 2025-09-04-Comment-utiliser-les-sessions-avec-requests %})
 - [Comment utiliser l'authentification avec requests]({% post_url 2025-09-05-Comment-utiliser-l-authentification-avec-requests %})
