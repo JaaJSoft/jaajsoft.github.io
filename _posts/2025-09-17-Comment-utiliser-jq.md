@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Comment utiliser jq : 15 exemples indispensables pour manipuler du JSON en ligne de commande"
+title: "jq : 15 exemples pour manipuler du JSON en ligne de commande"
 author: Pierre Chopinet
 tags:
   - linux
