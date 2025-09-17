@@ -71,10 +71,10 @@ N'ayant pas de Mac, je ne peux pas tester l'installation, il faut toutefois auss
 
 Source Wikipédia
 
-Il existe 5 principales requêtes http
+Il existe 5 principales requêtes HTTP
 
 - GET, permet d'accéder à une ressource.
-- HEAD, permet de récupérer l'entête d'une ressource, pour par exemple connaitre la date de sa dernière modification (utile pour le système de cache d'un navigateur)
+- HEAD, permet de récupérer l’en‑tête d’une ressource, par exemple pour connaître la date de sa dernière modification (utile pour le système de cache d’un navigateur)
 - POST, permet d'ajouter une ressource
 - PUT, permet de mettre à jour une ressource
 - DELETE, permet de supprimer une ressource
@@ -88,9 +88,9 @@ response = requests.get("https://blog.jaaj.dev")
 print(response.text)
 ```
 
-Cette requête http *get* affiche la page html correspondant à cette page.
+Cette requête HTTP GET affiche la page HTML correspondante.
 
-Une requête *get* peut avoir des paramètres par exemple pour `https://blog.jaaj.dev/archive.html?tag=python` :
+Une requête GET peut avoir des paramètres, par exemple pour `https://blog.jaaj.dev/archive.html?tag=python` :
 
 ```python
 import requests
@@ -122,6 +122,87 @@ data = {"example": "test"}
 response = requests.post("https://blog.jaaj.dev/archive.html", json=data)
 print(response.status_code)
 ```
+
+Explication : `params=` ajoute des paramètres dans l’URL, `data=` envoie un formulaire (application/x-www-form-urlencoded) et `json=` envoie un JSON (application/json). Choisissez le bon champ selon ce que l’API attend.
+
+Exemples :
+
+- Formulaire (data)
+```python
+import requests
+
+form = {"username": "bob", "password": "secret"}
+r = requests.post("https://httpbin.org/post", data=form)
+print(r.request.headers["Content-Type"])  # application/x-www-form-urlencoded
+```
+- Corps JSON (json)
+```python
+import requests
+
+payload = {"username": "bob"}
+r = requests.post("https://httpbin.org/post", json=payload)
+print(r.request.headers["Content-Type"])  # application/json
+```
+- Upload de fichier (multipart/form-data)
+```python
+import requests
+
+with open("rapport.pdf", "rb") as f:
+    r = requests.post("https://httpbin.org/post", files={"file": f})
+print(r.status_code)
+```
+
+### Requête PUT (mettre à jour une ressource)
+
+```python
+import requests
+
+url = "https://jsonplaceholder.typicode.com/posts/1"
+payload = {"id": 1, "title": "Mon titre", "body": "Nouveau contenu", "userId": 1}
+
+response = requests.put(url, json=payload)
+print(response.status_code)  # ex: 200
+print(response.json())
+```
+
+> Note : En REST, PUT remplace généralement la ressource entière. Pour une mise à jour partielle, utilisez plutôt PATCH. Selon les API, la réponse peut être 200 (avec un corps JSON) ou 204 No Content.
+
+### Requête DELETE (supprimer une ressource)
+
+```python
+import requests
+
+url = "https://jsonplaceholder.typicode.com/posts/1"
+response = requests.delete(url)
+
+print(response.status_code)  # ex: 200 ou 204
+print(response.text)         # souvent vide (No Content)
+```
+
+> Note : Beaucoup d’API renvoient 204 No Content pour un DELETE réussi.
+
+## Timeout et gestion des erreurs (basique)
+
+Utilisez toujours un `timeout` pour éviter qu’un appel ne bloque indéfiniment, et pensez à `raise_for_status()` pour déclencher une exception en cas d’erreur HTTP (4xx/5xx).
+
+```python
+import requests
+from requests.exceptions import HTTPError, Timeout, RequestException
+
+try:
+    r = requests.get("https://jsonplaceholder.typicode.com/users", timeout=5)
+    r.raise_for_status()  # lève HTTPError si 4xx/5xx
+    data = r.json()
+    print(len(data), "utilisateurs")
+except Timeout:
+    print("La requête a dépassé le délai (timeout).")
+except HTTPError as e:
+    print(f"Erreur HTTP: {e.response.status_code}")
+except RequestException as e:
+    print(f"Erreur réseau: {e}")
+```
+
+> Astuce : fixez un `timeout` (ex. 5–10s) sur toutes vos requêtes côté client.
 
 ## Traiter le résultat d'une requête vers une API REST
 
@@ -206,6 +287,24 @@ response = requests.get("https://jsonplaceholder.typicode.com/users", headers=he
 ```
 
 Pour personnaliser encore plus ses *User-Agent*, il existe une bibliothèque proposant plusieurs *User-Agent* : [fake-useragent](https://pypi.org/project/fake-useragent)
+
+## Télécharger un fichier (streaming)
+
+Pour les fichiers volumineux, activez `stream=True` et écrivez par blocs pour éviter de tout charger en mémoire.
+
+```python
+import requests
+
+url = "https://httpbin.org/image/png"
+with requests.get(url, stream=True, timeout=10) as r:
+    r.raise_for_status()
+    with open("image.png", "wb") as f:
+        for chunk in r.iter_content(chunk_size=8192):
+            if chunk:  # éviter les keep-alive chunks
+                f.write(chunk)
+```
+
+> Astuce : pour de petits contenus, `response.content` (bytes) suffit ; `response.text` applique un encodage (UTF‑8 par défaut ou `response.encoding`).
 
 ## Voir aussi
 
