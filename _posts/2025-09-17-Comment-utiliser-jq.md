@@ -173,7 +173,7 @@ Sortie :
 3	Chloé	active=true
 ```
 
-> Astuce : Les interpolations `\( ... )` insèrent des valeurs dans une chaîne & `-r` évite les guillemets et garde les tabulations.
+Explication : Les interpolations `\( ... )` insèrent des valeurs dans une chaîne et `-r` évite les guillemets et conserve les tabulations.
 
 ### 6) Trier (sort_by) et inverser
 
@@ -324,7 +324,7 @@ Sortie :
 }
 ```
 
-> Astuce : L’opérateur `|=` met à jour le champ ciblé. Utilisez `if/then/else` pour modifier conditionnellement.
+Explication : L’opérateur `|=` met à jour le champ ciblé. Utilisez `if/then/else` pour modifier conditionnellement.
 
 ### 12) Concaténer/assembler des tableaux (plusieurs fichiers)
 
@@ -344,12 +344,12 @@ Sortie :
 ```json
 [1, 2, 3, 4]
 ```
-flatten :
-```text
+- flatten :
+```json
 [1, 2, 3, 4]
 ```
 
-> Astuce : `-s` (slurp) lit tous les fichiers/entrées et crée un tableau d’entrées avant d’appliquer le filtre.
+> Note : `-s` (slurp) lit tous les fichiers/entrées et crée un tableau d’entrées avant d’appliquer le filtre.
 
 ### 13) Extraire seulement certaines clés
 
@@ -376,7 +376,7 @@ Sortie :
 ]
 ```
 
-> Astuce : `join(",")` fusionne un tableau de chaînes en une seule chaîne.
+Explication : `join(",")` fusionne un tableau de chaînes en une seule chaîne.
 
 ### 14) JSON Lines (une ligne par objet) et compact
 
@@ -384,8 +384,7 @@ Sortie :
 # Sortie compacte (-c) et une ligne par élément
 echo '{"items":[{"id":1},{"id":2}]}' | jq -c '.items[]'
 # Repasser en tableau structuré
-printf '%s
-' '{"id":1}' '{"id":2}' | jq -s '.'
+printf '%s\n' '{"id":1}' '{"id":2}' | jq -s '.'
 ```
 
 Sortie :
@@ -456,13 +455,11 @@ kubectl get pods -o json | jq -r '.items[] | "\(.metadata.name)\t\(.status.phase
 - `-s` slurp : lit toutes les entrées et les met dans un tableau
 - `-n` null-input : démarre sans entrée (pour générer du JSON de zéro)
 
-```
-
 ---
 
 ## Pièges et bonnes pratiques
 
-- Toujours penser à `-r` si vous attendez du texte (sinon vous aurez des quotes).
+- Toujours penser à `-r` si vous attendez du texte (sinon vous aurez des guillemets).
 - Préférez `select(...)` plutôt que des `if` imbriqués quand vous filtrez.
 - Pour de gros volumes, utilisez `-c` et évitez les pretty‑prints inutiles qui peuvent ralentir jq.
 - Utilisez `--arg` / `--argjson` plutôt que de bidouiller des chaînes JSON en shell.
@@ -484,4 +481,4 @@ kubectl get pods -o json | jq -r '.items[] | "\(.metadata.name)\t\(.status.phase
 
 ## Conclusion
 
-`jq` est indispensable pour trier, filtrer, agréger et reformater du JSON sans écrire un script. Gardez cette page sous la main, et n’hésitez pas à adapter les recettes à vos données..
+`jq` est indispensable pour trier, filtrer, agréger et reformater du JSON sans écrire un script. Gardez cette page sous la main, et n’hésitez pas à adapter les recettes à vos données.
