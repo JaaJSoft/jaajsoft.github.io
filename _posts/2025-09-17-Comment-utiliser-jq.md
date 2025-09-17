@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "jq : 15 exemples pour manipuler du JSON en ligne de commande"
+title: "Comment manipuler du JSON en ligne de commande avec jq"
 author: Pierre Chopinet
 tags:
   - linux
@@ -16,10 +16,9 @@ tags:
 <!--more-->
 
 Objectifs de l’article :
-
 - Installer `jq` (Linux/macOS/Windows)
 - Comprendre les bases (filtres, pipe, tableaux)
-- Appliquer 15 process concrets (extractions, filtres, agrégations, tri, mise à jour, concat, variables…)
+- Appliquer 15 cas concrets (extractions, filtres, agrégations, tri, mise à jour, concat, variables…)
 - Connaître les options essentielles (`-r`, `-c`, `-S`, `-e`, `--arg`, `--argjson`)
 
 ---
@@ -267,7 +266,7 @@ Sortie :
 
 > Note : `group_by` regroupe par clé (il trie par la clé avant de grouper).
 
-### 10) Changer la structure du json (projection)
+### 10) Changer la structure du JSON (projection)
 
 ```bash
 jq '.users | map({id, name, score})' data.json
@@ -405,7 +404,7 @@ Sortie :
 
 > Astuce : `-c` est idéal pour logs/streams (une ligne par objet). `-s` (slurp) recompose un tableau.
 
-### 15) Variables depuis la CLI (`--arg`, `--argjson`)
+### 15) Variables depuis la CLI (--arg, --argjson)
 
 ```bash
 # --arg crée une variable chaîne
