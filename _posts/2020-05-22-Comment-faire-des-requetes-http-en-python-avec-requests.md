@@ -166,6 +166,11 @@ print(response.json())
 ```
 
 > Note : En REST, PUT remplace généralement la ressource entière. Pour une mise à jour partielle, utilisez plutôt PATCH. Selon les API, la réponse peut être 200 (avec un corps JSON) ou 204 No Content.
+>
+> Explication :
+> - PUT est idempotent : répéter la même requête ne change pas l’état après la première.
+> - Avec `requests`, `json=` sérialise l’objet Python et ajoute l’en‑tête `Content-Type: application/json` automatiquement. `data=` enverrait un formulaire.
+> - Certaines API exigent un contrôle de concurrence optimiste via `ETag`/`If-Match` pour éviter d’écraser des modifications.
 
 ### Requête DELETE (supprimer une ressource)
 
@@ -180,6 +185,11 @@ print(response.text)         # souvent vide (No Content)
 ```
 
 > Note : Beaucoup d’API renvoient 204 No Content pour un DELETE réussi.
+>
+> Explication :
+> - DELETE est idempotent : un second appel sur la même ressource renvoie souvent `204` (aucun changement) ou `404` si elle n’existe plus.
+> - Le corps de la réponse est souvent vide. Vérifiez `response.status_code` ou utilisez `response.raise_for_status()`.
+> - Selon les API, l’opération peut être asynchrone et renvoyer `202 Accepted`.
 
 ## Timeout et gestion des erreurs (basique)
 
