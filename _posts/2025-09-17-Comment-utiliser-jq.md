@@ -441,7 +441,7 @@ docker inspect --format='{{json .State.Health}}' fastapi-app | jq
 kubectl get pods -o json | jq -r '.items[] | "\(.metadata.name)\t\(.status.phase)"'
 ```
 
-> Voir aussi : {% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %}
+> Voir aussi : [Dockeriser une API FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
 
 ---
 
@@ -482,3 +482,10 @@ kubectl get pods -o json | jq -r '.items[] | "\(.metadata.name)\t\(.status.phase
 ## Conclusion
 
 `jq` est indispensable pour trier, filtrer, agréger et reformater du JSON sans écrire un script. Gardez cette page sous la main, et n’hésitez pas à adapter les recettes à vos données.
+
+---
+
+## Pour aller plus loin sur linux
+
+- [Linux : Comment changer le hostname en ligne de commande (Ubuntu/Debian)]({% post_url 2025-09-13-Comment-changer-le-hostname-en-ligne-de-commande-sur-Ubuntu-ou-Debian %})
+- [K8s : Comment déployer un cluster kubernetes bare-metal]({% post_url 2021-01-27-Comment-déployer-Kubernetes %})
