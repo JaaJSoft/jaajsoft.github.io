@@ -224,6 +224,8 @@ curl "http://127.0.0.1:8000/items?q=abc&limit=5"
 {"q":"abc","limit":5}
 ```
 
+> Voir aussi : [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %}) — pour filtrer/formater des réponses JSON en CLI (avec curl).
+
 ## Méthodes HTTP
 
 Pour spécifier pour quelles méthodes l'*endpoint* doit être disponible, on

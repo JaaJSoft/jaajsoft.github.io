@@ -172,6 +172,8 @@ xxxxxxxx1   Ready    <none>     1d   v1.19.7+k3s1
 xxxxxxxx2   Ready    master     1d   v1.19.7+k3s1
 xxxxxxxx3   Ready    <none>     1d   v1.19.7+k3s1
 ```
+
+> Voir aussi : [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %}) — pratique avec `kubectl -o json | jq`.
 ## La suite
 
 Maintenant que votre *cluster* est installé, vous pouvez commencer à déployer des services. Attention cependant, K3s ne propose pas de *loadbalancer* et de *storageclass* évolués par défaut, il faudra les installer vous-même. Un article expliquant comment faire devrait sortir prochainement.
