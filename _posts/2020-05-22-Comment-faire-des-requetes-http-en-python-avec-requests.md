@@ -136,6 +136,7 @@ Explication : `params=` ajoute des paramètres dans l’URL, `data=` envoie un 
 Exemples :
 
 - Formulaire (data)
+
 ```python
 import requests
 
@@ -144,6 +145,7 @@ r = requests.post("https://httpbin.org/post", data=form)
 print(r.request.headers["Content-Type"])  # application/x-www-form-urlencoded
 ```
 - Corps JSON (json)
+
 ```python
 import requests
 
@@ -152,6 +154,7 @@ r = requests.post("https://httpbin.org/post", json=payload)
 print(r.request.headers["Content-Type"])  # application/json
 ```
 - Upload de fichier (multipart/form-data)
+
 ```python
 import requests
 
