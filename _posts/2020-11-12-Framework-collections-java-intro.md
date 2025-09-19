@@ -83,6 +83,7 @@ Cette interface propose différentes méthodes à ses implémentations telles qu
 | Object[] toArray()                        | Retourne un tableau contenant tous les éléments de la collection                                   |
 | <E> E[] toArray(E[] a)                    | Retourne un tableau de type E contenant tous les éléments de la collection                         |
 
+
 Il faut savoir pour ces deux dernières méthodes que la collection et son tableau généré sont indépendants. Toute modification dans la collection n'impactera pas le tableau généré et inversement.
 
 Toutes les familles de collections fournissent alors au minimum ces méthodes et chaque famille de collection vient ensuite ajouter un nouvel ensemble de méthodes qui vont venir spécialiser les futures implémentations.
@@ -176,5 +177,5 @@ Il est maintenant temps de s'intéresser aux collections concrètes que représe
 
 ### Pour aller plus loin
 
- - [Collection — Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Collection.html)
- - [Iterator — Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Iterator.html)
+ - [Collection - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Collection.html)
+ - [Iterator - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Iterator.html)

@@ -207,6 +207,6 @@ class Service {
 
 ### Pour aller plus loin
 
-- [List — Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/List.html)
-- [ArrayList — Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/ArrayList.html)
-- [LinkedList — Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/LinkedList.html)
+- [List - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/List.html)
+- [ArrayList - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/ArrayList.html)
+- [LinkedList - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/LinkedList.html)
