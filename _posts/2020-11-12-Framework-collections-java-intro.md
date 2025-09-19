@@ -12,8 +12,8 @@ Dans cet article, nous allons nous attarder sur une des fonctionnalités Java le
 <!--more-->
 Cet article s'inscrit dans une série d'articles concernant les collections, leurs utilisations et fonctionnalités dont voici le sommaire :
 
-1. [Introduction aux collections Java](#)
-2. Collections List (article à venir)
+1. Introduction aux collections Java (vous êtes ici)
+2. [Les listes en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
 3. Collections Set (article à venir)
 4. Collections Queue (article à venir)
 5. Collections Map (article à venir)
@@ -168,7 +168,7 @@ Le plus important est alors de retenir que cette API est construite sous une for
 
 Il est maintenant temps de s'intéresser aux collections concrètes que représentent les implémentations de cette API grâce aux articles suivants :
 
-- Collections List (article à venir)
+- [Les listes en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
 - Collections Set (article à venir)
 - Collections Queue (article à venir)
 - Collections Map (article à venir)
@@ -176,5 +176,5 @@ Il est maintenant temps de s'intéresser aux collections concrètes que représe
 
 ### Pour aller plus loin
 
- - https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html
- - https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html
+ - https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Collection.html
+ - https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Iterator.html
