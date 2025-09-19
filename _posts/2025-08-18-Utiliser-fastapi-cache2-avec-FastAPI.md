@@ -256,8 +256,8 @@ async def user_lang_key_builder(func, namespace: str, request: Request, response
 ## Pour aller plus loin
 
 - Documentation fastapi-cache2
-  - GitHub: https://github.com/fastapi-cache/fastapi-cache
-  - PyPI: https://pypi.org/project/fastapi-cache2/
+  - GitHub: [fastapi-cache/fastapi-cache](https://github.com/fastapi-cache/fastapi-cache)
+  - PyPI: [fastapi-cache2](https://pypi.org/project/fastapi-cache2/)
 
 - Autres articles FastAPI sur ce blog
   - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})

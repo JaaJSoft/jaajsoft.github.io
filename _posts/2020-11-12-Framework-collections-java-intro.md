@@ -176,5 +176,5 @@ Il est maintenant temps de s'intéresser aux collections concrètes que représe
 
 ### Pour aller plus loin
 
- - https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Collection.html
- - https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Iterator.html
+ - [Collection — Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Collection.html)
+ - [Iterator — Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Iterator.html)
