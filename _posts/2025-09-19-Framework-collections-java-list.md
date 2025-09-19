@@ -127,7 +127,7 @@ for (String f : fruits) {
 }
 ```
 
-- Pour supprimer en parcourant, utilisez l’itérateur (ou `removeIf`) pour éviter `ConcurrentModificationException` :
+- Pour supprimer en parcourant, utilisez un itérateur (ou `removeIf`) pour éviter `ConcurrentModificationException` :
 
 ```java
 Iterator<String> it = fruits.iterator();
@@ -154,7 +154,7 @@ while (li.hasNext()) {
 // nums => [1, 2, 99, 3]
 ```
 
-## Immutabilité et exposition sûre d’API
+## Immutabilité
 
 - Construire directement une liste immuable :
 
