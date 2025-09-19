@@ -1,6 +1,6 @@
 ---
 layout: article
-title: Les listes en Java - comprendre leur fonctionnement, quand les utiliser et lesquelles utiliser
+title: Les listes en Java
 excerpt:
 author: Pierre Chopinet
 tags:
@@ -71,7 +71,7 @@ Cas d’usage : scénarios spécialisés où l’on enlève/insère souvent au 
 - Ajout en fin : `ArrayList` ≈ `O(1)` amorti, `LinkedList` ≈ `O(1)` (avec pointeur de fin).
 - Insertion/suppression au milieu par index : `ArrayList` ≈ `O(n)`, `LinkedList` ≈ `O(n)` (traversée) mais `O(1)` si itérateur déjà positionné.
 
-En pratique, `ArrayList` est souvent le meilleur choix par défaut, `LinkedList` gagnant seulement dans des cas de niches avec itérateur.
+En pratique, `ArrayList` est souvent le meilleur choix par défaut, `LinkedList` gagnant seulement dans des cas niches avec des itérateurs.
 
 ## Méthodes clés à connaître
 
