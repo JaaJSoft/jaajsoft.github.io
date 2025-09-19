@@ -33,7 +33,7 @@ La signature :
 public interface List<E> extends Collection<E> { /* … */ }
 ```
 
-En plus des méthodes héritées de `Collection`, `List` ajoute entre autres (tableau récapitulatif) :
+En plus des méthodes héritées de `Collection`, `List` ajoute entre autres :
 
 | Méthode                                     | Description                                                                           |
 |---------------------------------------------|---------------------------------------------------------------------------------------|
