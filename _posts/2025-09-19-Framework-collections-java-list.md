@@ -183,7 +183,7 @@ class Service {
 
 - Déclarez par l’interface : `List<String> l = new ArrayList<>();`
 - Choisissez l’implémentation selon le pattern d’accès (lecture par index ? insertions fréquentes ?).
-- Évitez `LinkedList` par défaut ; mesurez avant d’optimiser.
+- Évitez `LinkedList` par défaut ; mesurez les perfs avant d’optimiser.
 - Attention à `remove` en boucle for‑each : utilisez un itérateur ou `removeIf`.
 - Copiez une `subList` si vous avez besoin d’une liste indépendante.
 
