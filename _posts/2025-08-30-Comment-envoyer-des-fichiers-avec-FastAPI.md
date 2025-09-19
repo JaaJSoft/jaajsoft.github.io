@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Comment envoyer des fichiers avec FastAPI"
+title: "Uploader des fichiers avec FastAPI"
 author: Pierre Chopinet
 tags:
   - python
