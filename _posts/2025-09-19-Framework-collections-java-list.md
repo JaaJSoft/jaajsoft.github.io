@@ -33,13 +33,21 @@ La signature :
 public interface List<E> extends Collection<E> { /* … */ }
 ```
 
-En plus des méthodes héritées de `Collection`, `List` ajoute entre autres :
+En plus des méthodes héritées de `Collection`, `List` ajoute entre autres (tableau récapitulatif) :
 
-- `E get(int index)`, `E set(int index, E element)`
-- `void add(int index, E element)`, `E remove(int index)`
-- `int indexOf(Object o)`, `int lastIndexOf(Object o)`
-- `ListIterator<E> listIterator()`, `ListIterator<E> listIterator(int index)`
-- `List<E> subList(int fromIndex, int toIndex)` (vue de la liste)
+| Méthode                                     | Description                                                                           |
+|---------------------------------------------|---------------------------------------------------------------------------------------|
+| E get(int index)                            | Retourne l’élément à l’index donné.                                                   |
+| E set(int index, E element)                 | Remplace l’élément à l’index par element et retourne l’ancien.                        |
+| void add(int index, E element)              | Insère element à la position index (décale les éléments suivants).                    |
+| E remove(int index)                         | Supprime et retourne l’élément à la position index.                                   |
+| int indexOf(Object o)                       | Retourne le premier index de o, ou -1 s’il est absent.                                |
+| int lastIndexOf(Object o)                   | Retourne le dernier index de o, ou -1 s’il est absent.                                |
+| ListIterator<E> listIterator()              | Itérateur bidirectionnel sur la liste.                                                |
+| ListIterator<E> listIterator(int index)     | Itérateur bidirectionnel démarrant à index.                                           |
+| List<E> subList(int fromIndex, int toIndex) | retourne une vue d'une portion [fromIndex, toIndex) de la liste (liée à l’originale). |
+| void replaceAll(UnaryOperator<E> operator)  | Remplace chaque élément par operator.apply(élément).                                  |
+| void sort(Comparator<? super E> c)          | Trie en place selon le comparateur.                                                   |
 
 ## Principales implémentations
 
