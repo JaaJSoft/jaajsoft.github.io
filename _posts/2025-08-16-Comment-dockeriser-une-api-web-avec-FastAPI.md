@@ -205,6 +205,7 @@ docker inspect --format='{{json .State.Health}}' fastapi-app | jq
 
 - Article précédent : [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
+- [Limiter le rate d’une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
 - [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %})
 - Ajoutez un reverse proxy (Nginx, Traefik) devant votre API.
 - Utilisez des variables d'environnement et des secrets.

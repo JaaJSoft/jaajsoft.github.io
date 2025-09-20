@@ -18,13 +18,12 @@ On commence par un cache en mémoire (simple, sans dépendance), puis on passe �
 Redis pour
 un cache partagé et persistant. <!--more-->
 
-Prérequis: savoir démarrer une API minimaliste. Si besoin, lisez d’abord
-[Python : Comment faire une api web avec FastAPI]({% post_url
-2025-08-15-Comment-faire-une-api-web-avec-FastAPI %}).
+Prérequis : savoir démarrer une API minimaliste. Si besoin, lisez d’abord
+[Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %}).
 
 ## Installation
 
-Installez les dépendances nécessaires:
+Installez les dépendances nécessaires :
 
 ```bash
 pip install fastapi uvicorn fastapi-cache2
@@ -55,9 +54,8 @@ InMemoryBackend) ou Redis.
 
 ## Partie 1 — Cache en mémoire
 
-Avantages: simple, aucune dépendance externe. Limites: non partagé entre
-plusieurs processus/
-conteneurs; vidé à chaque redémarrage.
+Avantages : simple, aucune dépendance externe.
+Limites : non partagé entre plusieurs processus/conteneurs et vidé à chaque redémarrage.
 
 ### Code complet (InMemoryBackend)
 
@@ -101,13 +99,13 @@ async def clear_cache(namespace: str | None = None):
     return {"cleared": True, "namespace": namespace}
 ```
 
-Démarrage:
+Démarrage :
 
 ```bash
 uvicorn app_memory:app --reload
 ```
 
-Test rapide (notez le timestamp qui ne change pas pendant 10s):
+Test rapide (notez le timestamp qui ne change pas pendant 10s) :
 
 ```bash
 # 1ère requête lente (~2s) puis réponse mise en cache
@@ -116,7 +114,7 @@ curl "http://127.0.0.1:8000/slow?q=42"
 curl "http://127.0.0.1:8000/slow?q=42"
 ```
 
-Notes importantes:
+Notes importantes :
 
 - `@cache(expire=10)` définit la durée de vie (TTL) pour cette route.
 - La clé de cache par défaut inclut l’URL et les paramètres de requête. Les
@@ -130,9 +128,9 @@ Notes importantes:
 
 ## Partie 2 — Cache Redis
 
-Avantages: partagé entre plusieurs workers/instances, persistance (selon
-config),
-observabilité (on voit les clés). Nécessite un service Redis.
+Avantages : partagé entre plusieurs workers/instances, persistance (selon
+config), observabilité (on voit les clés).
+Nécessite un service Redis.
 
 ### Démarrer un Redis local (docker-compose)
 
@@ -146,7 +144,7 @@ services:
     command: [ "redis-server", "--appendonly", "yes" ]
 ```
 
-Lancez-le:
+Lancez-le :
 
 ```bash
 docker compose up -d
@@ -201,13 +199,13 @@ async def clear_cache(namespace: str | None = None):
     return {"cleared": True, "namespace": namespace}
 ```
 
-Démarrage:
+Démarrage :
 
 ```bash
 uvicorn app_redis:app --reload
 ```
 
-Vérification du cache:
+Vérification du cache :
 
 ```bash
 curl "http://127.0.0.1:8000/slow?q=1"   # lente
@@ -241,12 +239,12 @@ async def user_lang_key_builder(func, namespace: str, request: Request, response
 
 ### Bonnes pratiques et points d’attention
 
-- Préfixe: définissez un `prefix` explicite (par exemple avec le nom de votre
+- Préfixe : définissez un `prefix` explicite (par exemple avec le nom de votre
   app et la version) pour isoler vos clés.
-- Namespace: utile pour invalider sélectivement des sous-ensembles de clés.
-- Sécurité: éviter d’exposer un endpoint de purge sans protection; ajoutez
+- Namespace : utile pour invalider sélectivement des sous-ensembles de clés.
+- Sécurité : éviter d’exposer un endpoint de purge sans protection; ajoutez
   auth/rôle.
-- TTL (time to live): choisissez une durée adaptée à la fraîcheur des données et
+- TTL (time to live) : choisissez une durée adaptée à la fraîcheur des données et
   au coût de recalcul.
 - Multi‑workers: avec Uvicorn/Gunicorn en multi‑processus, utilisez Redis (
   l’in‑memory n’est pas partagé entre workers).
@@ -263,3 +261,4 @@ async def user_lang_key_builder(func, namespace: str, request: Request, response
   - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
   - [Comment dockeriser une API FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
   - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
+  - [Limiter le rate d’une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
