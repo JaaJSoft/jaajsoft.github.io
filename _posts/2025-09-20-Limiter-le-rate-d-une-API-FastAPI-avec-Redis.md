@@ -5,9 +5,11 @@ author: Pierre Chopinet
 tags:
   - python
   - fastapi
+  - api
+  - rest
   - redis
   - rate-limit
-  - securité
+  - sécurité
   - performance
   - tutoriel
 ---

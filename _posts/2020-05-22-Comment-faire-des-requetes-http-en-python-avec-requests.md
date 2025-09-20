@@ -4,6 +4,8 @@ title: "Python : Comment faire des requêtes HTTP avec requests"
 tags:
     - python
     - http
+    - api
+    - rest
     - requests
     - tutoriel
 author: Pierre Chopinet

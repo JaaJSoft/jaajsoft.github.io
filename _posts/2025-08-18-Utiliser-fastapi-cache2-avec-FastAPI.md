@@ -8,6 +8,8 @@ tags:
 - cache
 - performance
 - redis
+- api
+- rest
 - tutoriel
 
 ---

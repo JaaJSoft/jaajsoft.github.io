@@ -6,6 +6,7 @@ tags:
 - python
 - fastapi
 - api
+- rest
 - docker
 - multistage
 - alpine

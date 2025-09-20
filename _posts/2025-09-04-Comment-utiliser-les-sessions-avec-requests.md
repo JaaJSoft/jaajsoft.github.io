@@ -5,6 +5,8 @@ author: Pierre Chopinet
 tags:
   - python
   - http
+  - api
+  - rest
   - requests
   - performance
   - authentification

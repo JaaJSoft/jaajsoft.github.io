@@ -6,6 +6,7 @@ tags:
   - python
   - fastapi
   - api
+  - rest
   - tutoriel
   - architecture
   - routers

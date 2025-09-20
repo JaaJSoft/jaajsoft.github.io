@@ -7,6 +7,8 @@ tags:
   - flask
   - cache
   - redis
+  - api
+  - rest
   - performance
   - tutoriel
 ---
