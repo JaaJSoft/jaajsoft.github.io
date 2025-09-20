@@ -5,6 +5,7 @@ author: Pierre Chopinet
 tags:
   - python
   - flask
+  - http
   - cache
   - redis
   - api

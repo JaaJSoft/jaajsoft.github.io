@@ -5,6 +5,7 @@ author: Pierre Chopinet
 tags:
 - python
 - fastapi
+- http
 - cache
 - performance
 - redis
