@@ -20,8 +20,8 @@ L’objectif est de protéger vos
 endpoints contre les abus (pics de trafic, scripts, DDoS applicatif léger) et de
 mieux contrôler votre consommation de ressources.
 
-Prérequis : savoir démarrer une API minimaliste. Si besoin, lisez d’abord
-[Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %}).
+Prérequis : savoir démarrer une API minimaliste.
+Voir [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %}).
 
 ## Installation
 
@@ -129,7 +129,7 @@ identifiant si besoin.
 
 Souvent, on veut limiter par clé API ou par utilisateur authentifié plutôt que
 par IP.
-On peut fournir une fonction `identifier` au `RateLimiter`.
+Pour cela, on peut fournir une fonction `identifier` au `RateLimiter`.
 
 ```python
 from fastapi import Request
@@ -263,8 +263,7 @@ async def too_many_requests_handler(request: Request, exc: HTTPException):
 ## Pour aller plus loin
 
 - Documentation fastapi-limiter
--
-GitHub: [long2ice/fastapi-limiter](https://github.com/long2ice/fastapi-limiter)
+- GitHub: [long2ice/fastapi-limiter](https://github.com/long2ice/fastapi-limiter)
 - [Ajouter un cache à notre application FastAPI avec redis]({% post_url
   2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
 - [Python : Comment faire une api web avec FastAPI]({% post_url
