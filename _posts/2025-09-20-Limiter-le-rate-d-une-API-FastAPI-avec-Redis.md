@@ -262,12 +262,8 @@ async def too_many_requests_handler(request: Request, exc: HTTPException):
 
 ## Pour aller plus loin
 
-- Documentation fastapi-limiter
 - GitHub: [long2ice/fastapi-limiter](https://github.com/long2ice/fastapi-limiter)
-- [Ajouter un cache à notre application FastAPI avec redis]({% post_url
-  2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
-- [Python : Comment faire une api web avec FastAPI]({% post_url
-  2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
-- [Organiser une application FastAPI en plusieurs fichiers]({% post_url
-  2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
+- [Ajouter un cache à notre application FastAPI avec redis]({% post_url 2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
+- [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
+- [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
 
