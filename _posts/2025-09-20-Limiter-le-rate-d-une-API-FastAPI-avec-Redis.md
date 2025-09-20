@@ -249,7 +249,7 @@ async def too_many_requests_handler(request: Request, exc: HTTPException):
 
 ## Bonnes pratiques et points d’attention
 
-- Granularité : adaptez les fenêtres (secondes, minutes, heures) à vos usages.
+- Granularité : adaptez les paramètres (secondes, minutes, heures) à vos usages.
 - Identifiant : préférez un identifiant stable (clé API, user id) quand c’est
   pertinent.
 - Proxies : gérez correctement les IP réelles (ProxyHeadersMiddleware, trusted
