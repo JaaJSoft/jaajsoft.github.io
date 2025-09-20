@@ -21,8 +21,7 @@ endpoints contre les abus (pics de trafic, scripts, DDoS applicatif léger) et d
 mieux contrôler votre consommation de ressources.
 
 Prérequis : savoir démarrer une API minimaliste. Si besoin, lisez d’abord
-[Python : Comment faire une api web avec FastAPI]({% post_url
-2025-08-15-Comment-faire-une-api-web-avec-FastAPI %}).
+[Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %}).
 
 ## Installation
 
