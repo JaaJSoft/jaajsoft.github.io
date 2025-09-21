@@ -196,3 +196,10 @@ sudo systemctl restart systemd-hostnamed
 - [systemd - hostnamed.service (bus D‑Bus du hostname)](https://www.freedesktop.org/software/systemd/man/latest/hostnamed.service.html)
 - [cloud-init - preserve_hostname et gestion du hostname](https://cloudinit.readthedocs.io/en/latest/reference/config.html#preserve-hostname)
 - [Docker - option --hostname pour les conteneurs](https://docs.docker.com/reference/cli/docker/container/run/#hostname)
+
+
+---
+
+## Pour aller plus loin sur linux
+
+- [Installer et configurer Fail2ban sur un serveur Ubuntu/Debian]({% post_url 2025-09-21-Installer-et-configurer-Fail2ban-sur-Ubuntu-Debian %})

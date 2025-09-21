@@ -8,9 +8,6 @@ tags:
   - sécurité
   - ssh
   - firewall
-  - ufw
-  - iptables
-  - nftables
   - debian
   - ubuntu
   - serveur
