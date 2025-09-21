@@ -58,8 +58,8 @@ sudo systemctl status fail2ban
 
 Ne modifiez jamais les fichiers `.conf` fournis par le paquet ; créez des `.local` pour surcharger :
 
-- Fichier global de site : `/etc/fail2ban/jail.local`
-- Dossiers de drop‑in : `/etc/fail2ban/jail.d/*.local` et `*.conf` (priorité `.local`)
+- Fichier global : `/etc/fail2ban/jail.local`
+- Dossiers de configuration utilisateurs : `/etc/fail2ban/jail.d/*.local` et `*.conf` (priorité `.local`)
 
 Les journaux observés peuvent être des fichiers (ex : `/var/log/auth.log`) ou le journal `systemd` (backend `systemd`).
 
@@ -106,6 +106,14 @@ sudo fail2ban-client reload
 
 ### Choisir l’action (UFW / iptables / nftables)
 
+Vérifiez quel firewall est installé :
+
+```bash
+sudo ufw status               # si actif, privilégier banaction=ufw
+sudo which iptables           # compat couche iptables-nft possible
+sudo which nft                # présence de nftables
+```
+
 - Si UFW est votre pare‑feu :
 
 ```ini
@@ -123,14 +131,6 @@ banaction = nftables-multiport
 
 ```ini
 banaction = iptables-multiport
-```
-
-Vérifiez votre contexte :
-
-```bash
-sudo ufw status               # si actif, privilégier banaction=ufw
-sudo which iptables           # compat couche iptables-nft possible
-sudo which nft                # présence de nftables
 ```
 
 ---
