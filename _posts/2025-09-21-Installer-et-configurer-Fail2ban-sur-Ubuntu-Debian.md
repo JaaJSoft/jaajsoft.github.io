@@ -293,7 +293,7 @@ action = %(action_mwl)s
 
 ---
 
-Pour aller plus loin :
+## Pour aller plus loin :
 
 - [Documentation officielle Fail2ban](https://www.fail2ban.org/)
 - [Debian Wiki – Fail2ban](https://wiki.debian.org/fail2ban)
