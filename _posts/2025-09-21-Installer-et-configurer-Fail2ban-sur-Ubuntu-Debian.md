@@ -32,7 +32,7 @@ Pré‑requis :
 
 ---
 
-## 1) Installation et démarrage
+## Installation et démarrage
 
 Sur Debian/Ubuntu récents :
 
@@ -50,7 +50,7 @@ sudo systemctl status fail2ban
 
 ---
 
-## 2) Philosophie et fichiers importants
+## Philosophie et fichiers importants
 
 - Filters (filtres) : regex qui détectent les lignes suspectes dans les logs (ex : `/etc/fail2ban/filter.d/sshd.conf`).
 - Actions : que fait Fail2ban quand il bannit ? (ex : ajouter une règle firewall via UFW/iptables/nftables).
@@ -65,7 +65,7 @@ Les journaux observés peuvent être des fichiers (ex : `/var/log/auth.log`) ou
 
 ---
 
-## 3) Configuration de base: protéger SSH
+## Configuration de base: protéger SSH
 
 Créer un fichier `/etc/fail2ban/jail.local` :
 
@@ -104,7 +104,7 @@ sudo systemctl reload fail2ban
 sudo fail2ban-client reload
 ```
 
-### Choisir l’action (UFW / iptables / nftables)
+### Choisir le firewall (UFW / iptables / nftables)
 
 Vérifiez quel firewall est installé :
 
@@ -135,7 +135,7 @@ banaction = iptables-multiport
 
 ---
 
-## 4) Vérifier que ça fonctionne
+## Vérifier que ça fonctionne
 
 - État global :
 
@@ -183,7 +183,7 @@ sudo tail -f /var/log/fail2ban.log
 
 ---
 
-## 5) Ajuster la sensibilité (bantime, findtime, maxretry)
+## Ajuster la sensibilité (bantime, findtime, maxretry)
 
 - bantime : durée de ban (ex : 10m, 1h, 24h). Unité : s, m, h, d, w.
 - findtime : fenêtre pendant laquelle on compte les échecs.
@@ -202,7 +202,7 @@ Astuce : mettez des valeurs plus permissives au début pour éviter de vous ban
 
 ---
 
-## 6) Whitelist: ignorer vos IPs
+## Whitelist: ignorer vos IPs
 
 Ajoutez votre IP publique (ou votre bureau/VPN) dans `ignoreip` :
 
@@ -214,9 +214,9 @@ Rechargez ensuite Fail2ban.
 
 ---
 
-## 7) Aller plus loin
+## Aller plus loin
 
-### 7.1 Jail « recidive » (récidivistes)
+### Jail « recidive » (récidivistes)
 
 Le jail `recidive` bannit plus longtemps les IP qui déclenchent plusieurs bans dans la journée.
 
@@ -231,7 +231,7 @@ maxretry = 5
 
 > Note : ce jail opère au‑dessus des autres jails (il lit le log Fail2ban). Utile en production.
 
-### 7.2 Protéger Nginx
+### Protéger Nginx
 
 Plusieurs filtres sont fournis (selon la distribution) : `nginx-http-auth`, `nginx-botsearch`, etc. Exemple d’un jail basique :
 
@@ -257,7 +257,7 @@ Sinon, vous pouvez créer vos propres filtres et jails dans `*.local`. Testez vo
 sudo fail2ban-regex /var/log/nginx/access.log /etc/fail2ban/filter.d/nginx-botsearch.conf
 ```
 
-### 7.3 Notifications email
+### Notifications email
 
 Vous pouvez recevoir un email lors d’un ban, en utilisant une action prédéfinie (ex : `action_mw`, `action_mwl`). Il faut disposer d’un agent de mail (ex : `postfix`).
 
@@ -272,7 +272,7 @@ action = %(action_mwl)s
 
 ---
 
-## 8) Bonnes pratiques
+## Bonnes pratiques
 
 - Toujours utiliser des fichiers `.local`, ne pas modifier les `.conf` d’origine.
 - Recharger la configuration après modification : `sudo fail2ban-client reload`.
@@ -283,7 +283,7 @@ action = %(action_mwl)s
 
 ---
 
-## 9) Résumé
+## Résumé
 
 - Installation : `apt install fail2ban`, service actif.
 - Configuration propre dans `/etc/fail2ban/jail.local` ; activer `[sshd]`.
