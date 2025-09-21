@@ -281,15 +281,6 @@ action = %(action_mwl)s
 - Ne mettez pas un gros `bantime` au début , combinez plutôt avec `recidive`.
 - Avec UFW, assurez‑vous que les ports légitimes restent ouverts (allow) avant d’activer des jails.
 
----
-
-## Résumé
-
-- Installation : `apt install fail2ban`, service actif.
-- Configuration propre dans `/etc/fail2ban/jail.local` ; activer `[sshd]`.
-- Choisir l’action adaptée (UFW, nftables, iptables).
-- Vérifier avec `fail2ban-client status` et les journaux.
-- Aller plus loin : `recidive`, jails pour Nginx, notifications email.
 
 ---
 
