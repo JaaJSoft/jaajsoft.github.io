@@ -23,7 +23,7 @@ Objectifs de cet article :
 - Installer Fail2ban sur Ubuntu/Debian
 - Comprendre sa philosophie (filters, jails, actions)
 - Activer une protection SSH simple et efficace
-- Vérifier, dépanner et aller un peu plus loin (recidive, notifications)
+- Comment vérifier le bon fonctionnement, dépanner et des pistes pour aller plus loin (recidive, notifications)
 
 Pré‑requis :
 
@@ -48,8 +48,6 @@ sudo systemctl enable --now fail2ban
 sudo systemctl status fail2ban
 ```
 
-Par défaut, aucun « jail » n’est activé. Nous allons créer une configuration locale propre.
-
 ---
 
 ## 2) Philosophie et fichiers importants
@@ -58,7 +56,7 @@ Par défaut, aucun « jail » n’est activé. Nous allons créer une configur
 - Actions : que fait Fail2ban quand il bannit ? (ex : ajouter une règle firewall via UFW/iptables/nftables).
 - Jails : association filtre + action + paramètres (bantime, findtime, maxretry, etc.).
 
-Ne modifiez jamais les fichiers `.conf` fournis par le paquet ; créez des `.local` pour surcharger:
+Ne modifiez jamais les fichiers `.conf` fournis par le paquet ; créez des `.local` pour surcharger :
 
 - Fichier global de site : `/etc/fail2ban/jail.local`
 - Dossiers de drop‑in : `/etc/fail2ban/jail.d/*.local` et `*.conf` (priorité `.local`)
