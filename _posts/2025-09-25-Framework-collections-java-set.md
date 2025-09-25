@@ -71,7 +71,7 @@ Remarques :
 
 - Structure : table de hachage.
 - Pas d’ordre garanti d’itération.
-- Opérations de base (`add`, `contains`, `remove`) en `O(1)` amorti.
+- Opérations de base (`add`, `contains`, `remove`) en `O(1)`.
 - Autorise un seul `null`.
 
 Cas d’usage : ensemble générique sans contrainte d’ordre, rapide par défaut.
