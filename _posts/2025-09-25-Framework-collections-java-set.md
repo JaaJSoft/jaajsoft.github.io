@@ -119,7 +119,7 @@ Cas d’usage : ensemble trié partagé entre threads sans verrou global.
 
 ## Complexités
 
-- `HashSet`/`LinkedHashSet` : `add`/`contains`/`remove` ≈ `O(1)` amorti.
+- `HashSet`/`LinkedHashSet` : `add`/`contains`/`remove` ≈ `O(1)`.
 - `TreeSet`/`ConcurrentSkipListSet` : `O(log n)`.
 - `EnumSet` : très proche de `O(1)` pour la majorité des opérations.
 
