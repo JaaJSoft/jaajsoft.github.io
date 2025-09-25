@@ -14,7 +14,7 @@ Cet article s'inscrit dans une série d'articles concernant les collections, leu
 
 1. Introduction aux collections Java (vous êtes ici)
 2. [Les listes en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
-3. Collections Set (article à venir)
+3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
 4. Collections Queue (article à venir)
 5. Collections Map (article à venir)
 6. Utilisations avancées des collections (article à venir)
@@ -170,7 +170,7 @@ Le plus important est alors de retenir que cette API est construite sous une for
 Il est maintenant temps de s'intéresser aux collections concrètes que représentent les implémentations de cette API grâce aux articles suivants :
 
 - [Les listes en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
-- Collections Set (article à venir)
+- [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
 - Collections Queue (article à venir)
 - Collections Map (article à venir)
 - Utilisations avancées des collections (article à venir)
