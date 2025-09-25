@@ -269,8 +269,14 @@ List<String> dedup = new ArrayList<>(new LinkedHashSet<>(emails));
 
 ## Conclusion
 
-Pour conclure, ce qu'il faut retenir c'est que les ensembles (Set) garantissent l’unicité des éléments, qu'il ne faut pas oublier d'implémenter `equals`/`hashCode`.
-Utiliser : `HashSet` par défaut ; `LinkedHashSet` si l’ordre d’insertion compte ; `TreeSet` si un tri ou des bornes sont nécessaires ; `EnumSet` pour les énumérations ; et des variantes concurrentes si plusieurs threads partagent la structure.
+Pour conclure, ce qu'il faut retenir c'est que les ensembles (Set) garantissent l’unicité des éléments, il faut cependant ne pas oublier d'implémenter `equals`/`hashCode` ou `compareTo`.
+
+Utiliser :
+- `HashSet` par défaut
+- `LinkedHashSet` si l’ordre d’insertion compte
+- `TreeSet` si un tri ou des bornes sont nécessaires
+- `EnumSet` pour les énumérations
+- Les variantes concurrentes si plusieurs threads partagent la structure.
 
 ### Pour aller plus loin
 
