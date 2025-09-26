@@ -1,6 +1,6 @@
 ---
 layout: article
-title: Les Queues et Deques en Java
+title: Les files (Queue) en Java
 author: Pierre Chopinet
 tags:
   - java
@@ -15,7 +15,7 @@ Dans cet article (partie 4 de la série sur les collections), nous allons nous c
 1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
 2. [Les listes en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
 3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
-4. Les Queues et Deques en Java (vous êtes ici)
+4. Les files (Queue) et Deques en Java (vous êtes ici)
 5. Collections Map (article à venir)
 6. Utilisations avancées des collections (article à venir)
 
