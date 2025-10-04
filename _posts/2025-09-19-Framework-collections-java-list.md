@@ -15,7 +15,7 @@ Dans cet article (partie 2 de la série sur les collections), nous allons nous c
 2. Les listes en Java (vous êtes ici)
 3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
 4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
-5. Collections Map (article à venir)
+5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
 6. Utilisations avancées des collections (article à venir)
 
 ## Qu’est‑ce qu’une List ?
@@ -203,6 +203,15 @@ class Service {
 ## Conclusion
 
 `List` est probablement la collection la plus utilisée en Java. En comprenant ses implémentations clés, leurs complexités et les pièges courants, vous ferez des choix plus éclairés et écrirez un code plus robuste et performant.
+
+Pour aller plus loin dans la série :
+
+1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
+2. Les listes en Java (vous êtes ici)
+3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
+4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
+5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
+6. Utilisations avancées des collections (article à venir)
 
 ### Pour aller plus loin
 
