@@ -13,7 +13,7 @@ Dans cet article, nous allons nous attarder sur une des fonctionnalités Java le
 Cet article s'inscrit dans une série d'articles concernant les collections, leurs utilisations et fonctionnalités dont voici le sommaire :
 
 1. Introduction aux collections Java (vous êtes ici)
-2. [Les listes en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
+2. [Les listes (List) en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
 3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
 4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
 5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
@@ -170,7 +170,7 @@ Le plus important est alors de retenir que cette API est construite sous une for
 Pour aller plus loin dans la série :
 
 1. Introduction aux collections Java (vous êtes ici)
-2. [Les listes en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
+2. [Les listes (List) en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
 3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
 4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
 5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})

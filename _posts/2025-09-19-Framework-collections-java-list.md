@@ -12,7 +12,7 @@ Dans cet article (partie 2 de la série sur les collections), nous allons nous c
 <!--more-->
 
 1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
-2. Les listes en Java (vous êtes ici)
+2. Les listes (List) en Java (vous êtes ici)
 3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
 4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
 5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
@@ -207,7 +207,7 @@ class Service {
 Pour aller plus loin dans la série :
 
 1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
-2. Les listes en Java (vous êtes ici)
+2. Les listes (List) en Java (vous êtes ici)
 3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
 4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
 5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
