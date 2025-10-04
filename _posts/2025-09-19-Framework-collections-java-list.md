@@ -1,6 +1,6 @@
 ---
 layout: article
-title: Les listes en Java
+title: Les listes (List) en Java
 author: Pierre Chopinet
 tags:
   - java
