@@ -98,7 +98,7 @@ for (String mot : mots) {
 
 - Structure : table de hachage (buckets + arbres rouges/noirs au‑delà d’un seuil de collisions depuis Java 8).
 - Ordre d’itération non garanti et susceptible de changer.
-- Opérations de base (`get`, `put`, `remove`) en O(1) amorti.
+- Opérations de base (`get`, `put`, `remove`) en O(1).
 - Accepte une clé null et des valeurs null (plusieurs).
 - Paramètres importants : capacité initiale, facteur de charge (load factor, 0.75 par défaut).
 
