@@ -12,7 +12,7 @@ Dans cet article (partie 3 de la série sur les collections), nous allons nous c
 <!--more-->
 
 1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
-2. [Les listes en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
+2. [Les listes (List) en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
 3. Les ensembles (Set) en Java (vous êtes ici)
 4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
 5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
@@ -281,7 +281,7 @@ Utiliser :
 Pour aller plus loin dans la série :
 
 1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
-2. [Les listes en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
+2. [Les listes (List) en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
 3. Les ensembles (Set) en Java (vous êtes ici)
 4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
 5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
