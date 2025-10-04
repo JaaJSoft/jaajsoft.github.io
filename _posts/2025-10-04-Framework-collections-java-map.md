@@ -60,7 +60,7 @@ Remarques :
 - Les vues `keySet`, `values`, `entrySet` sont liées à la map : modifier la vue modifie la map (et inversement).
 - Les opérations de type `compute*` et `merge` sont très utiles pour éviter les if/put répétitifs et sont atomiques sur `ConcurrentHashMap`.
 
-### Parcourir une Map correctement
+### Parcourir une Map
 
 - Parcourir les paires clé/valeur (le plus courant) :
 
