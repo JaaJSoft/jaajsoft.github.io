@@ -8,7 +8,7 @@ tags:
   - map
 ---
 
-Dans cet article (partie 5 de la série sur les collections), nous allons nous concentrer sur la famille Map du Framework Collections. Nous verrons ses principes (association clé/valeur), les principales implémentations (HashMap, LinkedHashMap, TreeMap, ConcurrentHashMap, WeakHashMap, IdentityHashMap, EnumMap), leurs différences, pièges courants et bonnes pratiques d’utilisation.
+Dans cet article (partie 5 de la série sur les collections), nous allons nous concentrer sur la famille Map du Framework Collections. Nous verrons ses principes (association clé/valeur), les principales implémentations (HashMap, LinkedHashMap, TreeMap, etc), leurs différences, pièges courants et bonnes pratiques d’utilisation.
 <!--more-->
 
 1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
