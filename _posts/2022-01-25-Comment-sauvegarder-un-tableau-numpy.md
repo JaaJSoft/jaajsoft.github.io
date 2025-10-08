@@ -181,6 +181,7 @@ Voilà, vous êtes maintenant capable de faire persister vos données numpy.
 ## Voir aussi
 
 - [La doc de NumPy](https://numpy.org/doc/stable/reference/index.html)
+- [Comment faire des group by en Python]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
 - [Comment sauvegarder un _dataframe_ Pandas]({% post_url 2023-12-28-Comment-sauvegarder-un-dataframe-pandas %})
 - [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 - [Comment faire une api avec flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})

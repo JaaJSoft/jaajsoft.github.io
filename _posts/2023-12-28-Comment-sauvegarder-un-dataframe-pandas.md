@@ -228,6 +228,7 @@ Voilà, vous êtes maintenant capable de sauvegarder et charger vos _dataframes_
 ## Voir aussi
 
 - [La documentation de Pandas](https://pandas.pydata.org/docs/)
+- [Comment faire des group by en Python]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
 - [Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
 - [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 - [Comment faire une api avec flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
