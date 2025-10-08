@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Comment faire des group by en Python"
+title: "Python : Comment faire des group by"
 author: Pierre Chopinet
 tags:
   - python
