@@ -488,5 +488,6 @@ kubectl get pods -o json | jq -r '.items[] | "\(.metadata.name)\t\(.status.phase
 ## Pour aller plus loin sur linux
 
 - [Linux : Comment changer le hostname en ligne de commande (Ubuntu/Debian)]({% post_url 2025-09-13-Comment-changer-le-hostname-en-ligne-de-commande-sur-Ubuntu-ou-Debian %})
+- [Linux : Programmer une tâche avec cron (exemples utiles)]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
 - [Installer et configurer Fail2ban sur un serveur Ubuntu/Debian]({% post_url 2025-09-21-Installer-et-configurer-Fail2ban-sur-Ubuntu-Debian %})
 - [K8s : Comment déployer un cluster kubernetes bare-metal]({% post_url 2021-01-27-Comment-déployer-Kubernetes %})

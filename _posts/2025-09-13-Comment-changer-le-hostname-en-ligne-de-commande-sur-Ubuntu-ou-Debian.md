@@ -203,3 +203,4 @@ sudo systemctl restart systemd-hostnamed
 ## Pour aller plus loin sur linux
 
 - [Installer et configurer Fail2ban sur un serveur Ubuntu/Debian]({% post_url 2025-09-21-Installer-et-configurer-Fail2ban-sur-Ubuntu-Debian %})
+- [Linux : Programmer une tâche avec cron (exemples utiles)]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
