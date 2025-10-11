@@ -86,7 +86,7 @@ Vos tâches tourneront avec vos droits utilisateur, via le service `cron` du sys
 
 ---
 
-## 4) Bonnes pratiques (éviter 90% des bugs)
+## 4) Bonnes pratiques
 
 - Chemins absolus uniquement : `/usr/bin/python` et `/home/user/mon_script.py`, pas `python` ni `./mon_script.py`.
 - Définir un PATH et le shell en tête de la crontab si nécessaire :
