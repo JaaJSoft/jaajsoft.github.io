@@ -188,7 +188,7 @@ Exemple d’entrée dans `/etc/crontab` :
 
 ## 7) Dépannage : pourquoi ma tâche ne s’exécute pas ?
 
-Checklist rapide :
+Vérifiez les points suivants :
 
 - Le script est-il exécutable (`chmod +x`) et a-t-il un shebang correct ?
 - Les chemins sont-ils absolus (binaire, fichiers, venv) ?
