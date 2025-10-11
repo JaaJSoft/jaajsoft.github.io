@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Linux : Programmer une tâche avec cron en 5 minutes (exemples utiles)"
+title: "Linux : Programmer une tâche avec cron"
 author: Pierre Chopinet
 tags:
   - linux
