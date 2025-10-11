@@ -227,6 +227,6 @@ Pour des besoins complexes, envisagez un service + timer systemd. Pour des tâch
 
 ## Références
 
-- `man 5 crontab` (format) et `man 8 cron` (service)
-- Debian Wiki – Cron: https://wiki.debian.org/cron
-- Ubuntu CronHowto: https://help.ubuntu.com/community/CronHowto
+- [man 5 crontab (format)](https://man7.org/linux/man-pages/man5/crontab.5.html) et [man 8 cron (service)](https://man7.org/linux/man-pages/man8/cron.8.html)
+- [Debian Wiki – Cron](https://wiki.debian.org/cron)
+- [Ubuntu CronHowto](https://help.ubuntu.com/community/CronHowto)
