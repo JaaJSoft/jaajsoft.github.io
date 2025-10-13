@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "kubernetes : Comment déployer un cluster k8s bare-metal avec k3s"
+title: "Kubernetes : Comment déployer un cluster k8s bare-metal avec k3s"
 tags:
     - kubernetes
     - k8s
