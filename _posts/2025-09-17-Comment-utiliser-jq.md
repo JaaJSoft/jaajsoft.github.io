@@ -9,6 +9,7 @@ tags:
   - data
   - cli
   - shell
+  - bash
   - outils
   - tutoriel
 ---

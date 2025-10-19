@@ -11,6 +11,7 @@ tags:
   - data
   - outils
   - shell
+  - bash
   - tutoriel
 ---
 
