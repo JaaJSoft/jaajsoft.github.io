@@ -10,6 +10,7 @@ tags:
   - cli
   - data
   - outils
+  - shell
   - tutoriel
 ---
 

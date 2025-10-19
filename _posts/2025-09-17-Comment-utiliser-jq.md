@@ -6,6 +6,7 @@ tags:
   - linux
   - jq
   - json
+  - data
   - cli
   - shell
   - outils
