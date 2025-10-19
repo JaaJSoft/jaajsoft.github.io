@@ -485,8 +485,9 @@ kubectl get pods -o json | jq -r '.items[] | "\(.metadata.name)\t\(.status.phase
 
 ---
 
-## Pour aller plus loin sur linux
+## Pour aller plus loin
 
+- [Comment transformer un JSON en CSV avec jq]({% post_url 2025-10-19-Comment-transformer-un-JSON-en-CSV-avec-jq %})
 - [Linux : Comment changer le hostname en ligne de commande (Ubuntu/Debian)]({% post_url 2025-09-13-Comment-changer-le-hostname-en-ligne-de-commande-sur-Ubuntu-ou-Debian %})
 - [Linux : Programmer une tâche avec cron (exemples utiles)]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
 - [Installer et configurer Fail2ban sur un serveur Ubuntu/Debian]({% post_url 2025-09-21-Installer-et-configurer-Fail2ban-sur-Ubuntu-Debian %})
