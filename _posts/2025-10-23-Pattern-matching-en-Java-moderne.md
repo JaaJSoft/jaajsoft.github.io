@@ -68,7 +68,7 @@ static String render(Object o) {
 Points clés :
 - `case null` est possible et utile pour éliminer les NPE.
 - Les patterns sont testés dans l’ordre, la première correspondance gagne.
-- Les gardes `when` affinent un pattern par une condition booléenne.
+- Les `when` affinent un pattern par une condition booléenne.
 - Le compilateur vérifie l’exhaustivité (selon les types, notamment avec `sealed`).
 
 ---
@@ -93,7 +93,7 @@ static String quadrant(Object o) {
 ```
 
 - `Point(int x, int y)` lie `x`/`y` sans écrire d’accesseurs explicitement.
-- Les gardes permettent d’exprimer la logique métier localement.
+- Les when permettent d’exprimer la logique métier localement.
 
 ### Nesting (imbriquer des patterns)
 
@@ -162,7 +162,7 @@ static String f(Object o) {
 ## 7) Bonnes pratiques
 
 - Préférez les `switch` expression (`switch (...) { ... }`) pour des retours clairs et immutables.
-- Limitez la logique dans les gardes `when` : gardes simples, logique métier ailleurs.
+- Limitez la logique dans les `when` .
 - Combinez `sealed` + records + patterns pour coder des « sum types » lisibles.
 - Conservez l’exhaustivité : évitez `default` quand une hiérarchie scellée la rend vérifiable.
 - Gardez les `case` courts ; extraire en méthodes si nécessaire.
@@ -172,7 +172,7 @@ static String f(Object o) {
 ## 8) Pièges fréquents
 
 - Un `case` générique (`Object o`) placé trop tôt capture tout et rend les suivants inaccessibles.
-- Gardes avec effets de bord : évitez d’appeler des méthodes non idempotentes dans `when`.
+- When avec effets de bord : évitez d’appeler des méthodes non idempotentes dans `when`.
 - Ne confondez pas record patterns et déconstruction arbitraire : seuls les records (ou patterns définis) sont déstructurables de cette façon.
 - Attention aux `switch` non exhaustifs sur des hiérarchies non `sealed` : gardez un `default` sensé.
 
