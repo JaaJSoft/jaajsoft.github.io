@@ -5,11 +5,6 @@ author: Pierre Chopinet
 tags:
   - java
   - pattern-matching
-  - switch
-  - records
-  - sealed
-  - jdk17
-  - jdk21
   - tutoriel
 ---
 
