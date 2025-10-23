@@ -48,7 +48,7 @@ if (obj instanceof String s) {
 
 ## 2) Pattern matching pour switch (Java 21)
 
-Le `switch` accepte des patterns de type, avec **exhaustivité** et **gardes** (`when`).
+Le `switch` accepte des patterns de type et valeur (`when`).
 
 Exemple simple :
 
