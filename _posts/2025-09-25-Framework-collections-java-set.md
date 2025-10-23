@@ -289,6 +289,7 @@ Pour aller plus loin dans la série :
 
 ### Pour aller plus loin
 
+- [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
 - [Set - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Set.html)
 - [HashSet - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/HashSet.html)
 - [LinkedHashSet - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/LinkedHashSet.html)

@@ -235,6 +235,7 @@ Pour aller plus loin dans la série :
 
 ### Pour aller plus loin
 
+- [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
 - [Queue - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Queue.html)
 - [Deque - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Deque.html)
 - [ArrayDeque - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/ArrayDeque.html)
