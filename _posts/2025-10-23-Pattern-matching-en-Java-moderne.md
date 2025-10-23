@@ -51,7 +51,7 @@ if (obj instanceof String s) {
 
 ---
 
-## 2) Pattern matching pour switch (final Java 21)
+## 2) Pattern matching pour switch (Java 21)
 
 Le `switch` accepte des patterns de type, avec **exhaustivité** et **gardes** (`when`).
 
@@ -78,7 +78,7 @@ Points clés :
 
 ---
 
-## 3) Record patterns (final Java 21)
+## 3) Record patterns (Java 21)
 
 Les records permettent de déstructurer un objet par ses composants, directement dans le `case`.
 
