@@ -19,7 +19,7 @@ Le pattern matching a profondément simplifié l’écriture de code orienté do
 Objectifs de l’article :
 - Comprendre le pattern matching pour `instanceof` et `switch`
 - Découvrir les record patterns et leur combinaison avec `switch`
-- Utiliser les gardes (`when`) et écrire des `switch` exhaustifs
+- Utiliser les `when` et écrire des `switch` exhaustifs
 - Tirer parti des classes `sealed` pour des hiérarchies sûres
 - Connaître les limites, pièges et bonnes pratiques
 
@@ -27,7 +27,7 @@ Pré‑requis : Java 17+ conseillé (LTS). Les fonctionnalités présentées c
 
 ---
 
-## 1) Rappel : pattern matching pour `instanceof`
+## 1) Rappel : pattern matching pour instanceof
 
 Avant Java 16/17, on écrivait :
 
@@ -51,7 +51,7 @@ if (obj instanceof String s) {
 
 ---
 
-## 2) Pattern matching pour `switch` (final Java 21)
+## 2) Pattern matching pour switch (final Java 21)
 
 Le `switch` accepte des patterns de type, avec **exhaustivité** et **gardes** (`when`).
 
@@ -116,7 +116,7 @@ static int manhattan(Object o) {
 
 ---
 
-## 4) `sealed` + patterns : des hiérarchies fermées et exhaustives
+## 4) sealed + patterns : des hiérarchies fermées et exhaustives
 
 Les classes scellées permettent de contrôler les sous‑types et aident le compilateur à vérifier l’exhaustivité des `switch`.
 
@@ -139,7 +139,7 @@ Ici, l’absence de `default` est possible, car la hiérarchie est connue (grâc
 
 ---
 
-## 5) Dominance, ordre des `case` et variable shadowing
+## 5) Dominance, ordre des case et variable shadowing
 
 - Placez les `case` plus spécifiques avant les plus génériques, sinon les spécifiques deviennent inatteignables.
 
@@ -157,7 +157,7 @@ static String f(Object o) {
 
 ---
 
-## 6) Null et `switch`
+## 6) Null et switch
 
 - `case null` est supporté et recommandé si `o` peut être `null`.
 - Sans `case null` ni `default`, un `switch` sur une référence `null` lancerait un `NullPointerException`.
@@ -183,7 +183,7 @@ static String f(Object o) {
 
 ---
 
-## 9) Cheatsheet (copier‑coller)
+## 9) Cheatsheet
 
 ```java
 // instanceof binding
