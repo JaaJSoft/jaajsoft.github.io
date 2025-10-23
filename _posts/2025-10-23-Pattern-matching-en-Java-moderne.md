@@ -183,40 +183,6 @@ static String f(Object o) {
 
 ---
 
-## 9) Cheatsheet
-
-```java
-// instanceof binding
-if (x instanceof String s) use(s);
-
-// switch patterns de base
-String label = switch (x) {
-    case null -> "<null>";
-    case Integer i -> "int=" + i;
-    case String s when !s.isBlank() -> s;
-    default -> "other";
-};
-
-// record patterns imbriqués
-record P(int x, int y) {}
-record L(P a, P b) {}
-int d = switch (obj) {
-    case L(P(int x1, int y1), P(int x2, int y2)) -> Math.abs(x1 - x2) + Math.abs(y1 - y2);
-    default -> 0;
-};
-
-// sealed + exhaustivité
-sealed interface Expr permits Val, Add {}
-record Val(int v) implements Expr {}
-record Add(Expr l, Expr r) implements Expr {}
-int eval = switch (e) {
-    case Val(int v) -> v;
-    case Add(Expr l, Expr r) -> /* ... */ 0;
-};
-```
-
----
-
 ## FAQ
 
 - Peut‑on utiliser les patterns avec des types primitifs ?
