@@ -132,7 +132,7 @@ fonctionner, mais migrez idéalement vers psycopg 3.
 
 ---
 
-## 3) Dockerfile minimal et propre
+## 3) Dockerfile minimal
 
 On va partir d’une image officielle Python « slim » (souvent plus simple que
 alpine pour compiler certaines libs) et préparer un conteneur prêt pour Django.
