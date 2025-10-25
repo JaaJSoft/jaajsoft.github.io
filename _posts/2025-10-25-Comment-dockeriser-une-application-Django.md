@@ -7,9 +7,7 @@ tags:
   - django
   - docker
   - devops
-  - production
   - tutoriel
-  - gunicorn
 ---
 
 Dans ce tutoriel, nous allons dockeriser une application Django pas à pas,
