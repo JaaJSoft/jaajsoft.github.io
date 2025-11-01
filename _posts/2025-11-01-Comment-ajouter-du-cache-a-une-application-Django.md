@@ -313,7 +313,7 @@ def invalidate_article_cache(sender, instance, **kwargs):
 
 ---
 
-## 7) Par utilisateur, i18n, pagination : modèles pratiques
+## 7) Patterns courant de cache pour la gestion des utilisateurs, i18n et pagination
 
 ### a) Par utilisateur
 
