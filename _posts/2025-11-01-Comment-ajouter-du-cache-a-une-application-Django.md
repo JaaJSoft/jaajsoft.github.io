@@ -419,8 +419,6 @@ def expensive():
 
 - Mesurez : un profilage simple (ex : `django-silk`, `cProfile`) permet de vérifier les gains.
 
-Une fois vos gains confirmés, gardez en tête ces pièges et bonnes pratiques pour éviter les régressions.
-
 ---
 
 ## 10) Pièges et bonnes pratiques
@@ -432,8 +430,6 @@ Une fois vos gains confirmés, gardez en tête ces pièges et bonnes pratiques p
 - Pour les déploiements multi-process/containers, évitez d'utiliser
   `LocMemCache` car chaque process aura son propre cache isolé.
 - Avec Memcached: évitez de dépasser ~1 Mo par valeur; sérialisez des données légères.
-
-Pour vous aider au quotidien, voici une mini‑cheatsheet récapitulative des commandes et patterns clés.
 
 ---
 
@@ -461,7 +457,7 @@ Pour vous aider au quotidien, voici une mini‑cheatsheet récapitulative des co
   ```
 - Invalidation ciblée: `cache.delete("k")`, motif Redis `scan_iter("prefix:*")`.
 
-Avec ces repères synthétiques, vous pouvez appliquer rapidement le bon type de cache selon la situation. Concluons par une stratégie d’adoption progressive.
+Avec ces repères synthétiques, vous pouvez appliquer rapidement le bon type de cache selon la situation.
 
 ---
 
