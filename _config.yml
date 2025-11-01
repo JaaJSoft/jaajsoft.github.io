@@ -96,7 +96,7 @@ chart: true # false (default), true
 
 ## => Paginate
 ##############################
-paginate: 11
+paginate: 12
 paginate_path: /page:num # don't change this unless for special need
 
 
