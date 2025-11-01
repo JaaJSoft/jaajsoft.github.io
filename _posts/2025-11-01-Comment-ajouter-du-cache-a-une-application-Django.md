@@ -195,6 +195,7 @@ def admin_dashboard(request):
 
 Parfait pour une « sidebar », un bloc de navigation coûteux, ou un composant externe.
 
+{% raw %}
 ```django
 {# template.html #}
 {% load cache %}
@@ -212,6 +213,7 @@ Parfait pour une « sidebar », un bloc de navigation coûteux, ou un composant 
   </section>
 </main>
 ```
+{% endraw %}
 
 - La clé de cache inclut ici `user.pk` pour différencier par utilisateur.
 - Gardez les fragments assez gros pour amortir le coût, mais pas trop (évitez
@@ -434,9 +436,11 @@ def expensive():
   ```
 - Per‑site (middlewares): `UpdateCacheMiddleware` en premier, `FetchFromCacheMiddleware` en dernier.
 - Fragment:
+  {% raw %}
   ```django
   {% load cache %}{% cache 600 name arg %}...{% endcache %}
   ```
+  {% endraw %}
 - Bas niveau:
   ```python
   cache.get/set/get_or_set/delete/incr/decr/touch
