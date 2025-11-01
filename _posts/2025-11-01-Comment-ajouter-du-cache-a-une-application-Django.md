@@ -26,6 +26,8 @@ Prérequis :
 - Django 4.2+ (ou 5.x)
 - Notions de vues/templates
 
+Avant de configurer quoi que ce soit, commençons par choisir le backend de cache le plus adapté à votre contexte.
+
 ---
 
 ## 1) Choisir un backend de cache
@@ -118,6 +120,8 @@ CACHES = {
 }
 ```
 
+En partant du choix du backend, voyons l’approche la plus simple à mettre en place côté vues.
+
 ---
 
 ## 2) Cache per‑view (le plus simple à adopter)
@@ -189,6 +193,8 @@ def admin_dashboard(request):
 
 > Le per‑site convient aux contenus publics. Évitez pour des pages personnalisées par utilisateur (ou utilisez un CDN avec règles précises).
 
+Quand seule une portion d’une page est coûteuse, on peut cibler ce périmètre : passons au cache de fragments dans les templates.
+
 ---
 
 ## 4) Cache de fragments dans les templates
@@ -219,6 +225,8 @@ Parfait pour une « sidebar », un bloc de navigation coûteux, ou un composant 
 - Gardez les fragments assez gros pour amortir le coût, mais pas trop (évitez
   d'avoir un trop grand nombre de clés de cache différentes qui pourraient
   surcharger la mémoire).
+
+Pour des besoins plus fins, passons maintenant à l’API bas niveau qui permet de lire/écrire directement des clés.
 
 ---
 
@@ -262,6 +270,8 @@ except NotImplementedError:
 > Sérialisation : Django sérialise les données en utilisant Pickle par défaut.
 > Avec Redis, vous pouvez configurer un compresseur pour réduire la taille (voir
 `OPTIONS["COMPRESSOR"]`).
+
+Maintenant que vous savez manipuler le cache au plus près du code, voyons comment l’invalider proprement (TTL, suppression ciblée, versioning, signaux).
 
 ---
 
@@ -409,6 +419,8 @@ def expensive():
 
 - Mesurez : un profilage simple (ex : `django-silk`, `cProfile`) permet de vérifier les gains.
 
+Une fois vos gains confirmés, gardez en tête ces pièges et bonnes pratiques pour éviter les régressions.
+
 ---
 
 ## 10) Pièges et bonnes pratiques
@@ -420,6 +432,8 @@ def expensive():
 - Pour les déploiements multi-process/containers, évitez d'utiliser
   `LocMemCache` car chaque process aura son propre cache isolé.
 - Avec Memcached: évitez de dépasser ~1 Mo par valeur; sérialisez des données légères.
+
+Pour vous aider au quotidien, voici une mini‑cheatsheet récapitulative des commandes et patterns clés.
 
 ---
 
@@ -446,6 +460,8 @@ def expensive():
   cache.get/set/get_or_set/delete/incr/decr/touch
   ```
 - Invalidation ciblée: `cache.delete("k")`, motif Redis `scan_iter("prefix:*")`.
+
+Avec ces repères synthétiques, vous pouvez appliquer rapidement le bon type de cache selon la situation. Concluons par une stratégie d’adoption progressive.
 
 ---
 
