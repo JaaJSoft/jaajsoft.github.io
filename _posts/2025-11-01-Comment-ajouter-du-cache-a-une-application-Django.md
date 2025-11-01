@@ -457,8 +457,6 @@ def expensive():
   ```
 - Invalidation ciblée: `cache.delete("k")`, motif Redis `scan_iter("prefix:*")`.
 
-Avec ces repères synthétiques, vous pouvez appliquer rapidement le bon type de cache selon la situation.
-
 ---
 
 ## Conclusion
