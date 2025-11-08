@@ -177,5 +177,6 @@ Comme nous l'avons vu Spring offre un panel de possibilités assez large pour d�
 
 ## Voir aussi
 
+- [Ajouter du cache à une application Spring Boot]({% post_url 2025-11-08-Comment-ajouter-du-cache-a-une-application-Spring-Boot %})
 - [La doc de spring sur la configuration externe](https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-external-config-files)
 - [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
