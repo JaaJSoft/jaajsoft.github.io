@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Accélérer Django avec la compression HTTP GZip"
+title: "Accélérer Django avec la compression HTTP"
 date: 2025-11-22
 author: Pierre Chopinet
 tags:

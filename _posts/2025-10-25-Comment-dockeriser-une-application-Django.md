@@ -356,7 +356,8 @@ ainsi que du monitoring et de la journalisation centralisée.
 ## Voir aussi
 
 - [Comment ajouter du cache à une application Django]({% post_url 2025-11-01-Comment-ajouter-du-cache-a-une-application-Django %})
+- [Accélérer Django avec la compression GZip]({% post_url 2025-11-22-Accelerer-Django-avec-la-compression-GZip %})
 - [Comment dockeriser une application Flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %})
-- [Limiter le rate d’une API avec Redis (FastAPI)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
+- [Limiter le rate d'une API avec Redis (FastAPI)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
 - [Installer et configurer Fail2ban sur Ubuntu/Debian]({% post_url 2025-09-21-Installer-et-configurer-Fail2ban-sur-Ubuntu-Debian %})
 - [Faire des requêtes HTTP en Python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})

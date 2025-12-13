@@ -468,4 +468,5 @@ Le cache Django offre plusieurs leviers complémentaires : commencez par le per
 ## Pour aller plus loin
 
 - [Comment dockeriser une application Django]({% post_url 2025-10-25-Comment-dockeriser-une-application-Django %})
+- [Accélérer Django avec la compression GZip]({% post_url 2025-11-22-Accelerer-Django-avec-la-compression-GZip %})
 - [Documentation officielle Django (cache)](https://docs.djangoproject.com/en/stable/topics/cache/)
