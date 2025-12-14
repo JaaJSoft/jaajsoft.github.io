@@ -228,7 +228,7 @@ Voilà, vous êtes maintenant capable de sauvegarder et charger vos _dataframes_
 ## Voir aussi
 
 - [La documentation de Pandas](https://pandas.pydata.org/docs/)
-- [Automatiser le nettoyage de données avec pandas]({% post_url 2025-11-23-automatiser-le-nettoyage-de-donnees-avec-pandas %})
+- [Automatiser le nettoyage de données avec pandas]({% post_url 2025-12-14-Automatiser-le-nettoyage-de-donnees-avec-pandas %})
 - [Comment faire des group by en Python]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
 - [Comment merger deux DataFrame pandas]({% post_url 2025-08-31-Comment-merger-deux-dataframe-pandas %})
 - [Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})

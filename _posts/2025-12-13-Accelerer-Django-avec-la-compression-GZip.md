@@ -1,7 +1,7 @@
 ---
 layout: article
 title: "Accélérer Django avec la compression HTTP"
-date: 2025-11-22
+date: 2025-12-13
 author: Pierre Chopinet
 tags:
   - python
