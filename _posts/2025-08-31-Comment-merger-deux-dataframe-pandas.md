@@ -487,6 +487,6 @@ print("\nJOIN INDEX:\n", join_idx, sep="")
 - [Comment sauvegarder un tableau numpy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
 - [Comment sauvegarder un dataframe pandas]({% post_url 2023-12-28-Comment-sauvegarder-un-dataframe-pandas %})
 - [Comment faire des group by en Python]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
-- [Automatiser le nettoyage de données avec pandas]({% post_url 2025-11-23-Automatiser-le-nettoyage-de-donnees-avec-pandas %})
+- [Automatiser le nettoyage de données avec pandas]({% post_url 2025-11-23-automatiser-le-nettoyage-de-donnees-avec-pandas %})
 
 
