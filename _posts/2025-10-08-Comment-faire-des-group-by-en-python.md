@@ -201,6 +201,7 @@ Choisissez la méthode en fonction de votre volume de données, du besoin de con
 
 ## Voir aussi
 
+- [Automatiser le nettoyage de données avec pandas]({% post_url 2025-11-23-Automatiser-le-nettoyage-de-donnees-avec-pandas %})
 - [Comment merger deux DataFrame pandas]({% post_url 2025-08-31-Comment-merger-deux-dataframe-pandas %})
 - [Python : Comment sauvegarder et charger un dataframe Pandas avec Excel (ou du csv)]({% post_url 2023-12-28-Comment-sauvegarder-un-dataframe-pandas %})
 - [Python : Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
