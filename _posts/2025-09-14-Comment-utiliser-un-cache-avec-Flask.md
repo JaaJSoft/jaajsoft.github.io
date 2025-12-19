@@ -11,7 +11,6 @@ tags:
   - api
   - rest
   - performance
-  - tutoriel
 ---
 
 Dans ce tutoriel, on va voir comment ajouter un cache à une application Flask

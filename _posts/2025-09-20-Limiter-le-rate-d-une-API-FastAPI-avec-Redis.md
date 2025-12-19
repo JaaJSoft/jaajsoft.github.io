@@ -12,7 +12,6 @@ tags:
   - rate-limit
   - sécurité
   - performance
-  - tutoriel
 ---
 
 Dans ce tutoriel, on met en place un rate limiting pour une API FastAPI à l’aide

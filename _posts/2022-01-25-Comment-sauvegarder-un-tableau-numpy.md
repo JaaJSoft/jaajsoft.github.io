@@ -7,7 +7,6 @@ tags:
 - numpy
 - array
 - persistence
-- tutoriel
 
 ---
 

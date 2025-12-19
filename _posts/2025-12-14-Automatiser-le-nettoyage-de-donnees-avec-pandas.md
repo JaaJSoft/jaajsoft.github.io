@@ -7,7 +7,6 @@ tags:
   - pandas
   - data
   - nettoyage
-  - tutoriel
 ---
 
 Le nettoyage de données représente souvent 60 à 80 % du travail en data science. Des données mal formatées, des valeurs manquantes, des doublons, des types incohérents : autant de problèmes qui peuvent saboter vos analyses. Heureusement, pandas offre un arsenal complet pour automatiser ces tâches fastidieuses.

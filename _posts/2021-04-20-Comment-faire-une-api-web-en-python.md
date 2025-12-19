@@ -5,7 +5,6 @@ tags:
 - python
 - http
 - api
-- tutoriel
 - flask
 - rest
 author: Pierre Chopinet

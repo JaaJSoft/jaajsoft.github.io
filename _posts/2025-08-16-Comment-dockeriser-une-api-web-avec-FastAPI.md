@@ -11,7 +11,6 @@ tags:
 - docker
 - multistage
 - alpine
-- tutoriel
 - devops
 ---
 

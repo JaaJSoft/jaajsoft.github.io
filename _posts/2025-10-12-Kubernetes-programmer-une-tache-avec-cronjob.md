@@ -8,7 +8,6 @@ tags:
   - k8s
   - jobs
   - devops
-  - tutoriel
 ---
 
 Besoin d’exécuter une commande ou un script de façon récurrente dans votre cluster Kubernetes, comme vous le feriez avec cron sur Linux ? Les CronJobs K8s sont faits pour ça.

@@ -8,7 +8,6 @@ tags:
   - http
   - api
   - rest
-  - tutoriel
   - architecture
   - routers
 ---

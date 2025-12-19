@@ -10,7 +10,6 @@ tags:
     - bare-metal
     - sysadmin
     - raspberry-pi
-    - tutoriel
 author: Pierre Chopinet
 ---
 

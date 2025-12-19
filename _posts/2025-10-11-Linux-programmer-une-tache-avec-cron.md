@@ -5,7 +5,6 @@ author: Pierre Chopinet
 tags:
   - linux
   - cron
-  - tutoriel
   - ubuntu
   - debian
   - serveur

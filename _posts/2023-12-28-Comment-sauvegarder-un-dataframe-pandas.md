@@ -8,7 +8,6 @@ tags:
 - pandas
 - dataframe
 - persistence
-- tutoriel
 - excel
 - csv
 

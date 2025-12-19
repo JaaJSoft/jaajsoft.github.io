@@ -11,7 +11,6 @@ tags:
   - shell
   - bash
   - outils
-  - tutoriel
 ---
 
 `jq` est un couteau suisse pour lire, filtrer et transformer du JSON en ligne de commande. Il s’intègre parfaitement avec `curl`, `kubectl`, `docker`, des logs JSON, etc.

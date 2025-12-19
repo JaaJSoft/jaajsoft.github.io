@@ -11,7 +11,6 @@ tags:
 - redis
 - api
 - rest
-- tutoriel
 
 ---
 

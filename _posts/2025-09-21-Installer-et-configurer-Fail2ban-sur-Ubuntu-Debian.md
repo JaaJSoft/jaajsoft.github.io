@@ -11,7 +11,6 @@ tags:
   - debian
   - ubuntu
   - serveur
-  - tutoriel
 ---
 
 Fail2ban est un outil indispensable pour protéger un serveur exposé sur Internet contre les tentatives de brute‑force (SSH, HTTP, etc.).

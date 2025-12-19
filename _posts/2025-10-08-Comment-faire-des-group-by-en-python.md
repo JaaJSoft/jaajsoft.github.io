@@ -7,7 +7,6 @@ tags:
   - data
   - itertools
   - pandas
-  - tutoriel
 ---
 
 Regrouper des données par clé (faire un « group by ») est une opération courante : compter des occurrences, agréger des montants par catégorie, calculer des moyennes par groupe, etc. En Python, il existe plusieurs façons de procéder selon la taille des données, le besoin d’agrégation et vos dépendances.

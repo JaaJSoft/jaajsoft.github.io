@@ -9,7 +9,6 @@ tags:
   - cli
   - sysadmin
   - réseau
-  - tutoriel
 ---
 
 Comment changer rapidement le nom d’hôte (hostname) sous Ubuntu ou Debian, sans casse ni redémarrage inutile ? Ce guide vous montrera la méthode recommandée avec hostnamectl, les alternatives sans systemd, ainsi que les bonnes pratiques (mise à jour de /etc/hosts, FQDN, services).

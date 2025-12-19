@@ -5,7 +5,6 @@ tags:
 - python
 - http
 - api
-- tutoriel
 - fastapi
 - rest
 author: Pierre Chopinet

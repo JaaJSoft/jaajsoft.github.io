@@ -31,14 +31,14 @@ Prérequis :
 
 ## Pourquoi activer les mises à jour automatiques ?
 
-### Avantages
+**Avantages**
 
 - **Sécurité renforcée** : Les failles de sécurité sont corrigées rapidement, réduisant la fenêtre d'exposition aux attaques.
 - **Gain de temps** : Plus besoin de surveiller et d'appliquer manuellement les mises à jour de sécurité.
 - **Conformité** : Facilite le respect des politiques de sécurité et de conformité (ISO 27001, PCI-DSS, etc.).
 - **Stabilité** : Les mises à jour de sécurité sont généralement testées et ne cassent pas le système.
 
-### Précautions
+**Précautions**
 
 - **Mises à jour de paquets critiques** : Certaines mises à jour peuvent nécessiter un redémarrage (kernel, libc, systemd).
 - **Applications personnalisées** : Les mises à jour peuvent potentiellement affecter des configurations spécifiques.
@@ -66,7 +66,7 @@ Si le paquet n'est pas installé, vous verrez un message vide ou une erreur.
 
 ## 2) Installation de unattended-upgrades
 
-### Sur Ubuntu
+**Sur Ubuntu**
 
 Sur Ubuntu, `unattended-upgrades` est généralement préinstallé. Si ce n'est pas le cas :
 
@@ -75,7 +75,7 @@ sudo apt update
 sudo apt install unattended-upgrades
 ```
 
-### Sur Debian
+**Sur Debian**
 
 ```bash
 sudo apt update
@@ -88,7 +88,7 @@ sudo apt install unattended-upgrades apt-listchanges
 
 ## 3) Configuration de base (mises à jour de sécurité uniquement)
 
-### Méthode rapide (recommandée pour débuter)
+**Méthode rapide (recommandée pour débuter)**
 
 Utilisez l'outil interactif de configuration :
 
@@ -105,7 +105,7 @@ APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 ```
 
-### Vérification
+**Vérification**
 
 ```bash
 cat /etc/apt/apt.conf.d/20auto-upgrades
@@ -127,11 +127,11 @@ Ouvrez-le pour personnaliser les options :
 sudo nano /etc/apt/apt.conf.d/50unattended-upgrades
 ```
 
-### a) Choisir les sources de mise à jour
+**a) Choisir les sources de mise à jour**
 
 Par défaut, seules les mises à jour de sécurité sont activées. Voici les lignes importantes (décommentez selon vos besoins) :
 
-#### Ubuntu
+***Ubuntu***
 
 ```conf
 Unattended-Upgrade::Allowed-Origins {
@@ -145,7 +145,7 @@ Unattended-Upgrade::Allowed-Origins {
 };
 ```
 
-#### Debian
+***Debian***
 
 ```conf
 Unattended-Upgrade::Origins-Pattern {
@@ -158,7 +158,7 @@ Unattended-Upgrade::Origins-Pattern {
 
 **Recommandation** : Laissez uniquement les lignes avec `-security` activées (sans `//` devant).
 
-### b) Mettre automatiquement à jour tous les paquets (optionnel)
+**b) Mettre automatiquement à jour tous les paquets (optionnel)**
 
 Si vous souhaitez aussi appliquer les mises à jour non-sécurité (déconseillé en production), décommentez la ligne :
 
@@ -172,7 +172,7 @@ Enlevez le `//` :
 "${distro_id}:${distro_codename}-updates";
 ```
 
-### c) Exclure certains paquets (blacklist)
+**c) Exclure certains paquets (blacklist)**
 
 Si vous voulez éviter la mise à jour automatique de certains paquets (ex: kernel, bases de données) :
 
@@ -187,7 +187,7 @@ Unattended-Upgrade::Package-Blacklist {
 
 **Note** : Les wildcards (`*`) sont supportés.
 
-### d) Redémarrage automatique (avec précaution)
+**d) Redémarrage automatique (avec précaution)**
 
 Certaines mises à jour (kernel, libc, systemd) nécessitent un redémarrage. Par défaut, le système ne redémarre pas automatiquement.
 
@@ -206,7 +206,7 @@ Unattended-Upgrade::Automatic-Reboot-Time "03:00";
 
 **Recommandation** : Activez cela uniquement si vous gérez des serveurs non-critiques ou si vous avez une redondance. Pour les serveurs en production, préférez un redémarrage planifié manuel.
 
-### e) Supprimer les paquets obsolètes et dépendances inutilisées
+**e) Supprimer les paquets obsolètes et dépendances inutilisées**
 
 ```conf
 Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
@@ -216,7 +216,7 @@ Unattended-Upgrade::Remove-New-Unused-Dependencies "true";
 
 Cela équivaut à exécuter `apt autoremove` après chaque mise à jour.
 
-### f) Notifications par email
+**f) Notifications par email**
 
 Pour recevoir un email après chaque mise à jour :
 
@@ -271,7 +271,7 @@ Options disponibles :
 
 ## 6) Activer et démarrer le service
 
-### Méthode 1 : Via systemd (Ubuntu 18.04+, Debian 10+)
+**Méthode 1 : Via systemd (Ubuntu 18.04+, Debian 10+)**
 
 ```bash
 # Activer le service au démarrage
@@ -292,7 +292,7 @@ Sortie attendue :
    Active: active (running)
 ```
 
-### Méthode 2 : Via cron (anciennes versions)
+**Méthode 2 : Via cron (anciennes versions)**
 
 Les anciennes versions utilisent `apt-daily` et `apt-daily-upgrade` via cron :
 
@@ -309,7 +309,7 @@ Pas besoin de configuration supplémentaire si les fichiers existent.
 
 Vous pouvez simuler une exécution pour vérifier la configuration :
 
-### Test à blanc (dry-run)
+**Test à blanc (dry-run)**
 
 ```bash
 sudo unattended-upgrade --dry-run --debug
@@ -317,7 +317,7 @@ sudo unattended-upgrade --dry-run --debug
 
 Cela affiche les paquets qui seraient mis à jour sans les installer.
 
-### Exécution réelle
+**Exécution réelle**
 
 ```bash
 sudo unattended-upgrade --debug
@@ -340,7 +340,7 @@ Packages that will be upgraded: libssl3 openssl
 
 Les logs sont disponibles dans `/var/log/unattended-upgrades/`.
 
-### Voir les dernières mises à jour appliquées
+**Voir les dernières mises à jour appliquées**
 
 ```bash
 sudo cat /var/log/unattended-upgrades/unattended-upgrades.log
@@ -354,13 +354,13 @@ Exemple de sortie :
 2025-12-19 10:16:12,789 INFO All upgrades installed
 ```
 
-### Voir les erreurs
+**Voir les erreurs**
 
 ```bash
 sudo cat /var/log/unattended-upgrades/unattended-upgrades-dpkg.log
 ```
 
-### Voir l'historique APT complet
+**Voir l'historique APT complet**
 
 ```bash
 sudo cat /var/log/apt/history.log
@@ -372,7 +372,7 @@ sudo cat /var/log/apt/history.log
 
 Après certaines mises à jour (kernel, libc, systemd), un redémarrage est nécessaire.
 
-### Vérifier si un redémarrage est requis
+**Vérifier si un redémarrage est requis**
 
 ```bash
 cat /var/run/reboot-required
@@ -384,7 +384,7 @@ Si le fichier existe, un redémarrage est nécessaire. Son contenu affiche :
 *** System restart required ***
 ```
 
-### Voir quels paquets nécessitent un redémarrage
+**Voir quels paquets nécessitent un redémarrage**
 
 ```bash
 cat /var/run/reboot-required.pkgs
@@ -397,7 +397,7 @@ linux-image-5.15.0-58-generic
 libc6
 ```
 
-### Redémarrer manuellement
+**Redémarrer manuellement**
 
 ```bash
 sudo reboot
@@ -409,7 +409,7 @@ sudo reboot
 
 Si vous souhaitez désactiver temporairement ou définitivement les mises à jour automatiques :
 
-### Méthode 1 : Via dpkg-reconfigure
+**Méthode 1 : Via dpkg-reconfigure**
 
 ```bash
 sudo dpkg-reconfigure -plow unattended-upgrades
@@ -417,7 +417,7 @@ sudo dpkg-reconfigure -plow unattended-upgrades
 
 Sélectionnez **No** (Non).
 
-### Méthode 2 : Modifier le fichier de configuration
+**Méthode 2 : Modifier le fichier de configuration**
 
 ```bash
 sudo nano /etc/apt/apt.conf.d/20auto-upgrades
@@ -430,7 +430,7 @@ APT::Periodic::Update-Package-Lists "0";
 APT::Periodic::Unattended-Upgrade "0";
 ```
 
-### Méthode 3 : Désactiver le service
+**Méthode 3 : Désactiver le service**
 
 ```bash
 sudo systemctl stop unattended-upgrades
@@ -443,7 +443,7 @@ sudo systemctl disable unattended-upgrades
 
 Voici une configuration équilibrée pour un serveur de production :
 
-### `/etc/apt/apt.conf.d/20auto-upgrades`
+**`/etc/apt/apt.conf.d/20auto-upgrades`**
 
 ```conf
 APT::Periodic::Update-Package-Lists "1";
@@ -452,7 +452,7 @@ APT::Periodic::Unattended-Upgrade "1";
 APT::Periodic::AutocleanInterval "7";
 ```
 
-### `/etc/apt/apt.conf.d/50unattended-upgrades`
+**`/etc/apt/apt.conf.d/50unattended-upgrades`**
 
 ```conf
 Unattended-Upgrade::Allowed-Origins {
@@ -486,14 +486,14 @@ Unattended-Upgrade::SyslogFacility "daemon";
 
 ## Cheatsheet
 
-### Installation
+**Installation**
 
 ```bash
 sudo apt install unattended-upgrades
 sudo dpkg-reconfigure -plow unattended-upgrades  # Config interactive
 ```
 
-### Vérification
+**Vérification**
 
 ```bash
 sudo systemctl status unattended-upgrades
@@ -501,21 +501,21 @@ sudo unattended-upgrade --dry-run --debug
 cat /var/log/unattended-upgrades/unattended-upgrades.log
 ```
 
-### Configuration
+**Configuration**
 
 ```bash
 sudo nano /etc/apt/apt.conf.d/50unattended-upgrades  # Config avancée
 sudo nano /etc/apt/apt.conf.d/20auto-upgrades        # Fréquence
 ```
 
-### Redémarrage nécessaire ?
+**Redémarrage nécessaire ?**
 
 ```bash
 cat /var/run/reboot-required
 cat /var/run/reboot-required.pkgs
 ```
 
-### Désactiver
+**Désactiver**
 
 ```bash
 sudo systemctl stop unattended-upgrades

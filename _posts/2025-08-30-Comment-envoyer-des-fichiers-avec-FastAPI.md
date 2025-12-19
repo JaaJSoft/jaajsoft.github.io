@@ -8,7 +8,6 @@ tags:
   - api
   - rest
   - http
-  - tutoriel
   - upload
   - fichiers
 ---

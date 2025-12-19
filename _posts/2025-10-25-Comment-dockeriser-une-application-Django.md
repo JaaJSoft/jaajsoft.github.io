@@ -7,7 +7,6 @@ tags:
   - django
   - docker
   - devops
-  - tutoriel
 ---
 
 Dans ce tutoriel, nous allons dockeriser une application Django pas à pas,

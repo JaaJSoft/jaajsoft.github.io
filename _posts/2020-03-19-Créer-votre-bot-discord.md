@@ -5,7 +5,6 @@ tags:
     - java
     - discord
     - bot
-    - tutoriel
 author: Rémi Lecouillard
 ---
 

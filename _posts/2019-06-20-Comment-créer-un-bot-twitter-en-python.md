@@ -6,7 +6,6 @@ tags:
     - twitter
     - tweepy
     - bot
-    - tutoriel
 author: Pierre Chopinet
 ---
 

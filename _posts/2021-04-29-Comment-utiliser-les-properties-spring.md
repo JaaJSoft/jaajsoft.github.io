@@ -5,7 +5,6 @@ tags:
     - java
     - spring
     - properties
-    - tutoriel
 author: Rémi Lecouillard
 ---
 

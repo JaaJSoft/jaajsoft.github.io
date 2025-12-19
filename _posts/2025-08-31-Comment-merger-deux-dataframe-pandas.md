@@ -7,7 +7,6 @@ tags:
   - pandas
   - data
   - merge
-  - tutoriel
 ---
 
 Dans ce tutoriel, nous verrons pas à pas comment fusionner (merger) deux DataFrame avec pandas : syntaxe de base, types de jointures (inner, left, right, outer, cross), clés multiples, jointures sur l’index, gestion des doublons et colonnes homonymes, options utiles (`suffixes`, `validate`, `indicator`) et quelques conseils de performance.

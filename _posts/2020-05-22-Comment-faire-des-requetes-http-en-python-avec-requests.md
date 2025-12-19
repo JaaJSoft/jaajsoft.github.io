@@ -7,7 +7,6 @@ tags:
     - api
     - rest
     - requests
-    - tutoriel
 author: Pierre Chopinet
 ---
 

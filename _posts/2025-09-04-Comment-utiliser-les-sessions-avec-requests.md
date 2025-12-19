@@ -10,7 +10,6 @@ tags:
   - requests
   - performance
   - authentification
-  - tutoriel
 ---
 
 Les sessions (`requests.Session`) apportent un vrai gain de performance et de simplicité quand vous faites plusieurs requêtes vers une même API : elles réutilisent les connexions (keep‑alive), partagent automatiquement les cookies, en‑têtes et authentifications, et permettent de configurer des stratégies de retries.

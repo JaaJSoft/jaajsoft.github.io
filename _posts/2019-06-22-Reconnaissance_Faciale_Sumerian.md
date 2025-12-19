@@ -6,7 +6,6 @@ tags:
     - sumerian
     - reconnaissance
     - javascript
-    - tutoriel
 author: Julien Chevron
 ---
 

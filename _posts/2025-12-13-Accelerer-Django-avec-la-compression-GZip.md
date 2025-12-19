@@ -9,7 +9,6 @@ tags:
   - http
   - compression
   - gzip
-  - tutoriel
 ---
 
 La compression HTTP permet de réduire drastiquement la taille des réponses envoyées par votre serveur (HTML, JSON, CSS, JavaScript). Une page de 500 Ko peut facilement passer à 50 Ko après compression GZip, ce qui accélère le chargement, réduit la bande passante et améliore l'expérience utilisateur, surtout sur mobile.

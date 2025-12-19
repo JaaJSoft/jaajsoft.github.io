@@ -9,7 +9,6 @@ tags:
   - performance
   - redis
   - memcached
-  - tutoriel
 ---
 
 Accélérer une app Django ne passe pas uniquement par le code: un bon cache peut diviser la charge serveur par 10 et réduire drastiquement la latence. Dans ce guide, on passe en revue les niveaux de cache offerts par Django, avec des exemples concrets pour chaque usage.

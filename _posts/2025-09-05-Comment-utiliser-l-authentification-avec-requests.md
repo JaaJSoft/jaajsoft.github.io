@@ -11,7 +11,6 @@ tags:
   - authentification
   - sécurité
   - oauth
-  - tutoriel
 ---
 
 Dans cet article, on passe en revue les principaux modes d’authentification supportés par la bibliothèque Python requests, avec des exemples concrets et des bonnes pratiques (sessions, retries, proxies, sécurité).

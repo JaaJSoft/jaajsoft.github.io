@@ -12,7 +12,6 @@ tags:
   - outils
   - shell
   - bash
-  - tutoriel
 ---
 
 Convertir rapidement des données JSON en CSV est un besoin récurrent pour analyser dans Excel/Google Sheets, charger dans un datawarehouse ou partager un rapport simple.

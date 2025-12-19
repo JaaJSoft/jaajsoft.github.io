@@ -5,7 +5,6 @@ author: Pierre Chopinet
 tags:
   - java
   - pattern-matching
-  - tutoriel
 ---
 
 Le pattern matching a profondément simplifié l’écriture de code orienté données en Java. Finalisé dans Java 21 pour `switch` et les « record patterns », il s’impose désormais comme un outil idiomatique dans le Java moderne.
