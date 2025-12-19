@@ -222,9 +222,9 @@ Pour des besoins complexes, envisagez un service + timer systemd. Pour des tâch
 
 ## Voir aussi
 
-- [Kubernetes : Programmer des tâches avec CronJob]({% post_url 2025-10-12-Kubernetes-programmer-une-tache-avec-cronjob %})
+- [Activer les mises à jour de sécurité automatiques sur Ubuntu/Debian]({% post_url 2025-12-19-Activer-les-mises-a-jour-de-securite-automatiques-sur-Ubuntu-Debian %})
 - [Installer et configurer Fail2ban sur un serveur Ubuntu/Debian]({% post_url 2025-09-21-Installer-et-configurer-Fail2ban-sur-Ubuntu-Debian %})
-- [Linux : Comment changer le hostname en ligne de commande (Ubuntu/Debian)]({% post_url 2025-09-13-Comment-changer-le-hostname-en-ligne-de-commande-sur-Ubuntu-ou-Debian %})
+- [Kubernetes : Programmer des tâches avec CronJob]({% post_url 2025-10-12-Kubernetes-programmer-une-tache-avec-cronjob %})
 
 ## Références
 

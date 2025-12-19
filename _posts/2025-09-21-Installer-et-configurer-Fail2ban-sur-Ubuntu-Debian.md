@@ -287,12 +287,9 @@ action = %(action_mwl)s
 ## Pour aller plus loin
 
 - [Documentation officielle Fail2ban](https://www.fail2ban.org/)
-- [Debian Wiki – Fail2ban](https://wiki.debian.org/fail2ban)
-- [Ubuntu Community Help – Fail2ban](https://help.ubuntu.com/community/Fail2ban)
-- [Linux : Comment changer le hostname en ligne de commande (Ubuntu/Debian)]({% post_url 2025-09-13-Comment-changer-le-hostname-en-ligne-de-commande-sur-Ubuntu-ou-Debian %})
-- [Linux : Programmer une tâche avec cron (exemples utiles)]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
-- [jq : Comment utiliser jq en ligne de commande]({% post_url 2025-09-17-Comment-utiliser-jq %})
-- [K8s : Comment déployer un cluster kubernetes bare-metal]({% post_url 2021-01-27-Comment-déployer-Kubernetes %})
+- [Activer les mises à jour de sécurité automatiques sur Ubuntu/Debian]({% post_url 2025-12-19-Activer-les-mises-a-jour-de-securite-automatiques-sur-Ubuntu-Debian %})
+- [Linux : Programmer une tâche avec cron (exemples utiles)]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
+- [Linux : Comment changer le hostname en ligne de commande (Ubuntu/Debian)]({% post_url 2025-09-13-Comment-changer-le-hostname-en-ligne-de-commande-sur-Ubuntu-ou-Debian %})
 
 
 

@@ -1,7 +1,6 @@
 ---
 layout: article
 title: "Automatiser le nettoyage de données avec pandas"
-date: 2025-12-14
 author: Pierre Chopinet
 tags:
   - python
