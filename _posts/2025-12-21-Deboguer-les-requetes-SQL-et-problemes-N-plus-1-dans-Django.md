@@ -206,7 +206,7 @@ Django offre deux outils puissants pour charger les relations en une seule fois.
 
 Utilisez `select_related()` pour les relations **un-à-un** ou **plusieurs-à-un** (ForeignKey, OneToOneField). Django effectue une jointure SQL et récupère tout en une seule requête.
 
-✅ Version optimisée :
+Version optimisée :
 
 ```python
 # views.py
@@ -292,7 +292,7 @@ articles = Article.objects.select_related('author').prefetch_related('tags').all
 
 ---
 
-## 4) Cas avancés : `Prefetch()` et filtrage
+## 4) Cas avancés : Prefetch() et filtrage
 
 Parfois, vous voulez précharger une relation mais avec un filtrage ou un tri personnalisé.
 
