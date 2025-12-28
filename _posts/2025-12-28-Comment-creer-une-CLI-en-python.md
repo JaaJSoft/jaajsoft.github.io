@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Python : Comment créer une CLI (interface en ligne de commande)"
+title: "Python : Comment créer une CLI"
 author: Pierre Chopinet
 tags:
   - python
