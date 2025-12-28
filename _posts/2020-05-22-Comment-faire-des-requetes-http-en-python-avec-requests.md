@@ -331,9 +331,9 @@ with requests.get(url, stream=True, timeout=10) as r:
 ## Voir aussi
 
 - Documentation officielle requests: [https://requests.readthedocs.io](https://requests.readthedocs.io/)
+- [Python : Comment créer une CLI (interface en ligne de commande)]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
 - [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
 - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
-- [Python : Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
 - [Python : Comment utiliser les différents modes d'authentification avec requests]({% post_url 2025-09-05-Comment-utiliser-l-authentification-avec-requests %})
 - [Python : Comment utiliser les sessions avec requests pour optimiser vos appels HTTP]({% post_url 2025-09-04-Comment-utiliser-les-sessions-avec-requests %})
 
