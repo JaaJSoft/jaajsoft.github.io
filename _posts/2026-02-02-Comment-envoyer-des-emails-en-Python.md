@@ -1,12 +1,11 @@
 ---
 layout: article
-title: "Comment envoyer des emails en Python avec smtplib et email"
+title: "Python : Comment envoyer des emails"
 author: Pierre Chopinet
 tags:
   - python
   - email
   - smtp
-  - gmail
 ---
 
 Envoyer des emails en Python est simple grâce aux modules natifs `smtplib` et `email`. Que ce soit pour des notifications automatiques, des rapports ou des alertes, Python offre une API complète pour gérer l'envoi d'emails (texte, HTML, pièces jointes).
