@@ -182,6 +182,7 @@ analytics:
 markdown    : kramdown
 highlighter : rouge
 permalink   : date
+future      : false  # Ne pas publier les articles avec une date future
 
 exclude:
   - CHANGELOG.md
