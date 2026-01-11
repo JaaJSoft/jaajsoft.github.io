@@ -25,6 +25,8 @@ Pré-requis : Java 17+ (LTS) où les sealed classes sont finalisées.
 
 ## 1) Problème : hiérarchies ouvertes incontrôlables
 
+Avant les sealed classes, Java ne permettait pas de contrôler qui pouvait étendre une classe ou interface. Cette limitation posait plusieurs problèmes de maintenabilité et de sûreté du code.
+
 ### 1.1) Le problème avec les hiérarchies classiques
 
 En Java traditionnel, une classe ou interface peut être étendue par n'importe quelle classe :
@@ -48,6 +50,8 @@ public class Hexagon implements Shape {
 
 ### 1.2) Solutions traditionnelles limitées
 
+Avant Java 17, les développeurs tentaient de contourner ce problème avec des solutions imparfaites :
+
 **Option 1 : final (trop restrictif)**
 ```java
 public final class Circle {
@@ -65,7 +69,11 @@ interface Shape { } // package-private
 
 ## 2) Sealed classes : contrôle explicite des sous-types
 
+Les sealed classes offrent un juste milieu : elles permettent l'héritage, mais uniquement pour un ensemble défini et contrôlé de sous-types.
+
 ### 2.1) Syntaxe de base
+
+Voici comment déclarer une hiérarchie scellée complète :
 
 ```java
 public sealed interface Shape permits Circle, Rectangle, Triangle {
@@ -123,6 +131,8 @@ public final class Triangle implements Shape {
 
 ### 2.2) Les trois modificateurs pour les sous-types
 
+Chaque sous-type d'une classe scellée doit explicitement déclarer son comportement vis-à-vis de l'héritage :
+
 ```java
 public sealed interface Vehicle permits Car, Bike, Boat {}
 
@@ -143,7 +153,9 @@ public class Sailboat extends Boat {} // OK, hiérarchie ouverte
 
 ## 3) Sealed classes et records : la combinaison parfaite
 
-Les records sont implicitement `final`, ce qui les rend parfaits pour les sealed hierarchies :
+Les records, introduits en Java 16, s'intègrent naturellement avec les sealed classes. Étant implicitement `final`, ils constituent des candidats idéaux pour les sous-types d'une hiérarchie scellée :
+
+
 
 ```java
 public sealed interface Result<T> permits Success, Error {}
@@ -168,7 +180,11 @@ public static <T> void handleResult(Result<T> result) {
 
 ## 4) Pattern matching exhaustif avec sealed classes
 
+L'un des avantages majeurs des sealed classes est la vérification d'exhaustivité par le compilateur. Combinées au pattern matching de Java 21+, elles offrent une sûreté de type remarquable.
+
 ### 4.1) Switch exhaustif sans default
+
+Le compilateur peut garantir que tous les cas sont couverts, éliminant le besoin d'un `default` :
 
 ```java
 public sealed interface Payment permits CreditCard, Cash, BankTransfer {}
@@ -193,6 +209,8 @@ public static void processPayment(Payment payment) {
 
 ### 4.2) Déconstruction avec record patterns (Java 21+)
 
+Avec Java 21, on peut déconstruire directement les records dans le `switch`, rendant le code encore plus expressif :
+
 ```java
 public sealed interface Shape permits Circle, Rectangle, Triangle {}
 public record Circle(double radius) implements Shape {}
@@ -212,7 +230,11 @@ public static double calculateArea(Shape shape) {
 
 ## 5) Modéliser des types algébriques (sum types)
 
+Les sealed classes permettent de modéliser élégamment des types algébriques, un concept bien connu en programmation fonctionnelle. Voici les patterns les plus courants.
+
 ### 5.1) Option/Maybe type
+
+Représente une valeur qui peut être présente ou absente, alternative type-safe à `null` :
 
 ```java
 public sealed interface Option<T> permits Some, None {}
@@ -242,6 +264,8 @@ String result = getOrDefault(name, "Unknown"); // "Alice"
 
 ### 5.2) Either type (gauche/droite)
 
+Représente un choix entre deux valeurs possibles, souvent utilisé pour gérer les erreurs :
+
 ```java
 public sealed interface Either<L, R> permits Left, Right {}
 public record Left<L, R>(L value) implements Either<L, R> {}
@@ -263,6 +287,8 @@ switch (result) {
 ```
 
 ### 5.3) AST (Abstract Syntax Tree)
+
+Les sealed classes excellent pour représenter des structures hiérarchiques comme les arbres syntaxiques abstraits :
 
 ```java
 public sealed interface Expr permits Constant, Add, Multiply, Variable {}
@@ -293,7 +319,11 @@ int result = eval(expression, Map.of("x", 5)); // (2 + 5) * 3 = 21
 
 ## 6) Cas d'usage pratiques
 
+Explorons quelques exemples concrets où les sealed classes apportent une vraie valeur ajoutée dans le code métier.
+
 ### 6.1) Modéliser un état d'application
+
+Les machines à états se modélisent naturellement avec des sealed classes :
 
 ```java
 public sealed interface ConnectionState permits Disconnected, Connecting, Connected, Error {}
@@ -321,6 +351,8 @@ public class ConnectionManager {
 
 ### 6.2) Événements dans un système
 
+Pour les architectures événementielles, les sealed classes garantissent que tous les types d'événements sont gérés :
+
 ```java
 public sealed interface Event permits UserRegistered, OrderPlaced, PaymentProcessed {}
 public record UserRegistered(String userId, String email) implements Event {}
@@ -343,6 +375,8 @@ public class EventHandler {
 
 ### 6.3) Réponses HTTP typées
 
+Modéliser les différentes réponses d'une API de manière type-safe :
+
 ```java
 public sealed interface ApiResponse<T> permits Success, ClientError, ServerError {}
 public record Success<T>(T data, int statusCode) implements ApiResponse<T> {}
@@ -364,6 +398,8 @@ public static <T> void handleResponse(ApiResponse<T> response) {
 ---
 
 ## 7) Règles et contraintes
+
+Les sealed classes sont soumises à plusieurs règles strictes pour garantir leur cohérence et leur sûreté.
 
 ### 7.1) Règles de base
 
@@ -393,7 +429,9 @@ final class Rectangle implements Shape {
 
 ### 7.2) Contraintes avec les modules
 
-Dans un module, les sealed classes peuvent autoriser des sous-types dans d'autres packages du même module :
+Le système de modules Java (JPMS) s'intègre avec les sealed classes pour un contrôle encore plus fin :
+
+
 
 ```java
 // module-info.java
@@ -411,6 +449,8 @@ public final class Circle implements Shape { }
 ---
 
 ## 8) Sealed classes vs alternatives
+
+Comparons les sealed classes aux autres approches pour contrôler l'héritage en Java :
 
 | Approche               | Avantages                          | Inconvénients                              |
 |------------------------|------------------------------------|--------------------------------------------|
@@ -434,6 +474,8 @@ public final class Circle implements Shape { }
 ---
 
 ## 9) Bonnes pratiques
+
+Pour tirer le meilleur parti des sealed classes, voici les recommandations et pièges à éviter.
 
 ### ✅ À faire
 
