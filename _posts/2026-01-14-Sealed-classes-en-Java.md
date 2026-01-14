@@ -403,12 +403,11 @@ Les sealed classes sont soumises à plusieurs règles strictes pour garantir leu
 
 ### 7.1) Règles de base
 
-1. **Les sous-types doivent être accessibles** à la classe scellée (même package ou module)
+1 **Les sous-types doivent être accessibles** à la classe scellée (même package ou module)
 
-2. **Déclaration explicite requise** : tous les sous-types listés dans `permits` doivent exister
+2 **Déclaration explicite requise** : tous les sous-types listés dans `permits` doivent exister
 
-3. **Sous-types dans le même fichier** : si tous les sous-types sont dans le même fichier, `permits` peut être omis (inféré)
-
+3 **Sous-types dans le même fichier** : si tous les sous-types sont dans le même fichier, `permits` peut être omis (inféré)
 ```java
 // Fichier Shape.java
 public sealed interface Shape {
@@ -424,8 +423,7 @@ final class Rectangle implements Shape {
     public double area() { return 0; }
 }
 ```
-
-4. **Chaque sous-type doit choisir** : `final`, `sealed`, ou `non-sealed`
+4 **Chaque sous-type doit choisir** : `final`, `sealed`, ou `non-sealed`
 
 ### 7.2) Contraintes avec les modules
 
