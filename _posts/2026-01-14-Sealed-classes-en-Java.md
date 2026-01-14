@@ -477,7 +477,7 @@ Pour tirer le meilleur parti des sealed classes, voici les recommandations et pi
 
 ### ✅ À faire
 
-1. **Combiner avec records** pour des hiérarchies concises et immuables
+1 **Combiner avec records** pour des hiérarchies concises et immuables
 
 ```java
 public sealed interface Message permits TextMessage, ImageMessage {}
@@ -485,23 +485,23 @@ public record TextMessage(String content) implements Message {}
 public record ImageMessage(String url, int width, int height) implements Message {}
 ```
 
-2. **Utiliser pour modéliser des états** ou des résultats d'opérations
+2 **Utiliser pour modéliser des états** ou des résultats d'opérations
 
-3. **Documenter l'intention** : expliquer pourquoi la hiérarchie est fermée
+3 **Documenter l'intention** : expliquer pourquoi la hiérarchie est fermée
 
-4. **Profiter de l'exhaustivité** : éviter les `default` inutiles dans les switch
+4 **Profiter de l'exhaustivité** : éviter les `default` inutiles dans les switch
 
-5. **Nommer clairement** les sous-types pour refléter leur rôle
+5 **Nommer clairement** les sous-types pour refléter leur rôle
 
 ### ❌ À éviter
 
-1. **Ne pas sceller systématiquement** : les hiérarchies extensibles ont leur place
+1 **Ne pas sceller systématiquement** : les hiérarchies extensibles ont leur place
 
-2. **Éviter trop de niveaux** : sealed → sealed → sealed devient complexe
+2 **Éviter trop de niveaux** : sealed → sealed → sealed devient complexe
 
-3. **Ne pas mélanger sealed et non-sealed** sans raison claire
+3 **Ne pas mélanger sealed et non-sealed** sans raison claire
 
-4. **Attention aux dépendances cycliques** entre sealed types
+4 **Attention aux dépendances cycliques** entre sealed types
 
 ---
 
