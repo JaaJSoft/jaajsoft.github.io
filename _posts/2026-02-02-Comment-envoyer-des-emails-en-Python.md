@@ -68,6 +68,8 @@ with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
 
 ## 3) Configuration des serveurs SMTP populaires
 
+L'exemple precedent utilise Gmail, mais `smtplib` fonctionne avec n'importe quel fournisseur SMTP. Voici les paramètres des plus courants.
+
 ### Gmail
 
 **Prérequis** : activer les "Mots de passe d'application" (App Passwords)
@@ -315,7 +317,7 @@ except Exception as e:
 
 ## 8) Utiliser SSL (port 465) au lieu de STARTTLS
 
-### Connexion SSL directe
+Tous les exemples precedents utilisent `starttls()` sur le port 587. Certains serveurs supportent aussi une connexion SSL directe sur le port 465 via `SMTP_SSL`.
 
 ```python
 import smtplib
@@ -342,7 +344,7 @@ with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
 
 ## 9) Sécurité : ne pas hardcoder les mots de passe
 
-### Utiliser des variables d'environnement
+Les exemples precedents utilisent des mots de passe en clair pour rester lisibles. En production, il faut externaliser ces secrets dans des variables d'environnement.
 
 ```python
 import os
@@ -477,7 +479,7 @@ asyncio.run(envoyer_email_async('destinataire@example.com', 'Test', 'Message'))
 
 ## 12) Templates d'emails avec Jinja2
 
-Pour générer des emails HTML dynamiques.
+Plutôt que de construire le HTML a la main comme dans la section 4, Jinja2 permet de separer le template des donnees.
 
 ### Installation
 
@@ -568,6 +570,8 @@ with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
 
 ## 14) Cas d'usage pratiques
 
+Voici quelques exemples concrets qui combinent les techniques vues dans cet article.
+
 ### 1. Notification d'erreur
 
 ```python
@@ -646,7 +650,7 @@ def envoyer_confirmation_inscription(email_utilisateur, token):
 
 ## Conclusion
 
-Python offre des outils puissants et flexibles pour envoyer des emails. Que vous utilisiez les modules natifs `smtplib` et `email` ou des bibliothèques tierces comme `yagmail` ou `Flask-Mail`, vous pouvez automatiser vos notifications facilement.
+Avec `smtplib` et `email`, Python couvre la plupart des besoins d'envoi d'emails sans dépendance externe. Pour une integration web, `Flask-Mail` simplifie encore les choses.
 
 **Points clés à retenir :**
 
