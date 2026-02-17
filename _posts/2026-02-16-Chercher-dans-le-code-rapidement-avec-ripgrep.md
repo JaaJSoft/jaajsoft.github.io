@@ -20,9 +20,9 @@ tags:
 Objectifs de l'article :
 - Installer `ripgrep` sur Linux/macOS/Windows
 - Comprendre les différences avec `grep`
-- Maîtriser les options essentielles (types de fichiers, contexte, remplacement)
+- Maîtriser les options essentielles (types de fichiers, contexte, smart-case, regex avancées)
 - Découvrir 15 cas pratiques du quotidien
-- Intégrer `rg` dans vos workflows de développement
+- Intégrer `rg` dans vos workflows (fzf, vim, VS Code, scripts)
 
 ---
 
@@ -30,27 +30,23 @@ Objectifs de l'article :
 
 ### Comparaison avec grep
 
-| Critère                  | grep                   | ripgrep (rg)         |
-|--------------------------|------------------------|----------------------|
-| Vitesse                  | Rapide                 | **10× plus rapide**  |
-| Ignore .git/node_modules | Non (besoin --exclude) | **Oui (par défaut)** |
-| Regex                    | BRE/ERE                | **Rust (PCRE-like)** |
-| Coloration syntaxe       | Basique                | **Excellente**       |
-| Recherche récursive      | `-r` requis            | **Par défaut**       |
-| Types de fichiers        | Manuel                 | **Auto-détection**   |
+| Critère                  | grep                   | ripgrep (rg)           |
+|--------------------------|------------------------|------------------------|
+| Vitesse                  | Rapide                 | **10-30× plus rapide** |
+| Ignore .git/node_modules | Non (besoin --exclude) | **Oui (par défaut)**   |
+| Regex                    | BRE/ERE                | **Rust (PCRE2 en option)** |
+| Coloration syntaxe       | Basique                | **Excellente**         |
+| Recherche récursive      | `-r` requis            | **Par défaut**         |
+| Types de fichiers        | Manuel                 | **Auto-détection**     |
+| Smart case               | Non                    | **Oui (`-S`)**         |
 
-### Benchmark typique
+### D'où vient la différence de vitesse ?
 
-```bash
-# Rechercher "TODO" dans un projet React (50k fichiers)
-time grep -r "TODO" .        # ~8 secondes
-time rg "TODO"               # ~0.3 secondes (26× plus rapide)
-```
+- **Ignore intelligent** : `rg` respecte `.gitignore` et ignore `.git`, `node_modules`, fichiers binaires — sans configuration
+- **Multithreading natif** : utilise tous les cœurs CPU disponibles
+- **Moteur regex optimisé** : le moteur Rust est compilé en automate fini, évitant le backtracking catastrophique
 
-Pourquoi cette différence ?
-- `rg` ignore automatiquement `.git`, `node_modules`, fichiers binaires
-- Multithreading natif (utilise tous les cœurs CPU)
-- Optimisations mémoire et regex performantes
+L'écart dépend du projet : sur un dépôt propre avec peu de fichiers ignorés, `rg` est ~10× plus rapide. Sur un projet avec un gros `node_modules` ou beaucoup de binaires, le gain peut dépasser 30×.
 
 ---
 
@@ -67,10 +63,14 @@ sudo dnf install ripgrep
 
 # Arch
 sudo pacman -S ripgrep
+```
 
-# Depuis les binaires (toutes distros basée sur debian)
-curl -LO https://github.com/BurntSushi/ripgrep/releases/download/14.1.0/ripgrep_14.1.0-1_amd64.deb
-sudo dpkg -i ripgrep_14.1.0-1_amd64.deb
+Pour installer la dernière version manuellement, récupérez le `.deb` depuis la [page des releases GitHub](https://github.com/BurntSushi/ripgrep/releases) :
+
+```bash
+# Exemple pour la version 14.1.1
+curl -LO https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep_14.1.1-1_amd64.deb
+sudo dpkg -i ripgrep_14.1.1-1_amd64.deb
 ```
 
 ### macOS
@@ -88,6 +88,9 @@ scoop install ripgrep
 # Chocolatey
 choco install ripgrep
 
+# Winget
+winget install BurntSushi.ripgrep.MSVC
+
 # Cargo (si Rust installé)
 cargo install ripgrep
 ```
@@ -95,42 +98,18 @@ cargo install ripgrep
 Vérification :
 ```bash
 rg --version
-# ripgrep 14.1.0
 ```
 
 ---
 
-## Syntaxe de base
+## Les essentiels
+
+### Recherche de base
 
 ```bash
 rg pattern                          # Recherche récursive depuis le répertoire courant
 rg pattern path/                    # Recherche dans un répertoire spécifique
-rg pattern file.txt                 # Recherche dans un fichier
-rg -i pattern                       # Insensible à la casse (case-insensitive)
-rg -w pattern                       # Mots entiers uniquement (word boundary)
-rg -v pattern                       # Inverser (lignes NE contenant PAS pattern)
-```
-
-**Différences clés avec grep :**
-- `rg` est récursif **par défaut** (pas besoin de `-r`)
-- `rg` ignore automatiquement `.gitignore`, fichiers binaires, `.git`, `node_modules`
-- Les couleurs sont activées par défaut
-
----
-
-## Les bases de ripgrep
-
-### 1) Recherche simple
-
-```bash
-# Rechercher "TODO" dans tous les fichiers
-rg TODO
-
-# Rechercher "function" en ignorant la casse
-rg -i function
-
-# Rechercher le mot exact "test" (pas "testing", "contest")
-rg -w test
+rg pattern fichier.txt              # Recherche dans un fichier
 ```
 
 Sortie typique :
@@ -143,13 +122,31 @@ src/api/routes.py
 12:    # TODO: implement authentication
 ```
 
-### 2) Limiter par type de fichier
+**Différences clés avec grep :**
+- `rg` est récursif **par défaut** (pas besoin de `-r`)
+- `rg` ignore automatiquement `.gitignore`, fichiers binaires, `.git`, `node_modules`
+- Les couleurs sont activées par défaut
+
+### Casse et mots
 
 ```bash
-# Uniquement dans les fichiers Python
+rg -i pattern                       # Insensible à la casse
+rg -S pattern                       # Smart case : insensible si pattern en minuscules,
+                                     #              sensible dès qu'il y a une majuscule
+rg -w test                          # Mots entiers ("test" mais pas "testing" ni "contest")
+rg -v pattern                       # Inverser : lignes NE contenant PAS pattern
+rg -F 'foo(bar)'                    # Recherche littérale (pas de regex)
+```
+
+`-S` (smart case) est probablement l'option la plus pratique au quotidien. `rg -S todo` trouvera "TODO", "Todo", "todo", mais `rg -S TODO` ne trouvera que "TODO".
+
+### Filtrer par type de fichier
+
+```bash
+# Uniquement les fichiers Python
 rg TODO -t py
 
-# Uniquement JavaScript/TypeScript
+# JavaScript et TypeScript
 rg TODO -t js -t ts
 
 # Exclure les fichiers Markdown
@@ -161,33 +158,12 @@ rg --type-list
 
 Types courants : `py`, `js`, `ts`, `java`, `go`, `rust`, `c`, `cpp`, `md`, `html`, `css`, `json`, `yaml`
 
-### 3) Recherche avec regex
+### Contexte (lignes avant/après)
 
 ```bash
-# Regex basique : adresses email
-rg '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-
-# Numéros de téléphone français
-rg '0[1-9]( [0-9]{2}){4}'
-
-# Imports Python
-rg '^import \w+|^from \w+ import'
-
-# Fonctions JavaScript/TypeScript
-rg 'function \w+\(|const \w+ = \('
-```
-
-### 4) Contexte (lignes avant/après)
-
-```bash
-# 3 lignes avant et après
-rg -C 3 TODO
-
-# 2 lignes avant
-rg -B 2 TODO
-
-# 5 lignes après
-rg -A 5 TODO
+rg -C 3 TODO                        # 3 lignes avant et après
+rg -B 2 TODO                        # 2 lignes avant
+rg -A 5 TODO                        # 5 lignes après
 ```
 
 Sortie avec contexte :
@@ -202,237 +178,275 @@ src/utils.py
 45-
 ```
 
+### Contrôle de la sortie
+
+```bash
+rg -l pattern                       # Uniquement les noms de fichiers
+rg -L pattern                       # Fichiers SANS correspondance
+rg -c pattern                       # Nombre de lignes matchant par fichier
+rg --count-matches pattern          # Nombre total d'occurrences par fichier
+rg -o pattern                       # Uniquement la partie qui matche
+rg --no-line-number pattern         # Masquer les numéros de ligne
+rg --no-filename pattern            # Masquer les noms de fichiers
+```
+
 ---
 
 ## 15 cas pratiques
 
-### 1) Trouver tous les TODOs/FIXMEs
+### 1) Trouver tous les TODOs et FIXMEs d'un projet
 
 ```bash
-# TODOs
-rg 'TODO|FIXME|HACK|XXX'
-
-# Avec contexte et fichiers Python uniquement
-rg -C 2 'TODO|FIXME' -t py
+rg 'TODO|FIXME|HACK|XXX' -C 1
 ```
 
-### 2) Chercher une fonction/classe dans tout le projet
+Ajoutez `-t py` ou `-t js` pour cibler un langage spécifique.
+
+### 2) Chercher une définition de fonction ou de classe
 
 ```bash
-# Définition de fonction Python
+# Définition Python
 rg 'def calculate_total'
 
 # Classe Java
 rg 'class UserService'
 
 # Interface TypeScript
-rg 'interface User \{'
+rg 'interface UserProps \{'
 ```
 
-### 3) Trouver des imports/includes
+### 3) Détecter des secrets en dur dans le code
 
 ```bash
-# Imports Python
-rg '^from .* import|^import '
+# Mots de passe en dur
+rg -i 'password\s*=\s*["\047][^"\047]{3,}'
+
+# Clés API / tokens suspects
+rg -S 'api_key|apiKey|API_KEY|secret_key|access_token' -t py -t js -t ts
+```
+
+Utile en revue de code ou avant un commit, pour éviter de pousser des credentials.
+
+### 4) Chercher dans des logs ou la sortie d'une commande
+
+```bash
+# Filtrer les erreurs dans un fichier de log
+rg 'ERROR|WARN' /var/log/app.log
+
+# Piping depuis une autre commande
+docker logs mon-container 2>&1 | rg 'timeout|connection refused'
+
+# Filtrer la sortie de kubectl
+kubectl get pods -A | rg 'CrashLoop|Error'
+```
+
+`rg` lit stdin quand il ne reçoit pas de fichier en argument, ce qui le rend utilisable partout où vous utiliseriez `grep` dans un pipe.
+
+### 5) Chercher des imports et dépendances
+
+```bash
+# Qui importe ce module Python ?
+rg '^from utils import|^import utils'
 
 # Require Node.js
-rg "require\(['\"]"
+rg "require\(['\"]express"
 
-# Imports Java
-rg '^import '
+# Imports Go
+rg '"github\.com/.*"' -t go
 ```
 
-### 4) Chercher des valeurs de configuration
+### 6) Compter les occurrences dans un projet
 
 ```bash
-# Variables d'environnement
-rg 'process\.env\.|os\.getenv'
-
-# Clés API (pattern simple)
-rg 'api_key|API_KEY|apiKey'
-
-# URLs/endpoints
-rg 'https?://[^\s"]+'
-```
-
-### 5) Détecter des mots de passe en dur (code smell)
-
-```bash
-# Patterns suspects
-rg -i 'password\s*=\s*["\'][^"\']{3,}'
-
-# Secrets potentiels
-rg 'secret|token|key' -t py -t js
-```
-
-### 6) Compter les occurrences
-
-```bash
-# Nombre de lignes contenant "error"
+# Nombre de lignes contenant "error" par fichier
 rg error -c
 
-# Total d'occurrences (pas de lignes)
+# Total d'occurrences (pas de lignes) par fichier
 rg error --count-matches
+
+# Compter dans tout le projet
+rg error --count-matches | awk -F: '{sum+=$NF} END {print sum}'
 ```
 
-Sortie :
-```
-src/logger.py:4
-src/api.py:12
-src/utils.py:2
-```
-
-### 7) Lister uniquement les fichiers contenant un pattern
+### 7) Filtrer par glob / exclure des fichiers
 
 ```bash
-# Fichiers avec "deprecated"
-rg -l deprecated
-
-# Fichiers SANS "test"
-rg -L test
-```
-
-### 8) Rechercher dans des fichiers spécifiques par extension
-
-```bash
-# Fichiers .env seulement
+# Uniquement les fichiers .env
 rg DATABASE_URL -g '*.env'
 
-# Tous les fichiers sauf .min.js
-rg pattern -g '!*.min.js'
+# Tous les fichiers sauf les minifiés
+rg pattern -g '!*.min.js' -g '!*.min.css'
 
-# Fichiers de config (yaml, json, toml)
-rg pattern -g '*.{yaml,json,toml}'
+# Fichiers de config uniquement
+rg pattern -g '*.{yaml,yml,json,toml}'
 ```
 
-### 9) Remplacer du texte (prévisualisation)
+### 8) Prévisualiser un remplacement
 
 ```bash
-# Voir à quoi ressemblerait le remplacement
+# Voir le résultat d'un remplacement (sans modifier les fichiers)
 rg 'old_function' -r 'new_function'
 
-# Avec sed pour appliquer
+# Avec capture groups
+rg 'log\((\w+)\)' -r 'logger.info($1)'
+
+# Appliquer avec sed une fois satisfait
 rg -l 'old_function' | xargs sed -i 's/old_function/new_function/g'
 ```
 
-> **Note** : `rg` ne modifie pas les fichiers directement. Utilisez `sed` ou un éditeur pour appliquer les changements.
+> `rg -r` ne modifie jamais les fichiers, il affiche juste la sortie transformée. Utilisez `sed` ou votre éditeur pour appliquer.
 
-### 10) Chercher des lignes longues (code smell)
+### 9) Recherche multi-ligne
 
 ```bash
-# Lignes de plus de 120 caractères
-rg '.{121,}'
+# Activer le mode multiline avec -U
+rg -U 'try:.*?except' -t py
 
-# Uniquement Python
-rg '.{121,}' -t py
+# Trouver des fonctions vides en JavaScript
+rg -U 'function \w+\([^)]*\)\s*\{\s*\}' -t js
 ```
 
-### 11) Trouver des fichiers binaires/non-texte
+Le flag `-U` permet au `.` de matcher les retours à la ligne.
+
+### 10) Regex avancées avec PCRE2
 
 ```bash
-# Forcer la recherche dans tous les fichiers (y compris binaires)
-rg pattern --binary
+# Activer le moteur PCRE2 (lookahead, lookbehind, backreferences)
+rg -P '(?<=def )\w+(?=\()' -t py        # Noms de fonctions Python (lookbehind/lookahead)
 
-# Lister les fichiers binaires détectés
-rg --files --type-not text
+# Lignes contenant "error" mais PAS "404"
+rg -P 'error(?!.*404)'
+
+# Backreference : mots doublés
+rg -P '\b(\w+)\s+\1\b'
 ```
 
-### 12) Exclure des répertoires
+> `-P` nécessite que `ripgrep` soit compilé avec le support PCRE2 (c'est le cas sur la plupart des distributions).
+
+### 11) Exclure des répertoires
 
 ```bash
-# Exclure node_modules et vendor (normalement déjà fait)
-rg pattern -g '!node_modules' -g '!vendor'
+# Exclure les dossiers de test
+rg pattern -g '!**/test/**' -g '!**/tests/**' -g '!**/__tests__/**'
 
-# Exclure tous les répertoires de test
-rg pattern -g '!**/test/**' -g '!**/tests/**'
+# Exclure vendor et build
+rg pattern -g '!vendor' -g '!build' -g '!dist'
 ```
 
-### 13) Recherche multi-ligne
+Note : `node_modules` et `.git` sont déjà exclus par défaut via `.gitignore`.
+
+### 12) Chercher dans les fichiers cachés et ignorés
 
 ```bash
-# Activer le mode multiline
-rg -U 'function.*\{.*\}' -t js
+# Inclure les fichiers cachés (.dotfiles)
+rg pattern --hidden
 
-# Exemple : trouver des blocs try-catch Python
-rg -U 'try:.*except.*:' -t py
+# Ignorer .gitignore (chercher partout, y compris node_modules)
+rg pattern --no-ignore
+
+# Les deux combinés
+rg pattern --hidden --no-ignore
 ```
 
-### 14) Statistiques sur le code
+Utile pour chercher dans `.env`, `.github/`, ou d'autres fichiers cachés.
+
+### 13) Sortie JSON pour les scripts
 
 ```bash
-# Nombre de fichiers Python
+# Sortie JSON structurée
+rg TODO --json
+
+# Exploitable avec jq
+rg TODO --json | jq 'select(.type == "match") | .data.path.text'
+```
+
+La sortie `--json` donne un objet par ligne, avec le chemin, le numéro de ligne, et le contenu. Idéal pour intégrer `rg` dans des pipelines de CI ou des scripts d'analyse.
+
+### 14) Statistiques rapides sur le code
+
+```bash
+# Nombre de fichiers Python dans le projet
 rg --files -t py | wc -l
 
-# Nombre de lignes de code Python (approximatif)
-rg --files -t py | xargs wc -l | tail -1
-
 # Nombre de fonctions Python
-rg '^def \w+' -t py -c | awk -F: '{sum+=$2} END {print sum}'
+rg '^def \w+' -t py -c | awk -F: '{sum+=$NF} END {print sum}'
+
+# Nombre de classes Java
+rg 'class \w+' -t java -c | awk -F: '{sum+=$NF} END {print sum}'
 ```
 
-### 15) Recherche avec gitignore personnalisé
+### 15) Utiliser un fichier d'exclusion personnalisé
 
 ```bash
 # Respecter .gitignore (par défaut)
 rg pattern
 
-# Ignorer .gitignore (chercher partout)
-rg pattern --no-ignore
-
-# Utiliser un fichier ignore custom
+# Utiliser un fichier d'exclusion dédié
 rg pattern --ignore-file .rgignore
+
+# Ignorer le fichier de config ripgrep
+rg pattern --no-config
 ```
 
-Exemple `.rgignore` :
+Exemple de `.rgignore` à placer à la racine de votre projet :
 ```
-# .rgignore
 *.log
 *.tmp
+*.min.js
+*.min.css
 build/
 dist/
+coverage/
 ```
 
 ---
 
-## Options essentielles
+## Options essentielles (référence rapide)
 
 ### Comportement de recherche
 
-- `-i`, `--ignore-case` : insensible à la casse
-- `-w`, `--word-regexp` : mots entiers uniquement
-- `-v`, `--invert-match` : lignes NE contenant PAS le pattern
-- `-U`, `--multiline` : recherche multi-lignes
-- `-F`, `--fixed-strings` : recherche littérale (pas de regex)
+| Option | Description |
+|--------|-------------|
+| `-i`, `--ignore-case` | Insensible à la casse |
+| `-S`, `--smart-case` | Insensible si minuscules, sensible si majuscule dans le pattern |
+| `-w`, `--word-regexp` | Mots entiers uniquement |
+| `-v`, `--invert-match` | Lignes NE contenant PAS le pattern |
+| `-U`, `--multiline` | Recherche multi-lignes |
+| `-P`, `--pcre2` | Moteur PCRE2 (lookahead, lookbehind) |
+| `-F`, `--fixed-strings` | Recherche littérale (pas de regex) |
 
-### Contexte
+### Contexte et sortie
 
-- `-C NUM`, `--context NUM` : NUM lignes avant et après
-- `-B NUM`, `--before-context NUM` : NUM lignes avant
-- `-A NUM`, `--after-context NUM` : NUM lignes après
+| Option | Description |
+|--------|-------------|
+| `-C NUM` | NUM lignes avant et après |
+| `-B NUM` | NUM lignes avant |
+| `-A NUM` | NUM lignes après |
+| `-l` | Uniquement noms de fichiers |
+| `-c` | Nombre de lignes par fichier |
+| `--count-matches` | Nombre d'occurrences par fichier |
+| `-o` | Uniquement la partie qui matche |
+| `-r TEXTE` | Prévisualiser un remplacement |
+| `--json` | Sortie JSON structurée |
 
 ### Filtrage de fichiers
 
-- `-t TYPE`, `--type TYPE` : type de fichier (py, js, etc.)
-- `-T TYPE`, `--type-not TYPE` : exclure un type
-- `-g GLOB`, `--glob GLOB` : pattern de fichier (ex: `*.py`)
-- `-g '!GLOB'` : exclure un pattern
+| Option | Description |
+|--------|-------------|
+| `-t TYPE` | Type de fichier (py, js, etc.) |
+| `-T TYPE` | Exclure un type |
+| `-g GLOB` | Pattern de fichier (ex: `*.py`) |
+| `-g '!GLOB'` | Exclure un pattern |
+| `--hidden` | Inclure les fichiers cachés |
+| `--no-ignore` | Ignorer .gitignore |
+| `--ignore-file` | Fichier d'exclusion personnalisé |
 
-### Sortie
+### Performance
 
-- `-l`, `--files-with-matches` : uniquement noms de fichiers
-- `-L`, `--files-without-match` : fichiers sans correspondance
-- `-c`, `--count` : nombre de lignes par fichier
-- `--count-matches` : nombre total d'occurrences
-- `-o`, `--only-matching` : uniquement la partie qui matche
-- `--no-line-number` : masquer les numéros de ligne
-- `--no-filename` : masquer les noms de fichiers
-
-### Performance et comportement
-
-- `--no-ignore` : ne pas respecter .gitignore
-- `--hidden` : inclure les fichiers cachés (`.dotfiles`)
-- `--no-binary` : ignorer les fichiers binaires (défaut)
-- `-j NUM`, `--threads NUM` : nombre de threads (auto par défaut)
+| Option | Description |
+|--------|-------------|
+| `-j NUM` | Nombre de threads (auto par défaut) |
+| `--no-binary` | Ignorer les fichiers binaires (défaut) |
 
 ---
 
@@ -440,34 +454,26 @@ dist/
 
 ### Fichier de config
 
-Créez `~/.config/ripgrep/config` (ou `~/.ripgreprc`) :
+Créez `~/.config/ripgrep/config` (ou `~/.ripgreprc` avec `export RIPGREP_CONFIG_PATH=~/.ripgreprc`) :
 
 ```bash
 # ~/.ripgreprc
-# Toujours afficher le contexte
+
+# Smart case par défaut
+--smart-case
+
+# Toujours afficher 2 lignes de contexte
 --context=2
 
 # Ignorer les fichiers minifiés
 --glob=!*.min.js
 --glob=!*.min.css
 
-# Smart case : insensible si lowercase, sensible si uppercase
---smart-case
-
-# Afficher les fichiers cachés
+# Inclure les fichiers cachés
 --hidden
 
-# Nombre max de threads
---threads=8
-```
-
-Utilisation :
-```bash
-# Utilise automatiquement ~/.ripgreprc
-rg pattern
-
-# Ignorer le fichier de config
-rg pattern --no-config
+# Mais toujours exclure .git
+--glob=!.git
 ```
 
 ### Types de fichiers personnalisés
@@ -486,6 +492,23 @@ Ajoutez dans `~/.ripgreprc` pour les rendre permanents :
 --type-add=config:*.{yaml,yml,json,toml,ini}
 ```
 
+### Aliases utiles
+
+Ajoutez à votre `~/.bashrc` ou `~/.zshrc` :
+
+```bash
+# Recherche dans le code uniquement (ignore tests)
+alias rgs='rg -g "!**/test/**" -g "!**/tests/**" -g "!**/__tests__/**"'
+
+# Recherche TODO/FIXME rapide
+alias todos='rg "TODO|FIXME|HACK|XXX" -C 1'
+
+# Recherche avec fzf interactif
+rgf() {
+  rg --line-number --no-heading --color=always "$@" | fzf --ansi --preview 'echo {}'
+}
+```
+
 ---
 
 ## Intégration avec d'autres outils
@@ -496,16 +519,19 @@ Ajoutez dans `~/.ripgreprc` pour les rendre permanents :
 # Recherche interactive de fichiers
 rg --files | fzf
 
-# Recherche interactive dans le contenu
-rg --line-number --no-heading --color=always pattern | fzf --ansi
+# Recherche interactive dans le contenu avec prévisualisation
+rg --line-number --no-heading --color=always "" | fzf --ansi \
+  --preview 'bat --color=always {1} --highlight-line {2}' \
+  --delimiter ':'
 ```
 
 ### Avec vim/neovim
 
 ```vim
 " .vimrc / init.vim
-" Utiliser rg au lieu de grep
-set grepprg=rg\ --vimgrep\ --smart-case\ --follow
+" Utiliser rg comme grepprg
+set grepprg=rg\ --vimgrep\ --smart-case
+set grepformat=%f:%l:%c:%m
 
 " Raccourci pour chercher le mot sous le curseur
 nnoremap <leader>g :grep <C-R><C-W><CR>
@@ -513,7 +539,7 @@ nnoremap <leader>g :grep <C-R><C-W><CR>
 
 ### Avec VS Code
 
-Installez l'extension "ripgrep" ou configurez :
+VS Code utilise déjà ripgrep en interne pour sa recherche. Pour personnaliser :
 ```json
 {
   "search.useRipgrep": true,
@@ -524,79 +550,43 @@ Installez l'extension "ripgrep" ou configurez :
 }
 ```
 
-### Avec git (chercher dans l'historique)
+### Avec git
 
 ```bash
-# Chercher dans les commits
-git log -S "old_function" --source --all
-
-# Chercher dans les fichiers non commités
+# Chercher un pattern dans les fichiers modifiés (non commités)
 rg pattern $(git diff --name-only)
+
+# Chercher un pattern dans les fichiers d'un commit
+git show --name-only HEAD | tail -n +7 | xargs rg pattern
+
+# Pour chercher dans l'historique git (contenu supprimé), utilisez git log :
+git log -S "old_function" --source --all --oneline
 ```
 
 ---
 
-## Comparaison ripgrep vs autres outils
+## Comparaison avec les alternatives
 
-| Outil                  | Usage                         | Quand l'utiliser ?              |
+| Outil                  | Usage                         | Verdict                         |
 |------------------------|-------------------------------|---------------------------------|
-| `rg`                   | Recherche rapide dans le code | **Toujours pour du code**       |
+| `rg`                   | Recherche rapide dans le code | **Le meilleur choix général**   |
 | `grep`                 | Recherche basique             | Scripts POSIX, systèmes sans rg |
-| `ag` (silver searcher) | Recherche dans le code        | Alternative à rg (plus lent)    |
+| `ag` (silver searcher) | Recherche dans le code        | Correct mais plus lent que rg   |
 | `ack`                  | Recherche Perl-like           | Legacy, préférer rg             |
-| `find + grep`          | Recherche avec contrôle fin   | Cas très spécifiques            |
-
-**Règle générale** : utilisez `rg` pour tout ce qui touche au code. C'est plus rapide, plus simple, et mieux intégré avec les outils modernes.
-
----
-
-## Bonnes pratiques
-
-### ✅ À faire
-
-- **Utilisez `-t` pour limiter les types de fichiers** : plus rapide et pertinent
-- **Créez un `.rgignore`** pour exclure des patterns spécifiques à votre projet
-- **Combinez avec `fzf`** pour des recherches interactives
-- **Utilisez `--hidden`** si vous cherchez dans des dotfiles
-- **Activez smart-case** (`--smart-case`) : insensible si lowercase, sensible sinon
-
-### ❌ À éviter
-
-- Ne pas utiliser `rg` pour modifier des fichiers (utilisez `sed` après avoir trouvé)
-- Éviter `--no-ignore` sans raison : performances dégradées
-- Ne pas utiliser `rg` pour parser du JSON/XML (utilisez `jq`, `xmllint`)
-
----
-
-## Cheatsheet
-
-### Commandes courantes
-```bash
-rg pattern                    # Recherche récursive
-rg -i pattern                 # Case-insensitive
-rg -w pattern                 # Mots entiers
-rg -v pattern                 # Inverser (NOT)
-rg -C 3 pattern               # 3 lignes de contexte
-rg -t py pattern              # Fichiers Python uniquement
-rg -g '*.js' pattern          # Glob pattern
-rg -l pattern                 # Noms de fichiers seulement
-rg -c pattern                 # Comptage par fichier
-```
 
 ---
 
 ## Conclusion
 
-`ripgrep` est l'outil de recherche de code moderne par excellence. Sa vitesse, son intelligence (respect de .gitignore), et sa simplicité en font un remplacement naturel de `grep` pour tous les développeurs.
+`ripgrep` remplace avantageusement `grep` pour toute recherche dans du code. Ses points forts : la vitesse, le respect automatique de `.gitignore`, et le smart case. Une fois installé, il n'y a quasiment aucune raison de revenir à `grep` pour chercher dans un projet.
 
-**Points clés à retenir :**
+**Les options à retenir en priorité :**
 - `rg pattern` : recherche récursive intelligente
+- `-S` : smart case (à mettre dans votre config)
 - `-t TYPE` : filtrer par type de fichier
 - `-C NUM` : contexte avant/après
-- `--no-ignore` : forcer la recherche partout
-- Configuration via `~/.ripgreprc`
-
-Pour des opérations complémentaires, pensez à combiner `rg` avec `sed`, `awk`, `fzf`, ou votre éditeur favori.
+- `-P` : regex avancées (lookahead, lookbehind)
+- `--json` : sortie structurée pour les scripts
 
 ---
 
@@ -604,5 +594,5 @@ Pour des opérations complémentaires, pensez à combiner `rg` avec `sed`, `awk`
 
 - [Sed : éditer des fichiers en ligne de commande avec des regex]({% post_url 2026-01-19-Sed-editer-des-fichiers-en-ligne-de-commande %})
 - [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %})
-- [Linux : programmer une tâche avec cron]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
-- [Installer et configurer Fail2ban sur Ubuntu/Debian]({% post_url 2025-09-21-Installer-et-configurer-Fail2ban-sur-Ubuntu-Debian %})
+- [Comment transformer un JSON en CSV avec jq]({% post_url 2025-10-19-Comment-transformer-un-JSON-en-CSV-avec-jq %})
+- [Comment créer une CLI en Python]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
