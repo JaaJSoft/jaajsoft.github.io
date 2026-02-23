@@ -273,5 +273,5 @@ done | sort -rn
 - [Documentation officielle inotify](https://man7.org/linux/man-pages/man7/inotify.7.html)
 - [Kernel.org - inotify parameters](https://www.kernel.org/doc/Documentation/sysctl/fs.txt)
 - [Chercher dans le code rapidement avec ripgrep]({% post_url 2026-02-16-Chercher-dans-le-code-rapidement-avec-ripgrep %})
-- [Optimiser les performances de votre IDE]({% post_url 2025-12-05-Optimiser-les-performances-de-votre-IDE %})
-- [Docker et les volumes : guide complet]({% post_url 2025-11-20-Docker-et-les-volumes-guide-complet %})
+- [Sed : éditer des fichiers en ligne de commande avec des regex]({% post_url 2026-01-19-Sed-editer-des-fichiers-en-ligne-de-commande %})
+- [Activer les mises à jour de sécurité automatiques sur Ubuntu/Debian]({% post_url 2025-12-19-Activer-les-mises-a-jour-de-securite-automatiques-sur-Ubuntu-Debian %})
