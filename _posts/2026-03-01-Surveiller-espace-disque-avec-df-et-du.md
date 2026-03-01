@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "df et du : surveiller et analyser l'espace disque sous Linux"
+title: "df/du : surveiller et analyser l'espace disque sous Linux"
 author: Pierre Chopinet
 tags:
   - linux
