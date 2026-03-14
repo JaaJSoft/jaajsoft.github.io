@@ -1,6 +1,8 @@
 .site-tags {
   .tag-button {
     @include clickable($text-color-3, $main-color-3, default, default, $text-color-2,$main-color-2, $text-color-2,$main-color-2);
+    padding: map-get($button, padding-y-sm) map-get($button, padding-x-sm);
+    font-size: map-get($base, font-size-sm);
     & > .tag-button__count {
       display: inline-block;
       margin-left: map-get($spacers, 1);
