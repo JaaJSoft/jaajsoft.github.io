@@ -589,6 +589,7 @@ Les Streams et `groupingBy` sont aujourd'hui l'approche idiomatique en Java mode
 
 ## Voir aussi
 
+- [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %})
 - [Les listes (List) en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
 - [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
 - [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})

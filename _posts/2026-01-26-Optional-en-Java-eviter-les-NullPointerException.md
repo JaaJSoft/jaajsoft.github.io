@@ -664,8 +664,8 @@ public String formatName(User user) {
 
 ## Voir aussi
 
+- [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %})
 - [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})
 - [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
 - [Comment faire des group by en Java]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
 - [Sealed classes en Java]({% post_url 2026-01-14-Sealed-classes-en-Java %})
-- [Stream API et les collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
