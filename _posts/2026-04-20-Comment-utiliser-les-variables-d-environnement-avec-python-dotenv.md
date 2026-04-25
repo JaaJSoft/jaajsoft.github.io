@@ -76,7 +76,7 @@ pip install python-dotenv
 Le fichier `.env` se place à la racine de votre projet. Il contient les
 variables sous la forme `CLÉ=valeur`, une par ligne :
 
-```env
+```
 # Configuration de la base de données
 DB_HOST=localhost
 DB_PORT=5432
@@ -212,7 +212,7 @@ else:
 Voici un exemple complet qui montre comment structurer proprement la
 configuration d'une connexion à PostgreSQL :
 
-```env
+```
 # .env
 DB_HOST=localhost
 DB_PORT=5432
@@ -270,7 +270,7 @@ dans le dépôt Git. Ajoutez-le à votre `.gitignore` :
 En revanche, on peut créer un fichier `.env.example` (sans les vraies
 valeurs) pour documenter les variables nécessaires :
 
-```env
+```
 # .env.example — Copiez ce fichier en .env et remplissez les valeurs
 DB_HOST=localhost
 DB_PORT=5432
