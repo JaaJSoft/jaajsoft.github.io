@@ -322,20 +322,20 @@ db_host = os.getenv("DB_HOST")
 
 ## Bonnes pratiques
 
-> ✅ **À faire**
->
-> - Toujours ajouter `.env` au `.gitignore`
-> - Fournir un `.env.example` avec des valeurs vides ou d'exemple
-> - Utiliser des valeurs par défaut raisonnables avec `os.getenv("CLÉ", "défaut")`
-> - Centraliser la configuration dans un module dédié (`config.py`)
-> - Valider les variables critiques au démarrage de l'application
+✅ **À faire**
 
-> ❌ **À éviter**
->
-> - Commiter le fichier `.env` dans le dépôt Git
-> - Utiliser `override=True` en production
-> - Mettre des valeurs de production dans le `.env.example`
-> - Appeler `load_dotenv()` plusieurs fois sans raison
+ - Toujours ajouter `.env` au `.gitignore`
+ - Fournir un `.env.example` avec des valeurs vides ou d'exemple
+ - Utiliser des valeurs par défaut raisonnables avec `os.getenv("CLÉ", "défaut")`
+ - Centraliser la configuration dans un module dédié (`config.py`)
+ - Valider les variables critiques au démarrage de l'application
+
+❌ **À éviter**
+
+ - Commiter le fichier `.env` dans le dépôt Git
+ - Utiliser `override=True` en production
+ - Mettre des valeurs de production dans le `.env.example`
+ - Appeler `load_dotenv()` plusieurs fois sans raison
 
 ## Voir aussi
 
