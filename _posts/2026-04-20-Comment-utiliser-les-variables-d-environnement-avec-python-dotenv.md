@@ -260,7 +260,7 @@ FastAPI. Il centralise toute la configuration au même endroit.
 Le fichier `.env` contient des secrets. Il ne doit **jamais** être commité
 dans le dépôt Git. Ajoutez-le à votre `.gitignore` :
 
-```gitignore
+```
 # Variables d'environnement
 .env
 .env.*
