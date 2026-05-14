@@ -1,7 +1,6 @@
 ---
 layout: article
 title: "Python : Comment utiliser les différents modes d'authentification avec requests"
-author: Pierre Chopinet
 tags:
   - python
   - http
@@ -11,10 +10,23 @@ tags:
   - authentification
   - sécurité
   - oauth
+author: Pierre Chopinet
 ---
 
-Dans cet article, on passe en revue les principaux modes d’authentification supportés par la bibliothèque Python requests, avec des exemples concrets et des bonnes pratiques (sessions, retries, proxies, sécurité).
+Dans cet article, on passe en revue les principaux modes d'authentification supportés par la bibliothèque Python requests, avec des exemples concrets et des bonnes pratiques (sessions, retries, proxies, sécurité).
 <!--more-->
+
+Dans cet article :
+- Basic Auth et Digest Auth
+- Bearer Token (OAuth2 / JWT)
+- API Key (header ou query string)
+- OAuth1 et OAuth2 via `requests-oauthlib`
+- Fichier `.netrc` et classe d'authentification personnalisée
+- Proxies avec authentification
+
+Pré-requis : Python 3 et `requests` (`pip install requests`). Pour OAuth, ajoutez aussi `requests-oauthlib`.
+
+---
 
 ## Installation rapide
 
@@ -22,13 +34,13 @@ Dans cet article, on passe en revue les principaux modes d’authentification su
 pip install requests
 ```
 
-Pour OAuth (OAuth1 et OAuth2) :
+Pour OAuth (OAuth1 et OAuth2) :
 
 ```bash
 pip install requests-oauthlib
 ```
 
-Sous Windows (PowerShell) :
+Sous Windows (PowerShell) :
 
 ```powershell
 python -m pip install requests
@@ -37,9 +49,9 @@ python -m pip install requests-oauthlib
 
 ---
 
-## 1) Basic Auth (HTTP Basic)
+## Basic Auth (HTTP Basic)
 
-La manière la plus simple : envoyer identifiant/mot de passe encodés en base64 dans l’en-tête `Authorization`.
+La manière la plus simple : envoyer identifiant et mot de passe encodés en base64 dans l'en-tête `Authorization`.
 
 ```python
 import requests
@@ -50,14 +62,14 @@ resp.raise_for_status()
 print(resp.json())
 ```
 
-Équivalent explicite :
+Équivalent explicite :
 
 ```python
 from requests.auth import HTTPBasicAuth
 resp = requests.get(url, auth=HTTPBasicAuth("mon_user", "mon_mot_de_passe"))
 ```
 
-Avec une Session (réutilise la connexion et l’auth sur plusieurs requêtes) :
+Avec une Session (réutilise la connexion et l'auth sur plusieurs requêtes) :
 
 ```python
 with requests.Session() as s:
@@ -66,7 +78,7 @@ with requests.Session() as s:
     r2 = s.get("https://api.example.com/orders")
 ```
 
-Astuce (pré-authentification) : certains serveurs n’envoient le challenge 401 qu’après une 1re requête. Pour éviter un aller‑retour, on peut ajouter l’en-tête soi‑même :
+Astuce (pré-authentification) : certains serveurs n'envoient le challenge 401 qu'après une première requête. Pour éviter un aller-retour, on peut ajouter l'en-tête soi-même :
 
 ```python
 import base64, requests
@@ -76,13 +88,13 @@ headers = {"Authorization": f"Basic {token}"}
 requests.get("https://api.example.com/", headers=headers)
 ```
 
-> Note : n’envoyez jamais des identifiants en clair en HTTP ; utilisez HTTPS.
+> Note : n'envoyez jamais des identifiants en clair en HTTP ; utilisez HTTPS.
 
 ---
 
-## 2) Digest Auth (HTTP Digest)
+## Digest Auth (HTTP Digest)
 
-Plus sûr que Basic (le mot de passe n’est pas envoyé tel quel), et aussi supporté nativement :
+Plus sûr que Basic (le mot de passe n'est pas envoyé tel quel), et aussi supporté nativement :
 
 ```python
 from requests.auth import HTTPDigestAuth
@@ -97,9 +109,9 @@ print(resp.status_code)
 
 ---
 
-## 3) Bearer Token (OAuth2/JWT)
+## Bearer Token (OAuth2 / JWT)
 
-Beaucoup d’APIs modernes utilisent un jeton (token) dans l’en-tête `Authorization: Bearer <token>`.
+Beaucoup d'APIs modernes utilisent un jeton (token) dans l'en-tête `Authorization: Bearer <token>`.
 
 ```python
 import requests
@@ -111,41 +123,41 @@ resp.raise_for_status()
 print(resp.json())
 ```
 
-Avec Session :
+Avec Session :
 
 ```python
 s = requests.Session()
 s.headers.update({"Authorization": f"Bearer {token}"})
-# toutes les requêtes de s incluent l’en-tête Authorization
+# toutes les requêtes de s incluent l'en-tête Authorization
 ```
 
-Si le token expire, prévoyez un rafraîchissement (endpoint refresh_token) et mettez à jour l’en‑tête dans la Session.
+Si le token expire, prévoyez un rafraîchissement (endpoint refresh_token) et mettez à jour l'en-tête dans la Session.
 
 ---
 
-## 4) API Key (en header ou en paramètre de requête)
+## API Key (en header ou en paramètre de requête)
 
 Certaines APIs utilisent une clé statique à transmettre en header ou en query string.
 
-- En header :
+En header :
 
 ```python
 headers = {"X-API-Key": "ma_cle_api"}
 requests.get("https://api.example.com/data", headers=headers)
 ```
 
-- En paramètre d’URL :
+En paramètre d'URL :
 
 ```python
 params = {"api_key": "ma_cle_api"}
 requests.get("https://api.example.com/data", params=params)
 ```
 
-Privilégiez le header quand c’est possible (logguer la clé dans l'URL n'est pas une très bonne idée).
+Privilégiez le header quand c'est possible (logguer la clé dans l'URL n'est pas une très bonne idée).
 
 ---
 
-## 5) OAuth1 (via requests-oauthlib)
+## OAuth1 (via requests-oauthlib)
 
 Utilisé anciennement par exemple par l'API de Twitter.
 
@@ -163,15 +175,18 @@ auth = OAuth1(
 resp = requests.get("https://api.twitter.com/1.1/account/verify_credentials.json", auth=auth)
 print(resp.status_code)
 ```
-Ce type d'authentification est moins courant aujourd’hui, généralement remplacé par OAuth2.
+
+Ce type d'authentification est moins courant aujourd'hui, généralement remplacé par OAuth2.
+
+---
 
 ## OAuth2 (via requests-oauthlib)
 
-OAuth2 est aujourd’hui le standard le plus courant pour sécuriser les APIs. Avec `requests-oauthlib`, on utilise `OAuth2Session` pour obtenir le jeton (token), l’envoyer, et éventuellement le rafraîchir.
+OAuth2 est aujourd'hui le standard le plus courant pour sécuriser les APIs. Avec `requests-oauthlib`, on utilise `OAuth2Session` pour obtenir le jeton (token), l'envoyer, et éventuellement le rafraîchir.
 
-### a) Flux Client Credentials (machine-to-machine)
+### Flux Client Credentials (machine-to-machine)
 
-Quand il n’y a pas d’utilisateur final (intégrations serveur ↔ serveur).
+Quand il n'y a pas d'utilisateur final (intégrations serveur à serveur).
 
 ```python
 from requests_oauthlib import OAuth2Session
@@ -199,9 +214,9 @@ resp.raise_for_status()
 print(resp.json())
 ```
 
-### b) Flux Authorization Code (application web / utilisateur)
+### Flux Authorization Code (application web / utilisateur)
 
-Classique pour les applis web : on redirige l’utilisateur vers la page d’auth, puis on reçoit un `code` sur l’URL de callback, et on l’échange contre un token.
+Classique pour les applis web : on redirige l'utilisateur vers la page d'auth, puis on reçoit un `code` sur l'URL de callback, et on l'échange contre un token.
 
 ```python
 from requests_oauthlib import OAuth2Session
@@ -234,9 +249,9 @@ resp = oauth.get("https://api.example.com/me")
 print(resp.json())
 ```
 
-### c) Rafraîchir automatiquement le token
+### Rafraîchir automatiquement le token
 
-Quand le provider vous donne un `refresh_token`, configurez la session pour qu’elle rafraîchisse automatiquement et sauvegarde le nouveau token.
+Quand le provider vous donne un `refresh_token`, configurez la session pour qu'elle rafraîchisse automatiquement et sauvegarde le nouveau token.
 
 ```python
 from requests_oauthlib import OAuth2Session
@@ -254,7 +269,7 @@ saved_token = {
 }
 
 def save_token(token):
-    # Persistant : fichier, base, vault…
+    # Persistant : fichier, base, vault
     print("Nouveau token sauvegardé")
 
 extra = {"client_id": client_id, "client_secret": client_secret}
@@ -272,19 +287,19 @@ resp = oauth.get("https://api.example.com/ressource")
 print(resp.status_code)
 ```
 
-Notes :
+Notes :
 - La liste des `scopes` dépend du provider (lisez sa doc).
-- Stockez les tokens de manière sécurisée (chiffrement, variables d’environnement, vault).
+- Stockez les tokens de manière sécurisée (chiffrement, variables d'environnement, vault).
 - Évitez de logger les tokens.
 - Selon les providers, le passage de client_id/secret se fait en Basic Auth ou dans le corps POST.
 
 ---
 
-## 6) Utiliser un fichier .netrc / _netrc
+## Utiliser un fichier .netrc / _netrc
 
-requests sait lire automatiquement les identifiants depuis `~/.netrc` (Linux/macOS) ou `~/_netrc` (Windows) si vous n’indiquez pas `auth=` et que le fichier contient une entrée pour l’hôte.
+requests sait lire automatiquement les identifiants depuis `~/.netrc` (Linux/macOS) ou `~/_netrc` (Windows) si vous n'indiquez pas `auth=` et que le fichier contient une entrée pour l'hôte.
 
-Contenu d’exemple :
+Contenu d'exemple :
 
 ```
 machine api.example.com
@@ -292,7 +307,7 @@ machine api.example.com
   password mon_mot_de_passe
 ```
 
-Utilisation :
+Utilisation :
 
 ```python
 import requests
@@ -304,9 +319,9 @@ Sur Windows, assurez des permissions restreintes au fichier `_netrc`.
 
 ---
 
-## 7) Écrire sa propre classe d’authentification
+## Écrire sa propre classe d'authentification
 
-Vous pouvez personnaliser l’auth en héritant de `requests.auth.AuthBase`.
+Vous pouvez personnaliser l'auth en héritant de `requests.auth.AuthBase`.
 
 ```python
 import requests
@@ -322,7 +337,7 @@ class TokenAuth(AuthBase):
 resp = requests.get("https://api.example.com/", auth=TokenAuth("mon_token"))
 ```
 
-Cela fonctionne aussi avec `Session` :
+Cela fonctionne aussi avec `Session` :
 
 ```python
 s = requests.Session()
@@ -331,11 +346,11 @@ s.auth = TokenAuth("mon_token")
 
 ---
 
-## 8) Proxies avec authentification
+## Proxies avec authentification
 
-Deux façons courantes :
+Deux façons courantes :
 
-- Dans l’URL du proxy :
+Dans l'URL du proxy :
 
 ```python
 proxies = {
@@ -345,14 +360,14 @@ proxies = {
 requests.get("https://api.example.com/", proxies=proxies, timeout=10)
 ```
 
-- Via variables d’environnement powershell (HTTP(S)_PROXY) – pratique en ligne de commande :
+Via variables d'environnement (PowerShell) :
 
 ```powershell
 $env:HTTPS_PROXY = "http://user:pass@proxy.local:8080"
 python mon_script.py
 ```
 
-- En Bash :
+En Bash :
 
 ```bash
 export HTTPS_PROXY="http://user:pass@proxy.local:8080"
@@ -365,22 +380,31 @@ HTTPS_PROXY="http://user:pass@proxy.local:8080" python mon_script.py
 
 ---
 
-## Pour conclure
+## Conclusion
 
-- Basic : `auth=(user, pass)` ou `HTTPBasicAuth`.
-- Digest : `HTTPDigestAuth`.
-- Bearer : en‑tête `Authorization: Bearer <token>` .
-- OAuth1 : `requests-oauthlib` + `OAuth1`.
-- OAuth2 : `requests-oauthlib` + `OAuth2Session` (client_credentials, authorization_code, refresh_token).
-- API Key : header (préféré) ou query param.
-- Custom : classe `AuthBase`.
+Récapitulatif des principaux modes :
+
+- Basic : `auth=(user, pass)` ou `HTTPBasicAuth`.
+- Digest : `HTTPDigestAuth`.
+- Bearer : en-tête `Authorization: Bearer <token>`.
+- OAuth1 : `requests-oauthlib` + `OAuth1`.
+- OAuth2 : `requests-oauthlib` + `OAuth2Session` (client_credentials, authorization_code, refresh_token).
+- API Key : header (préféré) ou query param.
+- Custom : classe `AuthBase`.
+
+Stockez vos secrets dans des variables d'environnement (voir l'article python-dotenv), pas dans le code source.
 
 ---
+
+## Pour aller plus loin
+
+- [Documentation officielle requests](https://requests.readthedocs.io)
+- [Documentation requests-oauthlib](https://requests-oauthlib.readthedocs.io/)
 
 ## Voir aussi
 
 - [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 - [Python : Comment utiliser les sessions avec requests pour optimiser vos appels HTTP]({% post_url 2025-09-04-Comment-utiliser-les-sessions-avec-requests %})
+- [Python : Comment utiliser les variables d'environnement avec python-dotenv]({% post_url 2026-04-20-Comment-utiliser-les-variables-d-environnement-avec-python-dotenv %})
 - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
-- Documentation officielle requests : [https://requests.readthedocs.io](https://requests.readthedocs.io)

@@ -1,7 +1,6 @@
 ---
 layout: article
 title: "Python : Comment utiliser les sessions avec requests pour optimiser vos appels HTTP"
-author: Pierre Chopinet
 tags:
   - python
   - http
@@ -10,32 +9,35 @@ tags:
   - requests
   - performance
   - authentification
+author: Pierre Chopinet
 ---
 
-Les sessions (`requests.Session`) apportent un vrai gain de performance et de simplicité quand vous faites plusieurs requêtes vers une même API : elles réutilisent les connexions (keep‑alive), partagent automatiquement les cookies, en‑têtes et authentifications, et permettent de configurer des stratégies de retries.
+Les sessions (`requests.Session`) apportent un vrai gain de performance et de simplicité quand vous faites plusieurs requêtes vers une même API : elles réutilisent les connexions (keep-alive), partagent automatiquement les cookies, en-têtes et authentifications, et permettent de configurer des stratégies de retries.
 <!--more-->
 
-Dans cet article, on voit :
+Dans cet article :
 
 - Pourquoi et quand utiliser une session
 - Comment partager des headers, cookies et authentifications
 - Activer des retries et le pooling via `HTTPAdapter`
 - Gérer les timeouts, proxys, SSL
-- Les bonnes pratiques (context manager, thread‑safety, pièges courants)
+- Les bonnes pratiques (context manager, thread-safety, pièges courants)
 
+Pré-requis : Python 3 et la bibliothèque `requests` (`pip install requests`). Si vous débutez, commencez par l'article [Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %}).
 
-> Astuce : si vous débutez avec requests, commencez par l’article de base « [Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %}) », puis revenez ici pour optimiser vos appels.
+---
 
-## 1) Pourquoi utiliser requests.Session ?
+## Pourquoi utiliser requests.Session ?
 
 Sans session, chaque appel `requests.get/post/...` ouvre une nouvelle connexion TCP/TLS, ce qui coûte du temps (handshake) et des ressources.
-Une `Session` :
-- Réutilise les connexions grâce au keep‑alive (connection pooling)
-- Conserve automatiquement cookies et certains en‑têtes entre requêtes
-- Permet de définir une authentification une fois pour toutes
-- Centralise la configuration (timeouts par défaut, proxies, SSL, retries, User‑Agent, etc.)
 
-Résultat : moins de latence, code plus concis, et meilleure robustesse.
+Une `Session` :
+- Réutilise les connexions grâce au keep-alive (connection pooling)
+- Conserve automatiquement cookies et certains en-têtes entre requêtes
+- Permet de définir une authentification une fois pour toutes
+- Centralise la configuration (timeouts par défaut, proxies, SSL, retries, User-Agent)
+
+Résultat : moins de latence, code plus concis, et meilleure robustesse.
 
 ### Session de base
 
@@ -50,9 +52,11 @@ with requests.Session() as s:
     print(r2.json())  # {"cookies": {"session": "jaaj"}}
 ```
 
-## 2) Partager des en‑têtes (headers) et une authentification
+---
 
-Vous pouvez définir des headers et une auth sur la session ; ils seront appliqués à toutes les requêtes (et pourront être surchargés au cas par cas).
+## Partager des en-têtes (headers) et une authentification
+
+Vous pouvez définir des headers et une auth sur la session ; ils seront appliqués à toutes les requêtes (et pourront être surchargés au cas par cas).
 
 ```python
 import requests
@@ -70,10 +74,12 @@ with requests.Session() as s:
     print(r.json())
 ```
 
-- `s.headers.update(...)` permet de définir un jeu d’en‑têtes par défaut.
-- `s.auth` évite de répéter l’authentification à chaque appel.
+- `s.headers.update(...)` permet de définir un jeu d'en-têtes par défaut.
+- `s.auth` évite de répéter l'authentification à chaque appel.
 
-## 3) Cookies persistants et RequestsCookieJar
+---
+
+## Cookies persistants et RequestsCookieJar
 
 La session gère un `cookiejar` persistant tant que la session vit.
 
@@ -89,11 +95,13 @@ with requests.Session() as s:
         print(c.name, c.value)
 ```
 
-Pratique pour des parcours d’authentification basés sur cookies (login form) ou des données plus persistantes (ex. token, paniers, configuration).
+Pratique pour des parcours d'authentification basés sur cookies (login form) ou des données plus persistantes (ex: token, paniers, configuration).
 
-## 4) Retries et pooling via HTTPAdapter
+---
 
-Par défaut, requests n’applique pas de retries automatiques. En session, on peut brancher un `HTTPAdapter` pour :
+## Retries et pooling via HTTPAdapter
+
+Par défaut, requests n'applique pas de retries automatiques. En session, on peut brancher un `HTTPAdapter` pour :
 
 - Définir un pool de connexions maximum par hôte (pooling)
 - Configurer des retries sur erreurs réseau ou codes 5xx/429
@@ -105,7 +113,7 @@ from urllib3.util.retry import Retry
 
 retry_strategy = Retry(
     total=3,                # 3 tentatives au total
-    backoff_factor=0.5,     # délai exponentiel: 0.5, 1, 2, ...
+    backoff_factor=0.5,     # délai exponentiel: 0.5, 1, 2
     status_forcelist=[429, 500, 502, 503, 504],
     allowed_methods=["HEAD", "GET", "OPTIONS", "POST"],  # POST si idempotent côté serveur
     raise_on_status=False,
@@ -122,17 +130,19 @@ with requests.Session() as s:
     print(r.json())
 ```
 
-Notes :
-- `allowed_methods` s’applique aux méthodes idempotentes. N’activez `POST` que si votre API le supporte sans effet secondaire.
+Notes :
+- `allowed_methods` s'applique aux méthodes idempotentes. N'activez `POST` que si votre API le supporte sans effet secondaire.
 - `pool_connections` et `pool_maxsize` contrôlent la taille du pool.
 
-## 5) Timeouts & proxies
+---
+
+## Timeouts et proxies
 
 Toujours mettre un timeout pour éviter de bloquer indéfiniment.
 
 ```python
 with requests.Session() as s:
-    # Proxy (par ex. réseau d’entreprise)
+    # Proxy (par ex: réseau d'entreprise)
     s.proxies.update({
         "http": "http://proxy.local:3128",
         "https": "http://proxy.local:3128",
@@ -143,18 +153,22 @@ with requests.Session() as s:
     r.raise_for_status()
 ```
 
-## 6) Bonnes pratiques
+---
 
-- Utilisez un context manager : `with requests.Session() as s:` pour garantir la fermeture propre des connexions (appel implicite à `close()`).
+## Bonnes pratiques
+
+- Utilisez un context manager : `with requests.Session() as s:` pour garantir la fermeture propre des connexions (appel implicite à `close()`).
 - Définissez des timeouts à chaque requête (ou enveloppez vos méthodes pour un timeout par défaut).
-- Centralisez headers/auth/proxies au niveau session.
-- `Session` et thread‑safety : une même instance peut être utilisée en lecture simultanée avec prudence, mais l’API requests ne garantit pas une thread‑safety totale. Le plus sûr est d’avoir une session par thread ou d’utiliser un pool de sessions.
-- N’exposez pas de session globale modifiable dans une librairie ; préférez l’injection (passer la session) ou une fabrique qui crée une session configurée.
+- Centralisez headers, auth et proxies au niveau session.
+- `Session` et thread-safety : une même instance peut être utilisée en lecture simultanée avec prudence, mais l'API requests ne garantit pas une thread-safety totale. Le plus sûr est d'avoir une session par thread ou d'utiliser un pool de sessions.
+- N'exposez pas de session globale modifiable dans une librairie. Préférez l'injection (passer la session) ou une fabrique qui crée une session configurée.
 - Pensez à journaliser (`logging`) les URLs cibles, statuts et latences.
 
-## 7) Modèle de client réutilisable
+---
 
-Exemple d’un petit client API qui encapsule une session configurée :
+## Modèle de client réutilisable
+
+Exemple d'un petit client API qui encapsule une session configurée :
 
 ```python
 import requests
@@ -214,9 +228,20 @@ with ApiClient("https://api.example.com", token="...") as api:
 
 ---
 
-En résumé, `requests.Session` est un incontournable pour toute intégration HTTP sérieuse : plus rapide, plus fiable et plus facile à maintenir. Combinez‑la avec des `HTTPAdapter` pour les retries, définissez des timeouts, et utilisez le context manager pour une gestion propre des ressources.
+## Conclusion
 
-Pour aller plus loin :
-- [Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+`requests.Session` est un incontournable pour toute intégration HTTP sérieuse : plus rapide, plus fiable et plus facile à maintenir. Combinez-la avec des `HTTPAdapter` pour les retries, définissez des timeouts, et utilisez le context manager pour une gestion propre des ressources.
+
+---
+
+## Pour aller plus loin
+
+- [Documentation officielle requests](https://requests.readthedocs.io)
+- [Documentation urllib3 Retry](https://urllib3.readthedocs.io/en/stable/reference/urllib3.util.html#urllib3.util.Retry)
+
+## Voir aussi
+
+- [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 - [Python : Comment utiliser les différents modes d'authentification avec requests]({% post_url 2025-09-05-Comment-utiliser-l-authentification-avec-requests %})
-- Documentation officielle requests : [https://requests.readthedocs.io](https://requests.readthedocs.io)
+- [Comment utiliser un cache avec Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
+- [Comment faire une API web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})

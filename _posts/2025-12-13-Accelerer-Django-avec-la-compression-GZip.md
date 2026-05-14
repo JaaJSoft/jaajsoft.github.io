@@ -1,7 +1,6 @@
 ---
 layout: article
 title: "Accélérer Django avec la compression HTTP"
-author: Pierre Chopinet
 tags:
   - python
   - django
@@ -9,6 +8,7 @@ tags:
   - http
   - compression
   - gzip
+author: Pierre Chopinet
 ---
 
 La compression HTTP permet de réduire drastiquement la taille des réponses envoyées par votre serveur (HTML, JSON, CSS, JavaScript). Une page de 500 Ko peut facilement passer à 50 Ko après compression GZip, ce qui accélère le chargement, réduit la bande passante et améliore l'expérience utilisateur, surtout sur mobile.
@@ -22,30 +22,30 @@ Dans ce guide, vous allez apprendre à :
 - Comprendre quand utiliser GZip côté Django vs côté reverse proxy (Nginx, Caddy)
 - Éviter les pièges courants (double compression, types de contenu incompatibles)
 
-Prérequis :
+Pré-requis :
 - Django 4.2+ (fonctionne aussi avec Django 3.x et 5.x)
 - Connaissances de base de Django (settings, middlewares)
 
 ---
 
-## 1) Pourquoi activer la compression HTTP ?
+## Pourquoi activer la compression HTTP ?
 
 ### Avantages
 
-- **Réduction de la bande passante** : économie de 60 à 90 % sur les réponses textuelles (HTML, JSON, CSS, JS).
+- **Réduction de la bande passante** : économie de 60 à 90% sur les réponses textuelles (HTML, JSON, CSS, JS).
 - **Temps de chargement réduit** : pages plus rapides, surtout sur connexions lentes (3G/4G).
 - **Meilleur référencement** : Google favorise les sites rapides.
 - **Coût infra réduit** : moins de données transférées = moins de facture cloud/CDN.
 
 ### Limites
 
-- **CPU légèrement sollicité** : la compression consomme un peu de CPU côté serveur (négligeable dans 99 % des cas).
+- **CPU légèrement sollicité** : la compression consomme un peu de CPU côté serveur (négligeable dans la grande majorité des cas).
 - **Fichiers déjà compressés** : inutile pour les images (JPEG, PNG, WebP), vidéos (MP4) ou archives (ZIP) déjà compressées.
 - **Seuil de taille** : compresser une réponse de 10 octets n'a pas de sens (overhead supérieur au gain).
 
 ---
 
-## 2) Activer la compression GZip dans Django
+## Activer la compression GZip dans Django
 
 Django intègre un middleware de compression : `GZipMiddleware`. Il suffit de l'ajouter dans `MIDDLEWARE` (le plus tôt possible dans la chaîne, juste après `SecurityMiddleware`).
 
@@ -66,7 +66,7 @@ MIDDLEWARE = [
 ]
 ```
 
-> **Ordre important** : placez `GZipMiddleware` le plus tôt possible, mais après `SecurityMiddleware` (pour que les headers de sécurité soient traités en premier). Si vous utilisez WhiteNoise, placez `GZipMiddleware` après `WhiteNoiseMiddleware`.
+> Ordre important : placez `GZipMiddleware` le plus tôt possible, mais après `SecurityMiddleware` (pour que les headers de sécurité soient traités en premier). Si vous utilisez WhiteNoise, placez `GZipMiddleware` après `WhiteNoiseMiddleware`.
 
 ### Exemple avec WhiteNoise (fichiers statiques)
 
@@ -81,11 +81,11 @@ MIDDLEWARE = [
 ]
 ```
 
-> **Note** : WhiteNoise peut aussi compresser les statiques à l'avance (pré-compression). Voir la section « Combiner avec WhiteNoise ».
+> Note : WhiteNoise peut aussi compresser les statiques à l'avance (pré-compression). Voir la section "Combiner avec WhiteNoise".
 
 ---
 
-## 3) Vérifier que la compression fonctionne
+## Vérifier que la compression fonctionne
 
 ### Avec curl
 
@@ -104,7 +104,7 @@ Content-Length: 4567
 
 ### Avec les DevTools du navigateur
 
-1. Ouvrez l'inspecteur (F12) > onglet **Network**.
+1. Ouvrez l'inspecteur (F12) puis l'onglet **Network**.
 2. Rechargez la page.
 3. Cliquez sur la requête principale (document HTML).
 4. Vérifiez les en-têtes de réponse : `Content-Encoding: gzip`.
@@ -113,7 +113,7 @@ Content-Length: 4567
 Exemple :
 - **Content** : 523 Ko (taille originale)
 - **Size** : 87 Ko (taille transférée après compression)
-- **Gain** : ~83 % de réduction
+- **Gain** : environ 83% de réduction
 
 ### Script Python de test
 
@@ -130,11 +130,9 @@ print(f"Taille compressée: {len(response.content)} octets")
 print(f"Taille décompressée: {len(response.text)} octets")
 ```
 
-> Voir aussi : [Comment faire des requêtes HTTP en Python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
-
 ---
 
-## 4) Configuration avancée : seuils et types de contenu
+## Configuration avancée : seuils et types de contenu
 
 ### Seuil de taille minimum
 
@@ -163,7 +161,7 @@ Django compresse automatiquement les types de contenu textuels courants :
 - `text/xml`
 - `application/xml`
 
-**Types non compressés** (déjà binaires ou compressés) :
+Types non compressés (déjà binaires ou compressés) :
 - Images : `image/jpeg`, `image/png`, `image/webp`, `image/gif`
 - Vidéos : `video/mp4`, `video/webm`
 - Archives : `application/zip`, `application/gzip`
@@ -173,7 +171,7 @@ Le middleware détecte automatiquement le type de contenu et évite de compresse
 
 ---
 
-## 5) Combiner avec WhiteNoise (pré-compression des statiques)
+## Combiner avec WhiteNoise (pré-compression des statiques)
 
 WhiteNoise offre une fonctionnalité de **pré-compression** : vos fichiers statiques (CSS, JS) sont compressés une seule fois au `collectstatic`, puis servis directement compressés (zéro CPU en prod).
 
@@ -196,19 +194,19 @@ Avec cette config :
 - **WhiteNoise** : sert les fichiers statiques (CSS, JS) pré-compressés (`.gz`).
 - **GZipMiddleware** : compresse les réponses dynamiques (HTML, JSON des vues Django).
 
-> **Attention** : si WhiteNoise sert déjà vos statiques compressés, `GZipMiddleware` ne les re-compressera pas (pas de double compression).
+> Attention : si WhiteNoise sert déjà vos statiques compressés, `GZipMiddleware` ne les re-compressera pas (pas de double compression).
 
 ---
 
-## 6) GZip côté Django vs côté reverse proxy (Nginx, Caddy)
+## GZip côté Django vs côté reverse proxy (Nginx, Caddy)
 
-### Quand compresser côté Django ?
+### Quand compresser côté Django
 
 - Vous n'avez pas de reverse proxy (Nginx, Caddy, Traefik).
 - Vous déployez sur un PaaS (Heroku, Render, Fly.io) qui ne gère pas la compression par défaut.
 - Vous voulez une solution simple, sans config externe.
 
-### Quand compresser côté Nginx/Caddy ?
+### Quand compresser côté Nginx ou Caddy
 
 - Vous avez déjà un reverse proxy en place.
 - Vous voulez décharger Django du travail de compression (légère économie de CPU).
@@ -247,13 +245,13 @@ votre-site.com {
 }
 ```
 
-> **Recommandation** : si vous avez un reverse proxy, préférez compresser à ce niveau (plus performant). Sinon, `GZipMiddleware` est parfait.
+> Recommandation : si vous avez un reverse proxy, préférez compresser à ce niveau (plus performant). Sinon, `GZipMiddleware` est parfait.
 
 ---
 
-## 7) Compression Brotli (alternative moderne à GZip)
+## Compression Brotli (alternative moderne à GZip)
 
-**Brotli** est un algorithme de compression plus récent (Google, 2015) qui offre 15 à 25 % de gain supplémentaire par rapport à GZip, avec un support navigateur excellent (>95 %).
+**Brotli** est un algorithme de compression plus récent (Google, 2015) qui offre 15 à 25% de gain supplémentaire par rapport à GZip, avec un support navigateur excellent (>95%).
 
 ### Côté Django
 
@@ -290,11 +288,11 @@ Activé par défaut (Caddy choisit automatiquement entre brotli, gzip, zstd selo
 
 ---
 
-## 8) Pièges courants et bonnes pratiques
+## Pièges courants et bonnes pratiques
 
 ### Pièges
 
-- **Double compression** : si Nginx/Caddy compresse déjà, ne compressez pas côté Django (gaspillage CPU). Désactivez l'un des deux.
+- **Double compression** : si Nginx ou Caddy compresse déjà, ne compressez pas côté Django (gaspillage CPU). Désactivez l'un des deux.
 - **Ordre des middlewares** : `GZipMiddleware` doit être tôt dans la chaîne, mais après `SecurityMiddleware` et `WhiteNoiseMiddleware`.
 - **Fichiers déjà compressés** : ne compressez pas les images, vidéos, archives (aucun gain, voire augmentation de taille).
 - **Seuil trop bas** : compresser des réponses de 50 octets ajoute plus d'overhead que de gain.
@@ -303,23 +301,23 @@ Activé par défaut (Caddy choisit automatiquement entre brotli, gzip, zstd selo
 ### Bonnes pratiques
 
 - Activez la compression dès le début du projet (pas d'impact négatif).
-- Combinez avec du cache pour éviter de recompresser les mêmes réponses (voir [Comment ajouter du cache à une application Django]({% post_url 2025-11-01-Comment-ajouter-du-cache-a-une-application-Django %})).
+- Combinez avec du cache pour éviter de recompresser les mêmes réponses.
 - Mesurez l'impact réel (DevTools, Lighthouse, GTmetrix).
 - Préférez Brotli si vous avez un reverse proxy moderne (Nginx avec `ngx_brotli`, Caddy).
 - Utilisez WhiteNoise avec `CompressedManifestStaticFilesStorage` pour les statiques.
 
 ---
 
-## 9) Mesurer le gain de performance
+## Mesurer le gain de performance
 
 ### Lighthouse (Chrome DevTools)
 
-1. Ouvrez Chrome DevTools > onglet **Lighthouse**.
+1. Ouvrez Chrome DevTools puis l'onglet **Lighthouse**.
 2. Lancez un audit (Performance + Best Practices).
-3. Cherchez « Enable text compression » dans les recommandations.
+3. Cherchez "Enable text compression" dans les recommandations.
 4. Comparez le score avant/après activation.
 
-### GTmetrix / WebPageTest
+### GTmetrix et WebPageTest
 
 - GTmetrix : https://gtmetrix.com/
 - WebPageTest : https://www.webpagetest.org/
@@ -329,7 +327,7 @@ Entrez l'URL de votre site et vérifiez :
 - **Content Size** (taille décompressée)
 - **Compression Ratio**
 
-### Commande locale (avant/après)
+### Commande locale (avant et après)
 
 ```bash
 # Sans compression (désactiver GZipMiddleware)
@@ -345,7 +343,7 @@ ls -lh page.html.gz
 
 ## Cheatsheet
 
-### Activer GZip
+Activer GZip :
 
 ```python
 # settings.py
@@ -356,14 +354,14 @@ MIDDLEWARE = [
 ]
 ```
 
-### Vérifier avec curl
+Vérifier avec curl :
 
 ```bash
 curl -I -H "Accept-Encoding: gzip" https://votre-site.com/
 # Chercher : Content-Encoding: gzip
 ```
 
-### WhiteNoise + pré-compression
+WhiteNoise + pré-compression :
 
 ```python
 MIDDLEWARE = [
@@ -376,7 +374,7 @@ MIDDLEWARE = [
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 ```
 
-### Nginx (alternative)
+Nginx (alternative) :
 
 ```nginx
 gzip on;
@@ -388,14 +386,18 @@ gzip_min_length 1024;
 
 ## Conclusion
 
-Activer la compression GZip dans Django est trivial (une ligne dans `MIDDLEWARE`) et offre un gain substantiel de performance (50 à 90 % de réduction de bande passante). Combinez avec du cache, WhiteNoise et un reverse proxy pour maximiser la vitesse de votre application. Si vous avez déjà un Nginx/Caddy, préférez compresser à ce niveau pour économiser du CPU Django.
+Activer la compression GZip dans Django est trivial (une ligne dans `MIDDLEWARE`) et offre un gain substantiel de performance (50 à 90% de réduction de bande passante). Combinez avec du cache, WhiteNoise et un reverse proxy pour maximiser la vitesse de votre application. Si vous avez déjà un Nginx ou Caddy, préférez compresser à ce niveau pour économiser du CPU Django.
 
 ---
+
+## Pour aller plus loin
+
+- [Documentation Django (GZipMiddleware)](https://docs.djangoproject.com/en/stable/ref/middleware/#module-django.middleware.gzip)
+- [WhiteNoise documentation](http://whitenoise.evans.io/)
 
 ## Voir aussi
 
 - [Comment ajouter du cache à une application Django]({% post_url 2025-11-01-Comment-ajouter-du-cache-a-une-application-Django %})
 - [Comment dockeriser une application Django]({% post_url 2025-10-25-Comment-dockeriser-une-application-Django %})
+- [Déboguer les requêtes SQL et problèmes N+1 dans Django]({% post_url 2025-12-21-Deboguer-les-requetes-SQL-et-problemes-N-plus-1-dans-Django %})
 - [Comment faire des requêtes HTTP en Python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
-- [Documentation Django (GZipMiddleware)](https://docs.djangoproject.com/en/stable/ref/middleware/#module-django.middleware.gzip)
-- [WhiteNoise documentation](http://whitenoise.evans.io/)
