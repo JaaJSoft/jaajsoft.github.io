@@ -1,7 +1,6 @@
 ---
 layout: article
 title: "Déboguer les requêtes SQL et problèmes N+1 dans Django"
-author: Pierre Chopinet
 tags:
   - python
   - django
@@ -9,31 +8,30 @@ tags:
   - performance
   - orm
   - optimisation
+author: Pierre Chopinet
 ---
 
 Le problème N+1 est l'un des pièges les plus courants en Django : pour afficher une liste d'objets avec leurs relations, l'ORM exécute 1 requête pour la liste + N requêtes (une par objet). Résultat : des centaines de requêtes SQL qui plombent les performances. Dans ce guide, on voit comment visualiser toutes les requêtes SQL de votre app Django, détecter les N+1, et les corriger avec `select_related` et `prefetch_related`.
 <!--more-->
 
-Objectifs:
+Dans cet article :
 - Afficher et analyser toutes les requêtes SQL exécutées par Django
 - Comprendre le problème N+1 et savoir le détecter
 - Optimiser avec `select_related()` (jointures) et `prefetch_related()` (requêtes séparées)
 - Utiliser des outils comme Django Debug Toolbar, `django-querycount`, et le logging SQL
 - Éviter les pièges courants et adopter les bonnes pratiques
 
-Prérequis :
+Pré-requis :
 - Django 4.2+ (ou 5.x)
 - Notions de modèles et querysets
 
-Avant de résoudre les problèmes, commençons par les rendre visibles : voyons comment afficher les requêtes SQL.
-
 ---
 
-## 1) Afficher les requêtes SQL dans Django
+## Afficher les requêtes SQL dans Django
 
 Django propose plusieurs méthodes pour voir les requêtes SQL exécutées par l'ORM.
 
-### a) Via `connection.queries`
+### Via `connection.queries`
 
 Utile pour un debug rapide dans le shell ou une vue de dev.
 
@@ -56,9 +54,9 @@ for query in connection.queries:
 print(f"Total queries: {len(connection.queries)}")
 ```
 
-> **Attention** : `connection.queries` ne fonctionne qu'avec `DEBUG = True` et peut consommer beaucoup de mémoire en production.
+> Attention : `connection.queries` ne fonctionne qu'avec `DEBUG = True` et peut consommer beaucoup de mémoire en production.
 
-### b) Logging SQL
+### Logging SQL
 
 Activez le logging des requêtes SQL dans `settings.py` :
 
@@ -87,9 +85,9 @@ Toutes les requêtes SQL s'afficheront dans la console :
 (0.001) SELECT "blog_article"."id", "blog_article"."title", ... FROM "blog_article"; args=()
 ```
 
-### c) Django Debug Toolbar
+### Django Debug Toolbar
 
-L'outil le plus complet pour visualiser les requêtes, temps d'exécution, requêtes dupliquées, etc.
+L'outil le plus complet pour visualiser les requêtes, temps d'exécution, requêtes dupliquées.
 
 Installation :
 
@@ -138,11 +136,9 @@ Une fois installé, un panneau latéral apparaît dans votre navigateur avec :
 - Les requêtes dupliquées (= problèmes N+1)
 - Les traces de code qui ont déclenché chaque requête
 
-Maintenant que vous voyez les requêtes, passons au problème le plus courant : le N+1.
-
 ---
 
-## 2) Comprendre le problème N+1
+## Comprendre le problème N+1
 
 Le problème N+1 survient quand on boucle sur des objets et qu'on accède à leurs relations : Django exécute une requête supplémentaire pour chaque objet.
 
@@ -173,7 +169,7 @@ def article_list(request):
     return render(request, 'articles.html', {'articles': articles})
 ```
 
-**Résultat** : Si vous avez 100 articles, Django exécute :
+Si vous avez 100 articles, Django exécute :
 - 1 requête pour récupérer les 100 articles
 - 100 requêtes pour récupérer l'auteur de chaque article
 - **Total : 101 requêtes**
@@ -181,28 +177,26 @@ def article_list(request):
 Dans le template, c'est pareil :
 
 ```django
-{# templates/articles.html #}
+{% raw %}{# templates/articles.html #}
 {% for article in articles %}
   <h2>{{ article.title }}</h2>
   <p>Par {{ article.author.name }}</p>  {# 1 requête par article #}
-{% endfor %}
+{% endfor %}{% endraw %}
 ```
 
-### Comment détecter un N+1 ?
+### Comment détecter un N+1
 
-- Django Debug Toolbar : section « SQL » → regardez si vous voyez des requêtes répétées (ex : `SELECT ... FROM author WHERE id = ?` avec différents IDs)
+- Django Debug Toolbar : section "SQL", regardez si vous voyez des requêtes répétées (ex: `SELECT ... FROM author WHERE id = ?` avec différents IDs)
 - `connection.queries` : comptez le nombre de requêtes et cherchez des patterns répétitifs
-- Package `django-querycount` (voir section 5)
-
-Passons maintenant aux solutions pour éliminer ces requêtes en trop.
+- Package `django-querycount` (voir section dédiée plus bas)
 
 ---
 
-## 3) Corriger le N+1 : select_related() et prefetch_related()
+## Corriger le N+1 : select_related() et prefetch_related()
 
 Django offre deux outils puissants pour charger les relations en une seule fois.
 
-### a) select_related() : jointures SQL (ForeignKey, OneToOne)
+### select_related() : jointures SQL (ForeignKey, OneToOne)
 
 Utilisez `select_related()` pour les relations **un-à-un** ou **plusieurs-à-un** (ForeignKey, OneToOneField). Django effectue une jointure SQL et récupère tout en une seule requête.
 
@@ -214,20 +208,20 @@ def article_list(request):
     # 1 seule requête avec jointure sur Author
     articles = Article.objects.select_related('author').all()
     for article in articles:
-        print(article.author.name)  # Pas de requête supplémentaire !
+        print(article.author.name)  # Pas de requête supplémentaire
     return render(request, 'articles.html', {'articles': articles})
 ```
 
-**SQL généré** :
+SQL généré :
 ```sql
 SELECT article.*, author.*
 FROM article
 INNER JOIN author ON article.author_id = author.id
 ```
 
-**Résultat** : 1 seule requête au lieu de 101
+Résultat : 1 seule requête au lieu de 101.
 
-### b) prefetch_related() : requêtes séparées (ManyToMany, reverse ForeignKey)
+### prefetch_related() : requêtes séparées (ManyToMany, reverse ForeignKey)
 
 Pour les relations **un-à-plusieurs** ou **plusieurs-à-plusieurs**, utilisez `prefetch_related()`. Django effectue 2 requêtes séparées mais optimisées (une pour les objets principaux, une pour les relations), puis les relie en Python.
 
@@ -261,7 +255,7 @@ for article in articles:
         print(tag.name)
 ```
 
-**SQL généré** :
+SQL généré :
 ```sql
 -- Requête 1 : articles
 SELECT * FROM article;
@@ -272,9 +266,9 @@ INNER JOIN article_tags ON tag.id = article_tags.tag_id
 WHERE article_tags.article_id IN (1, 2, 3, ...);
 ```
 
-**Résultat** : 2 requêtes au total (au lieu de N+1).
+Résultat : 2 requêtes au total (au lieu de N+1).
 
-### c) Chaîner plusieurs relations
+### Chaîner plusieurs relations
 
 Vous pouvez optimiser plusieurs niveaux de relations :
 
@@ -292,7 +286,7 @@ articles = Article.objects.select_related('author').prefetch_related('tags').all
 
 ---
 
-## 4) Cas avancés : Prefetch() et filtrage
+## Cas avancés : Prefetch() et filtrage
 
 Parfois, vous voulez précharger une relation mais avec un filtrage ou un tri personnalisé.
 
@@ -337,15 +331,15 @@ for article in articles:
         print(comment.text)
 ```
 
-**Avantages** :
+Avantages :
 - 2 requêtes au total (1 pour les articles, 1 pour les commentaires publiés)
 - `to_attr` crée un attribut custom pour éviter de polluer le cache du relation manager
 
 ---
 
-## 5) Outils pour détecter et surveiller les N+1
+## Outils pour détecter et surveiller les N+1
 
-### a) django-querycount
+### django-querycount
 
 Ce package affiche automatiquement le nombre de requêtes pour chaque requête HTTP dans la console.
 
@@ -376,7 +370,7 @@ Résultat dans la console :
 [SQL] GET /articles/ : 101 queries (99 duplicates)
 ```
 
-### b) nplusone (détection automatique)
+### nplusone (détection automatique)
 
 Ce package détecte les N+1 et génère des warnings.
 
@@ -395,7 +389,7 @@ NPLUSONE_RAISE = True  # lève une exception si N+1 détecté (dev uniquement)
 
 ---
 
-## 6) Bonnes pratiques et pièges à éviter
+## Bonnes pratiques et pièges à éviter
 
 ### Bonnes pratiques
 
@@ -405,14 +399,12 @@ NPLUSONE_RAISE = True  # lève une exception si N+1 détecté (dev uniquement)
 
 ```python
 from django.test import TestCase
-from django.test.utils import override_settings
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
 
 class ArticleViewTest(TestCase):
     def test_article_list_queries(self):
         # Créez des données de test
-        from django.db import connection
-        from django.test.utils import CaptureQueriesContext
-
         with CaptureQueriesContext(connection) as context:
             response = self.client.get('/articles/')
 
@@ -431,33 +423,39 @@ class ArticleViewTest(TestCase):
 
 ## Cheatsheet
 
-- Afficher les requêtes :
-  ```python
-  from django.db import connection
-  print(len(connection.queries))
-  ```
-- Logging SQL :
-  ```python
-  # settings.py
-  LOGGING = {'loggers': {'django.db.backends': {'level': 'DEBUG'}}}
-  ```
-- ForeignKey/OneToOne → `select_related()` :
-  ```python
-  Article.objects.select_related('author', 'author__country')
-  ```
-- ManyToMany/reverse FK → `prefetch_related()` :
-  ```python
-  Article.objects.prefetch_related('tags')
-  ```
-- Préchargement personnalisé :
-  ```python
-  from django.db.models import Prefetch
-  Article.objects.prefetch_related(
-      Prefetch('comments', queryset=Comment.objects.filter(published=True))
-  )
-  ```
-- Django Debug Toolbar : indispensable en dev.
-- `django-querycount` : affiche le nombre de requêtes par vue.
+Afficher les requêtes :
+```python
+from django.db import connection
+print(len(connection.queries))
+```
+
+Logging SQL :
+```python
+# settings.py
+LOGGING = {'loggers': {'django.db.backends': {'level': 'DEBUG'}}}
+```
+
+ForeignKey / OneToOne -> `select_related()` :
+```python
+Article.objects.select_related('author', 'author__country')
+```
+
+ManyToMany / reverse FK -> `prefetch_related()` :
+```python
+Article.objects.prefetch_related('tags')
+```
+
+Préchargement personnalisé :
+```python
+from django.db.models import Prefetch
+Article.objects.prefetch_related(
+    Prefetch('comments', queryset=Comment.objects.filter(published=True))
+)
+```
+
+Django Debug Toolbar : indispensable en dev.
+
+`django-querycount` : affiche le nombre de requêtes par vue.
 
 ---
 
@@ -469,6 +467,12 @@ Visualiser et déboguer les requêtes SQL est essentiel pour optimiser une app D
 
 ## Pour aller plus loin
 
+- [Documentation officielle Django (optimisation de base de données)](https://docs.djangoproject.com/en/stable/topics/db/optimization/)
+- [Documentation Django Debug Toolbar](https://django-debug-toolbar.readthedocs.io/)
+- [django-querycount sur PyPI](https://pypi.org/project/django-querycount/)
+
+## Voir aussi
+
 - [Comment ajouter du cache à une application Django]({% post_url 2025-11-01-Comment-ajouter-du-cache-a-une-application-Django %})
 - [Accélérer Django avec la compression GZip]({% post_url 2025-12-13-Accelerer-Django-avec-la-compression-GZip %})
-- [Documentation officielle Django (optimisation de base de données)](https://docs.djangoproject.com/en/stable/topics/db/optimization/)
+- [Comment dockeriser une application Django]({% post_url 2025-10-25-Comment-dockeriser-une-application-Django %})

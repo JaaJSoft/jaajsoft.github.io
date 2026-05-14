@@ -1,19 +1,19 @@
 ---
 layout: article
 title: "Comment créer ses annotations en Java"
-author: Pierre Chopinet
 tags:
   - java
   - annotations
   - reflection
+author: Pierre Chopinet
 ---
 
-Les annotations font partie intégrante de Java moderne : `@Override`, `@Autowired`, `@GetMapping`... On les utilise quotidiennement, mais comment créer les nôtres ? Créer ses propres annotations permet d'ajouter des métadonnées à son code et d'automatiser des comportements récurrents.
+Les annotations font partie intégrante de Java moderne : `@Override`, `@Autowired`, `@GetMapping`. On les utilise quotidiennement, mais comment créer les nôtres ? Créer ses propres annotations permet d'ajouter des métadonnées à son code et d'automatiser des comportements récurrents.
 <!--more-->
 
 Dans cet article, vous découvrirez :
 - Ce qu'est une annotation et comment elle fonctionne en interne
-- Les méta-annotations qui contrôlent le comportement des annotations (`@Retention`, `@Target`, etc.)
+- Les méta-annotations qui contrôlent le comportement des annotations (`@Retention`, `@Target`)
 - Comment déclarer une annotation avec ou sans paramètres
 - Comment lire les annotations à l'exécution via la réflexion
 - Comment créer un processeur d'annotations à la compilation
@@ -23,11 +23,11 @@ Pré-requis : Java 8+ pour les bases, Java 17+ recommandé pour les exemples ava
 
 ---
 
-## 1) Qu'est-ce qu'une annotation ?
+## Qu'est-ce qu'une annotation ?
 
 Une annotation est une forme de **métadonnée** attachée au code. Elle ne modifie pas directement le comportement du programme, mais elle fournit des informations exploitables par le compilateur, les outils de build ou le runtime.
 
-### 1.1) Les annotations que vous connaissez déjà
+### Les annotations que vous connaissez déjà
 
 ```java
 @Override  // Vérifie que la méthode redéfinit bien une méthode parente
@@ -44,7 +44,7 @@ public void methodeAvecCast() {}
 
 Ces annotations sont traitées par le compilateur. Mais rien ne vous empêche de créer les vôtres, traitées soit à la compilation, soit à l'exécution.
 
-### 1.2) Anatomie d'une déclaration d'annotation
+### Anatomie d'une déclaration d'annotation
 
 Une annotation se déclare avec `@interface` (et non `class` ou `interface`) :
 
@@ -57,11 +57,11 @@ C'est tout. Vous avez créé une annotation utilisable avec `@MonAnnotation`. Ma
 
 ---
 
-## 2) Les méta-annotations
+## Les méta-annotations
 
 Les méta-annotations sont des annotations qui s'appliquent à d'autres annotations. Elles définissent **où**, **quand** et **comment** votre annotation se comporte.
 
-### 2.1) @Retention : durée de vie de l'annotation
+### @Retention : durée de vie de l'annotation
 
 `@Retention` détermine jusqu'à quand l'annotation est conservée :
 
@@ -90,7 +90,7 @@ public @interface Auditable {}
 
 > La politique par défaut est `CLASS`. Pour la plupart des cas d'usage custom, vous utiliserez `RUNTIME`.
 
-### 2.2) @Target : où l'annotation peut être placée
+### @Target : où l'annotation peut être placée
 
 `@Target` restreint les emplacements où votre annotation est autorisée :
 
@@ -121,7 +121,7 @@ Les valeurs possibles de `ElementType` :
 | `TYPE_USE`         | Utilisation de type (Java 8+)       |
 | `RECORD_COMPONENT` | Composant de record (Java 16+)      |
 
-### 2.3) @Documented
+### @Documented
 
 `@Documented` indique que l'annotation doit apparaître dans la Javadoc générée :
 
@@ -136,7 +136,7 @@ public @interface ApiEndpoint {
 }
 ```
 
-### 2.4) @Inherited
+### @Inherited
 
 `@Inherited` permet aux sous-classes d'hériter automatiquement de l'annotation de leur classe parente :
 
@@ -157,7 +157,7 @@ public class ChildService extends BaseService {}
 
 > `@Inherited` ne fonctionne qu'avec les annotations sur les classes, pas sur les méthodes ni les interfaces.
 
-### 2.5) @Repeatable (Java 8+)
+### @Repeatable (Java 8+)
 
 `@Repeatable` autorise l'utilisation multiple de la même annotation sur un même élément :
 
@@ -186,11 +186,11 @@ public class AdminController {}
 
 ---
 
-## 3) Annotations avec paramètres
+## Annotations avec paramètres
 
 Les annotations peuvent déclarer des **éléments** (paramètres) avec des valeurs par défaut optionnelles.
 
-### 3.1) Syntaxe des éléments
+### Syntaxe des éléments
 
 Les éléments d'une annotation ressemblent à des méthodes abstraites sans paramètres :
 
@@ -211,10 +211,10 @@ public void getUsers() {}
 public void createUser() {}
 ```
 
-### 3.2) Types autorisés
+### Types autorisés
 
 Les éléments d'une annotation sont limités aux types suivants :
-- Types primitifs (`int`, `long`, `double`, `boolean`...)
+- Types primitifs (`int`, `long`, `double`, `boolean`)
 - `String`
 - `Class<?>` ou `Class<? extends T>`
 - Enums
@@ -232,7 +232,7 @@ public @interface Entity {
 }
 ```
 
-### 3.3) L'élément spécial value()
+### L'élément spécial value()
 
 Si votre annotation ne possède qu'un seul élément nommé `value`, le nom peut être omis à l'utilisation :
 
@@ -267,11 +267,11 @@ private String email;
 
 ---
 
-## 4) Lire les annotations à l'exécution (réflexion)
+## Lire les annotations à l'exécution (réflexion)
 
 Les annotations avec `RetentionPolicy.RUNTIME` sont accessibles via l'API de réflexion de Java.
 
-### 4.1) Vérifier la présence d'une annotation
+### Vérifier la présence d'une annotation
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -293,7 +293,7 @@ System.out.println(saveMethod.isAnnotationPresent(Transactional.class));  // tru
 System.out.println(findMethod.isAnnotationPresent(Transactional.class));  // false
 ```
 
-### 4.2) Récupérer les valeurs des éléments
+### Récupérer les valeurs des éléments
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -316,7 +316,7 @@ System.out.println(retry.maxAttempts());  // 5
 System.out.println(retry.delayMs());      // 2000
 ```
 
-### 4.3) Scanner toutes les méthodes annotées d'une classe
+### Scanner toutes les méthodes annotées d'une classe
 
 ```java
 public static List<Method> findAnnotatedMethods(Class<?> clazz,
@@ -331,7 +331,7 @@ List<Method> transactionalMethods = findAnnotatedMethods(UserService.class, Tran
 transactionalMethods.forEach(m -> System.out.println(m.getName()));
 ```
 
-### 4.4) Lire les annotations sur les champs
+### Lire les annotations sur les champs
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -369,11 +369,11 @@ public static Map<String, Object> serialize(Object obj) throws Exception {
 
 ---
 
-## 5) Cas pratique : créer une annotation de validation
+## Cas pratique : créer une annotation de validation
 
 Mettons en pratique ce que nous avons vu en créant un mini-framework de validation basé sur les annotations.
 
-### 5.1) Définir les annotations
+### Définir les annotations
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -398,7 +398,7 @@ public @interface Range {
 }
 ```
 
-### 5.2) Le modèle annoté
+### Le modèle annoté
 
 ```java
 public class UserForm {
@@ -421,7 +421,7 @@ public class UserForm {
 }
 ```
 
-### 5.3) Le validateur
+### Le validateur
 
 ```java
 public class Validator {
@@ -470,7 +470,7 @@ public class Validator {
 }
 ```
 
-### 5.4) Utilisation
+### Utilisation
 
 ```java
 UserForm valid = new UserForm("Alice", "alice@mail.com", 30);
@@ -486,11 +486,11 @@ List<String> errors2 = Validator.validate(invalid);
 
 ---
 
-## 6) Cas pratique : annotation d'audit sur les méthodes
+## Cas pratique : annotation d'audit sur les méthodes
 
 Créons une annotation `@Audited` qui loggue automatiquement les appels de méthodes via un proxy dynamique.
 
-### 6.1) L'annotation
+### L'annotation
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -500,7 +500,7 @@ public @interface Audited {
 }
 ```
 
-### 6.2) Le handler de proxy
+### Le handler de proxy
 
 ```java
 import java.lang.reflect.InvocationHandler;
@@ -541,7 +541,7 @@ public class AuditProxy implements InvocationHandler {
 }
 ```
 
-### 6.3) Utilisation
+### Utilisation du proxy
 
 ```java
 public interface OrderService {
@@ -574,20 +574,20 @@ service.getOrder("ABC");
 
 ---
 
-## 7) Processeur d'annotations à la compilation
+## Processeur d'annotations à la compilation
 
 Jusqu'ici, nous avons lu les annotations à l'exécution. Mais il est aussi possible de les traiter **à la compilation** grâce à l'API `javax.annotation.processing`.
 
-### 7.1) Principe
+### Principe
 
 Un processeur d'annotations est invoqué par `javac` pendant la compilation. Il peut :
-- Vérifier des contraintes et émettre des erreurs/warnings
+- Vérifier des contraintes et émettre des erreurs ou warnings
 - Générer du code source supplémentaire
 - Générer des fichiers de ressources
 
 C'est le mécanisme utilisé par Lombok, MapStruct, Dagger et bien d'autres.
 
-### 7.2) Créer un processeur simple
+### Créer un processeur simple
 
 Créons un processeur qui vérifie que les classes annotées `@Builder` ont au moins un champ :
 
@@ -641,7 +641,7 @@ public class BuilderProcessor extends AbstractProcessor {
 }
 ```
 
-### 7.3) Enregistrer le processeur
+### Enregistrer le processeur
 
 Créez le fichier `META-INF/services/javax.annotation.processing.Processor` contenant le nom qualifié du processeur :
 
@@ -658,11 +658,11 @@ provides javax.annotation.processing.Processor
 
 ---
 
-## 8) Bonnes pratiques
+## Bonnes pratiques
 
-### ✅ À faire
+### À faire
 
-1 **Toujours spécifier `@Retention` et `@Target`** pour éviter les surprises
+- **Toujours spécifier `@Retention` et `@Target`** pour éviter les surprises :
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -670,37 +670,17 @@ provides javax.annotation.processing.Processor
 public @interface MyAnnotation {}
 ```
 
-2 **Utiliser `value()` comme élément principal** quand l'annotation n'a qu'un seul paramètre important
+- **Utiliser `value()` comme élément principal** quand l'annotation n'a qu'un seul paramètre important.
+- **Fournir des valeurs par défaut** quand c'est possible pour simplifier l'utilisation.
+- **Documenter avec `@Documented`** pour les annotations d'API publique.
+- **Préférer des annotations composées** plutôt que d'empiler les annotations.
 
-3 **Fournir des valeurs par défaut** quand c'est possible pour simplifier l'utilisation
+### À éviter
 
-4 **Documenter avec `@Documented`** pour les annotations d'API publique
-
-5 **Préférer des annotations composées** plutôt que d'empiler les annotations :
-
-```java
-// Plutôt que d'empiler
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-@Transactional
-@Cacheable
-@Audited
-public @interface ServiceMethod {}
-
-// Utilisation simplifiée
-@ServiceMethod
-public void processOrder() {}
-```
-
-### ❌ À éviter
-
-1 **Ne pas abuser des annotations** : si la logique devient complexe, préférez une approche explicite
-
-2 **Éviter les annotations avec trop d'éléments** : si vous dépassez 5 paramètres, envisagez une classe de configuration
-
-3 **Ne pas utiliser `RetentionPolicy.RUNTIME` sans raison** : cela ajoute des métadonnées au bytecode
-
-4 **Attention à la réflexion** : les appels réflectifs ont un coût de performance, utilisez-les avec discernement
+- **Ne pas abuser des annotations** : si la logique devient complexe, préférez une approche explicite.
+- **Éviter les annotations avec trop d'éléments** : si vous dépassez 5 paramètres, envisagez une classe de configuration.
+- **Ne pas utiliser `RetentionPolicy.RUNTIME` sans raison** : cela ajoute des métadonnées au bytecode.
+- **Attention à la réflexion** : les appels réflectifs ont un coût de performance, utilisez-les avec discernement.
 
 ---
 
@@ -712,7 +692,7 @@ public void processOrder() {}
 
 **Peut-on mettre une annotation sur une annotation ?**
 
-Oui, c'est exactement ce que font les méta-annotations (`@Retention`, `@Target`...). Utilisez `@Target(ElementType.ANNOTATION_TYPE)` pour cibler les annotations.
+Oui, c'est exactement ce que font les méta-annotations (`@Retention`, `@Target`). Utilisez `@Target(ElementType.ANNOTATION_TYPE)` pour cibler les annotations.
 
 **Les annotations ont-elles un impact sur les performances ?**
 
@@ -752,4 +732,6 @@ Créer ses annotations, c'est comprendre le fonctionnement interne des framework
 - [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})
 - [Les Sealed classes en Java]({% post_url 2026-01-14-Sealed-classes-en-Java %})
 - [Optional en Java : éviter les NullPointerException]({% post_url 2026-01-26-Optional-en-Java-eviter-les-NullPointerException %})
+- [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
+- [Comment faire des group by en Java]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
 - [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})

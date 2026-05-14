@@ -1,15 +1,15 @@
 ---
 layout: article
 title: "Augmenter la limite inotify sur Debian et Ubuntu"
-author: Pierre Chopinet
 tags:
   - linux
   - debian
   - ubuntu
   - inotify
+author: Pierre Chopinet
 ---
 
-Lorsque vous développez sur Linux avec des outils modernes (IDE, hot-reload, watchers), vous rencontrez souvent l'erreur « too many open files » ou « inotify watch limit reached ». Ces messages indiquent que la limite par défaut d'inotify est atteinte. Ce guide vous montre comment augmenter ces limites sur Debian et Ubuntu.
+Lorsque vous développez sur Linux avec des outils modernes (IDE, hot-reload, watchers), vous rencontrez souvent l'erreur "too many open files" ou "inotify watch limit reached". Ces messages indiquent que la limite par défaut d'inotify est atteinte. Ce guide vous montre comment augmenter ces limites sur Debian et Ubuntu.
 <!--more-->
 
 Dans cet article, vous découvrirez :
@@ -20,53 +20,56 @@ Dans cet article, vous découvrirez :
 - Les valeurs recommandées selon votre usage
 - Comment diagnostiquer les processus qui consomment des watchers
 
+Pré-requis : Debian ou Ubuntu (la procédure s'applique aussi aux autres distributions Linux modernes) et accès `sudo`.
+
 ---
 
-## 1) Qu'est-ce qu'inotify ?
+## Qu'est-ce qu'inotify ?
 
 `inotify` (inode notify) est un sous-système du noyau Linux qui surveille les modifications du système de fichiers. Il permet aux applications de recevoir des notifications lorsqu'un fichier ou répertoire est créé, modifié, supprimé ou déplacé.
 
+---
 
-## 2) Les trois limites d'inotify
+## Les trois limites d'inotify
 
 Le système inotify possède trois paramètres configurables :
 
 ### max_user_watches
 
-**Nombre maximum de fichiers et répertoires surveillés par utilisateur**.
+Nombre maximum de fichiers et répertoires surveillés par utilisateur.
 
 ```bash
 cat /proc/sys/fs/inotify/max_user_watches
 # Par défaut : 8192 ou 524288 (selon distribution)
 ```
 
-**Problème courant** : dépassement lors du watch de gros projets (node_modules, monorepos).
+Problème courant : dépassement lors du watch de gros projets (node_modules, monorepos).
 
 ### max_user_instances
 
-**Nombre maximum d'instances inotify par utilisateur** (nombre de processus pouvant surveiller des fichiers).
+Nombre maximum d'instances inotify par utilisateur (nombre de processus pouvant surveiller des fichiers).
 
 ```bash
 cat /proc/sys/fs/inotify/max_user_instances
 # Par défaut : 128
 ```
 
-**Problème courant** : trop d'outils tournent simultanément (IDE + webpack + tests + docker).
+Problème courant : trop d'outils tournent simultanément (IDE + webpack + tests + docker).
 
 ### max_queued_events
 
-**Nombre maximum d'événements en attente dans la file** avant qu'ils ne soient traités.
+Nombre maximum d'événements en attente dans la file avant qu'ils ne soient traités.
 
 ```bash
 cat /proc/sys/fs/inotify/max_queued_events
 # Par défaut : 16384
 ```
 
-**Problème courant** : modifications massives (git checkout, npm install) peuvent saturer la file.
+Problème courant : modifications massives (git checkout, npm install) peuvent saturer la file.
 
 ---
 
-## 3) Vérifier vos limites actuelles
+## Vérifier vos limites actuelles
 
 ### Afficher toutes les limites
 
@@ -74,7 +77,7 @@ cat /proc/sys/fs/inotify/max_queued_events
 sysctl fs.inotify
 ```
 
-**Sortie typique** :
+Sortie typique :
 ```
 fs.inotify.max_queued_events = 16384
 fs.inotify.max_user_instances = 128
@@ -104,7 +107,7 @@ Cette commande liste les processus avec leurs nombres de watchers (utile pour di
 
 ---
 
-## 4) Augmenter les limites temporairement
+## Augmenter les limites temporairement
 
 ### Modifier pour la session en cours
 
@@ -114,13 +117,13 @@ sudo sysctl fs.inotify.max_user_instances=512
 sudo sysctl fs.inotify.max_queued_events=32768
 ```
 
-**⚠️ Limitation** : ces changements sont perdus au redémarrage.
+> Limitation : ces changements sont perdus au redémarrage.
 
-**Usage** : test rapide ou débogage ponctuel.
+Usage : test rapide ou débogage ponctuel.
 
 ---
 
-## 5) Augmenter les limites de façon permanente
+## Augmenter les limites de façon permanente
 
 ### Méthode recommandée : créer un fichier de configuration
 
@@ -148,31 +151,31 @@ sudo sysctl -p /etc/sysctl.d/60-inotify.conf
 sysctl fs.inotify.max_user_watches
 ```
 
-**Résultat attendu** :
+Résultat attendu :
 ```
 fs.inotify.max_user_watches = 524288
 ```
 
 ---
 
-## 6) Impact mémoire des limites
+## Impact mémoire des limites
 
 Chaque watcher consomme environ **1 Ko de RAM** (noyau Linux).
 
-**Calcul pour 524 288 watchers** :
+Calcul pour 524 288 watchers :
 ```
 524288 watchers × 1 Ko = 512 Mo RAM
 ```
 
-Sur une machine de développement moderne (16+ Go RAM), c'est négligeable.
+Sur une machine de développement moderne (16 Go RAM ou plus), c'est négligeable.
 
-**⚡ Conseil** : ne dépassez pas 4 millions de watchers sauf cas extrême (risque de ralentissements).
+> Conseil : ne dépassez pas 4 millions de watchers sauf cas extrême (risque de ralentissements).
 
 ---
 
-## 7) Debugging : lister les watchers actifs
+## Debugging : lister les watchers actifs
 
-### Méthode 1 : avec inotify-tools
+### Avec inotify-tools
 
 Installez le paquet :
 ```bash
@@ -185,7 +188,7 @@ Surveillez en temps réel :
 inotifywatch -v /chemin/vers/dossier
 ```
 
-### Méthode 2 : script
+### Avec un script
 
 Créez `list-watchers.sh` :
 ```bash
@@ -206,7 +209,7 @@ chmod +x list-watchers.sh
 ./list-watchers.sh
 ```
 
-**Sortie exemple** :
+Sortie exemple :
 ```
   45 node
   12 java
@@ -216,22 +219,22 @@ chmod +x list-watchers.sh
 
 ---
 
-## 8) Bonnes pratiques
+## Bonnes pratiques
 
-### ✅ À faire
+### À faire
 
-1. **Augmenter progressivement** : commencez par 524288, augmentez si nécessaire
-2. **Monitorer la RAM** : surveillez l'impact mémoire avec `htop` ou `free -h`
-3. **Exclure les gros dossiers** : node_modules, .git, dist, build
-4. **Redémarrer les processus** après modification : IDE, serveurs de dev
-5. **Documenter** : notez les valeurs choisies
+- **Augmenter progressivement** : commencez par 524288, augmentez si nécessaire
+- **Monitorer la RAM** : surveillez l'impact mémoire avec `htop` ou `free -h`
+- **Exclure les gros dossiers** : node_modules, .git, dist, build
+- **Redémarrer les processus** après modification : IDE, serveurs de dev
+- **Documenter** : notez les valeurs choisies
 
-### ❌ À éviter
+### À éviter
 
-1. **Ne pas fixer à des valeurs astronomiques** (> 4 millions) sans raison
-2. **Ne pas ignorer les erreurs** : si vous atteignez la limite, investiguer pourquoi
-3. **Ne pas utiliser le polling** comme solution par défaut (moins performant)
-4. **Ne pas oublier de tester après redémarrage**
+- **Ne pas fixer à des valeurs astronomiques** (> 4 millions) sans raison
+- **Ne pas ignorer les erreurs** : si vous atteignez la limite, investiguer pourquoi
+- **Ne pas utiliser le polling** comme solution par défaut (moins performant)
+- **Ne pas oublier de tester après redémarrage**
 
 ---
 
@@ -264,7 +267,7 @@ done | sort -rn
 - inotify surveille les modifications du système de fichiers
 - Les limites par défaut sont souvent insuffisantes pour le développement moderne
 - Utilisez `/etc/sysctl.d/60-inotify.conf` pour des modifications permanentes
-- Chaque watcher consomme ~1 Ko RAM (négligeable sur machines modernes)
+- Chaque watcher consomme environ 1 Ko RAM (négligeable sur machines modernes)
 
 ---
 
@@ -272,6 +275,11 @@ done | sort -rn
 
 - [Documentation officielle inotify](https://man7.org/linux/man-pages/man7/inotify.7.html)
 - [Kernel.org - inotify parameters](https://www.kernel.org/doc/Documentation/sysctl/fs.txt)
+
+## Voir aussi
+
 - [Chercher dans le code rapidement avec ripgrep]({% post_url 2026-02-16-Chercher-dans-le-code-rapidement-avec-ripgrep %})
 - [Sed : éditer des fichiers en ligne de commande avec des regex]({% post_url 2026-01-19-Sed-editer-des-fichiers-en-ligne-de-commande %})
 - [Activer les mises à jour de sécurité automatiques sur Ubuntu/Debian]({% post_url 2025-12-19-Activer-les-mises-a-jour-de-securite-automatiques-sur-Ubuntu-Debian %})
+- [Surveiller la mémoire avec free]({% post_url 2026-03-16-Surveiller-la-memoire-avec-free %})
+- [Surveiller l'espace disque avec df et du]({% post_url 2026-03-01-Surveiller-espace-disque-avec-df-et-du %})

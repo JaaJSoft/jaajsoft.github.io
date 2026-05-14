@@ -1,29 +1,29 @@
 ---
 layout: article
 title: "Pattern matching en Java moderne"
-author: Pierre Chopinet
 tags:
   - java
   - pattern-matching
+author: Pierre Chopinet
 ---
 
-Le pattern matching a profondément simplifié l’écriture de code orienté données en Java. Finalisé dans Java 21 pour `switch` et les « record patterns », il s’impose désormais comme un outil idiomatique dans le Java moderne.
+Le pattern matching a profondément simplifié l'écriture de code orienté données en Java. Finalisé dans Java 21 pour `switch` et les record patterns, il s'impose désormais comme un outil idiomatique dans le Java moderne.
 <!--more-->
 
-Objectifs de l’article :
-- Comprendre le pattern matching pour `instanceof` et `switch`
-- Découvrir les record patterns et leur combinaison avec `switch`
-- Utiliser les `when` et écrire des `switch` exhaustifs
-- Tirer parti des classes `sealed` pour des hiérarchies sûres
-- Connaître les limites, pièges et bonnes pratiques
+Dans cet article :
+- Le pattern matching pour `instanceof` et `switch`
+- Les record patterns et leur combinaison avec `switch`
+- Les `when` et l'écriture de `switch` exhaustifs
+- L'usage des classes `sealed` pour des hiérarchies sûres
+- Limites, pièges et bonnes pratiques
 
-Pré‑requis : Java 17+ conseillé (LTS). Les fonctionnalités présentées comme « finalisées » le sont dès Java 21.
+Pré-requis : Java 17+ conseillé (LTS). Les fonctionnalités présentées comme finalisées le sont dès Java 21.
 
 ---
 
-## 1) Rappel : pattern matching pour instanceof
+## Rappel : pattern matching pour instanceof
 
-Avant Java 16/17, on écrivait :
+Avant Java 16/17, on écrivait :
 
 ```java
 if (obj instanceof String) {
@@ -32,7 +32,7 @@ if (obj instanceof String) {
 }
 ```
 
-Avec le pattern matching pour `instanceof` :
+Avec le pattern matching pour `instanceof` :
 
 ```java
 if (obj instanceof String s) {
@@ -45,11 +45,11 @@ if (obj instanceof String s) {
 
 ---
 
-## 2) Pattern matching pour switch (Java 21)
+## Pattern matching pour switch (Java 21)
 
 Le `switch` accepte des patterns de type et valeur (`when`).
 
-Exemple simple :
+Exemple simple :
 
 ```java
 static String render(Object o) {
@@ -64,15 +64,15 @@ static String render(Object o) {
 }
 ```
 
-Points clés :
+Points clés :
 - `case null` est possible et utile pour éliminer les NPE.
-- Les patterns sont testés dans l’ordre, la première correspondance gagne.
+- Les patterns sont testés dans l'ordre, la première correspondance gagne.
 - Les `when` affinent un pattern par une condition booléenne.
-- Le compilateur vérifie l’exhaustivité (selon les types, notamment avec `sealed`).
+- Le compilateur vérifie l'exhaustivité (selon les types, notamment avec `sealed`).
 
 ---
 
-## 3) Record patterns (Java 21)
+## Record patterns (Java 21)
 
 Les records permettent de déstructurer un objet par ses composants, directement dans le `case`.
 
@@ -91,8 +91,8 @@ static String quadrant(Object o) {
 }
 ```
 
-- `Point(int x, int y)` lie `x`/`y` sans écrire d’accesseurs explicitement.
-- Les when permettent d’exprimer la logique métier localement.
+- `Point(int x, int y)` lie `x` et `y` sans écrire d'accesseurs explicitement.
+- Les `when` permettent d'exprimer la logique métier localement.
 
 ### Nesting (imbriquer des patterns)
 
@@ -110,9 +110,9 @@ static int manhattan(Object o) {
 
 ---
 
-## 4) sealed + patterns : des hiérarchies fermées et exhaustives
+## sealed + patterns : des hiérarchies fermées et exhaustives
 
-Les classes scellées permettent de contrôler les sous‑types et aident le compilateur à vérifier l’exhaustivité des `switch`.
+Les classes scellées permettent de contrôler les sous-types et aident le compilateur à vérifier l'exhaustivité des `switch`.
 
 ```java
 sealed interface Shape permits Circle, Rectangle, Triangle {}
@@ -125,17 +125,17 @@ static double area(Shape s) {
         case Circle(double r) -> Math.PI * r * r;
         case Rectangle(double w, double h) -> w * h;
         case Triangle(double a, double b, double c) -> heron(a, b, c);
-    }; // exhaustif : pas de default nécessaire
+    }; // exhaustif : pas de default nécessaire
 }
 ```
 
-Ici, l’absence de `default` est possible, car la hiérarchie est connue (grâce à `sealed`). En cas d’ajout d’un nouveau sous‑type autorisé, le compilateur signalera les `switch` non à jour.
+Ici, l'absence de `default` est possible, car la hiérarchie est connue (grâce à `sealed`). En cas d'ajout d'un nouveau sous-type autorisé, le compilateur signalera les `switch` non à jour.
 
 ---
 
-## 5) Dominance, ordre des case et variable shadowing
+## Dominance, ordre des case et variable shadowing
 
-- Placez les `case` plus spécifiques avant les plus génériques, sinon les spécifiques deviennent inatteignables.
+Placez les `case` plus spécifiques avant les plus génériques, sinon les spécifiques deviennent inatteignables.
 
 ```java
 static String f(Object o) {
@@ -147,60 +147,65 @@ static String f(Object o) {
 }
 ```
 
-- Le nom des variables de binding doit être unique par alternative ; évitez les collisions avec des variables existantes dans la portée.
+Le nom des variables de binding doit être unique par alternative. Évitez les collisions avec des variables existantes dans la portée.
 
 ---
 
-## 6) Null et switch
+## Null et switch
 
 - `case null` est supporté et recommandé si `o` peut être `null`.
 - Sans `case null` ni `default`, un `switch` sur une référence `null` lancerait un `NullPointerException`.
 
 ---
 
-## 7) Bonnes pratiques
+## Bonnes pratiques
 
 - Préférez les `switch` expression (`switch (...) { ... }`) pour des retours clairs et immutables.
-- Limitez la logique dans les `when` .
-- Combinez `sealed` + records + patterns pour coder des « sum types » lisibles.
-- Conservez l’exhaustivité : évitez `default` quand une hiérarchie scellée la rend vérifiable.
-- Gardez les `case` courts ; extraire en méthodes si nécessaire.
+- Limitez la logique dans les `when`.
+- Combinez `sealed` + records + patterns pour coder des sum types lisibles.
+- Conservez l'exhaustivité : évitez `default` quand une hiérarchie scellée la rend vérifiable.
+- Gardez les `case` courts. Extrayez en méthodes si nécessaire.
 
 ---
 
-## 8) Pièges fréquents
+## Pièges fréquents
 
 - Un `case` générique (`Object o`) placé trop tôt capture tout et rend les suivants inaccessibles.
-- When avec effets de bord : évitez d’appeler des méthodes non idempotentes dans `when`.
-- Ne confondez pas record patterns et déconstruction arbitraire : seuls les records (ou patterns définis) sont déstructurables de cette façon.
-- Attention aux `switch` non exhaustifs sur des hiérarchies non `sealed` : gardez un `default` sensé.
+- `when` avec effets de bord : évitez d'appeler des méthodes non idempotentes dans `when`.
+- Ne confondez pas record patterns et déconstruction arbitraire : seuls les records (ou patterns définis) sont déstructurables de cette façon.
+- Attention aux `switch` non exhaustifs sur des hiérarchies non `sealed` : gardez un `default` sensé.
 
 ---
 
 ## FAQ
 
-- Peut‑on utiliser les patterns avec des types primitifs ?
-  - Les patterns de type s’appliquent aux références ; pour les primitifs, on continue d’utiliser les `case` littéraux (`case 1, 2, 3 -> ...`).
-- Est‑ce disponible en Java 17 ?
-  - `instanceof` avec binding fonctionne. Les `switch`/record patterns finalisés arrivent en Java 21. Sur Java 17, certaines fonctionnalités n’existent pas encore.
+Peut-on utiliser les patterns avec des types primitifs ?
+- Les patterns de type s'appliquent aux références. Pour les primitifs, on continue d'utiliser les `case` littéraux (`case 1, 2, 3 -> ...`).
+
+Est-ce disponible en Java 17 ?
+- `instanceof` avec binding fonctionne. Les `switch` et record patterns finalisés arrivent en Java 21. Sur Java 17, certaines fonctionnalités n'existent pas encore.
 
 ---
 
 ## Conclusion
 
-Le pattern matching apporte des `switch` plus lisibles, moins de casts et des logiques déclaratives puissantes, surtout combiné avec `records` et `sealed`. Finalisé en Java 21, c’est un incontournable du Java moderne.
+Le pattern matching apporte des `switch` plus lisibles, moins de casts et des logiques déclaratives puissantes, surtout combiné avec `records` et `sealed`. Finalisé en Java 21, c'est un incontournable du Java moderne.
 
 ---
 
 ## Pour aller plus loin
 
-- JEP 441 : Pattern Matching for switch (Final, JDK 21)
-- JEP 440 : Record Patterns (Final, JDK 21)
-- JEP 409 : Sealed Classes (Final, JDK 17)
-- Javadoc : `switch` expressions et statements (Java 21+)
+- [JEP 441 : Pattern Matching for switch (Final, JDK 21)](https://openjdk.org/jeps/441)
+- [JEP 440 : Record Patterns (Final, JDK 21)](https://openjdk.org/jeps/440)
+- [JEP 409 : Sealed Classes (Final, JDK 17)](https://openjdk.org/jeps/409)
+- [Javadoc : switch expressions et statements](https://docs.oracle.com/en/java/javase/21/language/pattern-matching.html)
 
 ## Voir aussi
 
+- [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})
+- [Sealed classes en Java]({% post_url 2026-01-14-Sealed-classes-en-Java %})
+- [Optional en Java : éviter les NullPointerException]({% post_url 2026-01-26-Optional-en-Java-eviter-les-NullPointerException %})
+- [Comment faire des group by en Java]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
 - [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
 - [Les listes (List) en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
 - [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
