@@ -1,32 +1,30 @@
 ---
 layout: article
-title: "Comment merger deux DataFrame pandas"
-author: Pierre Chopinet
+title: "Python : Comment merger deux DataFrame pandas"
 tags:
   - python
   - pandas
   - data
   - merge
+author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, nous verrons pas à pas comment fusionner (merger) deux DataFrame avec pandas : syntaxe de base, types de jointures (inner, left, right, outer, cross), clés multiples, jointures sur l’index, gestion des doublons et colonnes homonymes, options utiles (`suffixes`, `validate`, `indicator`) et quelques conseils de performance.
+Fusionner (merger) deux DataFrame est une opération centrale en analyse de données : combiner deux jeux de données via une clé commune, gérer les correspondances manquantes, contrôler les doublons. Cet article couvre `merge`, ses variantes et les pièges à éviter.
 <!--more-->
 
-## Installation rapide
+Dans cet article :
+- Syntaxe de base et types de jointures (inner, left, right, outer, cross)
+- Clés multiples et jointures sur l'index
+- Gestion des colonnes homonymes avec `suffixes`
+- Options de contrôle (`validate`, `indicator`)
+- `merge` vs `join` vs `concat`
+- Performance et bonnes pratiques
 
-```bash
-pip install pandas
-```
-
-Sous Windows (PowerShell) :
-
-```powershell
-python -m pip install pandas
-```
+Pré-requis : Python 3 et pandas installé (`pip install pandas`).
 
 ---
 
-## Jeu de données d’exemple
+## Jeu de données d'exemple
 
 ```python
 import pandas as pd
@@ -49,7 +47,7 @@ print(clients)
 print(commandes)
 ```
 
-Sortie :
+Sortie :
 
 ```
    client_id    nom  ville
@@ -67,12 +65,12 @@ Sortie :
 
 ---
 
-## 1) merge de base (inner join par défaut)
+## merge de base (inner join par défaut)
 
 `pd.merge(left, right, ...)` ou `left.merge(right, ...)` réalise une jointure relationnelle.
-Par défaut, c’est une jointure interne (inner) sur les colonnes communes.
+Par défaut, c'est une jointure interne (inner) sur les colonnes communes.
 
-Ici, nos clés n’ont pas le même nom (`client_id` vs `id_client`), on utilise `left_on`/`right_on` :
+Ici, nos clés n'ont pas le même nom (`client_id` vs `id_client`), on utilise `left_on`/`right_on` :
 
 ```python
 # Inner join (par défaut) sur client_id == id_client
@@ -85,7 +83,7 @@ inner = pd.merge(
 print(inner)
 ```
 
-Sortie :
+Sortie :
 
 ```
    client_id    nom  ville  id_client  commande_id  montant
@@ -94,19 +92,19 @@ Sortie :
 2          2    Bob  Paris          2          103     99.9
 ```
 
-Résultat : seules les lignes avec correspondance des deux côtés (clients 1 et 2).
+Résultat : seules les lignes avec correspondance des deux côtés (clients 1 et 2).
 
 ---
 
-## 2) Types de jointures
+## Types de jointures
 
-- inner (défaut) : intersection des clés.
-- left : toutes les lignes de gauche, complétées si correspondance (sinon NaN).
-- right : toutes les lignes de droite.
-- outer : union des clés (left ∪ right).
-- cross : produit cartésien (attention à la taille !).
+- inner (défaut) : intersection des clés.
+- left : toutes les lignes de gauche, complétées si correspondance (sinon NaN).
+- right : toutes les lignes de droite.
+- outer : union des clés (left + right).
+- cross : produit cartésien (attention à la taille).
 
-Exemples :
+Exemples :
 
 ```python
 left = pd.merge(clients, commandes, how="left", left_on="client_id", right_on="id_client")
@@ -114,7 +112,7 @@ right = pd.merge(clients, commandes, how="right", left_on="client_id", right_on=
 outer = pd.merge(clients, commandes, how="outer", left_on="client_id", right_on="id_client")
 ```
 
-Sortie :
+Sortie :
 
 LEFT
 ```
@@ -146,45 +144,23 @@ OUTER
 5        NaN    NaN    NaN        5.0        104.0     15.5
 ```
 
-Produit cartésien :
+Produit cartésien :
 
 ```python
 # Sans clé: toutes les combinaisons (seulement si ça a du sens)
 cross = pd.merge(clients, commandes, how="cross")
 ```
 
-Sortie :
-
-```
-    client_id    nom  ville  id_client  commande_id  montant
-0           1  Alice   Lyon          1          101     50.0
-1           1  Alice   Lyon          1          102     20.0
-2           1  Alice   Lyon          2          103     99.9
-3           1  Alice   Lyon          5          104     15.5
-4           2    Bob  Paris          1          101     50.0
-5           2    Bob  Paris          1          102     20.0
-6           2    Bob  Paris          2          103     99.9
-7           2    Bob  Paris          5          104     15.5
-8           3  Chloé  Lille          1          101     50.0
-9           3  Chloé  Lille          1          102     20.0
-10          3  Chloé  Lille          2          103     99.9
-11          3  Chloé  Lille          5          104     15.5
-12          4  David   Lyon          1          101     50.0
-13          4  David   Lyon          1          102     20.0
-14          4  David   Lyon          2          103     99.9
-15          4  David   Lyon          5          104     15.5
-```
-
 ---
 
-## 3) Plusieurs clés (composite keys)
+## Plusieurs clés (composite keys)
 
-Vous pouvez joindre sur plusieurs colonnes en passant une liste :
+Vous pouvez joindre sur plusieurs colonnes en passant une liste :
 
 ```python
 # Exemple artificiel avec une 2e clé
 clients2 = clients.assign(pays="FR")
-commandes2 = commandes.assign(pays=["FR", "FR", "FR", "FR"])  # même pays pour l'exemple
+commandes2 = commandes.assign(pays=["FR", "FR", "FR", "FR"])
 
 multi = pd.merge(
     clients2, commandes2,
@@ -194,7 +170,7 @@ multi = pd.merge(
 )
 ```
 
-Sortie :
+Sortie :
 
 ```
    client_id    nom  ville pays_x  id_client  commande_id  montant pays_y
@@ -205,9 +181,9 @@ Sortie :
 
 ---
 
-## 4) Colonnes homonymes et suffixes
+## Colonnes homonymes et suffixes
 
-Quand des colonnes (autres que les clés) portent le même nom des deux côtés, pandas ajoute par défaut `_x` et `_y`. Vous pouvez contrôler cela avec `suffixes` :
+Quand des colonnes (autres que les clés) portent le même nom des deux côtés, pandas ajoute par défaut `_x` et `_y`. Vous pouvez contrôler cela avec `suffixes` :
 
 ```python
 res = pd.merge(
@@ -219,20 +195,11 @@ res = pd.merge(
 print(res)
 ```
 
-Sortie :
-
-```
-   client_id    nom  ville  id_client  commande_id  montant
-0          1  Alice   Lyon          1          101     50.0
-1          1  Alice   Lyon          1          102     20.0
-2          2    Bob  Paris          2          103     99.9
-```
-
 ---
 
-## 5) indicator=True pour auditer la jointure
+## indicator=True pour auditer la jointure
 
-Ajoute une colonne `_merge` indiquant la provenance de chaque ligne : `left_only`, `right_only`, `both`.
+Ajoute une colonne `_merge` indiquant la provenance de chaque ligne : `left_only`, `right_only`, `both`.
 
 ```python
 outer_audit = pd.merge(
@@ -244,7 +211,7 @@ outer_audit = pd.merge(
 print(outer_audit["_merge"].value_counts())
 ```
 
-Sortie :
+Sortie :
 
 ```
 both          3
@@ -253,13 +220,13 @@ right_only    1
 Name: _merge, dtype: int64
 ```
 
-Utile pour vérifier ce qui matche/ne matche pas.
+Utile pour vérifier ce qui matche ou pas.
 
 ---
 
-## 6) validate pour vérifier le type de relation
+## validate pour vérifier le type de relation
 
-`validate` permet de détecter des cardinalités inattendues :
+`validate` permet de détecter des cardinalités inattendues :
 
 - `"one_to_one"`
 - `"one_to_many"` (ou `"1:m"`)
@@ -276,13 +243,13 @@ res = pd.merge(
 )
 ```
 
-Si la contrainte n’est pas respectée, pandas lève une `MergeError`.
+Si la contrainte n'est pas respectée, pandas lève une `MergeError`.
 
 ---
 
-## 7) Join via l’index (left_index/right_index) et DataFrame.join
+## Join via l'index et DataFrame.join
 
-Vous pouvez join sur l’index plutôt que sur des colonnes :
+Vous pouvez join sur l'index plutôt que sur des colonnes :
 
 ```python
 clients_idx = clients.set_index("client_id")
@@ -299,9 +266,8 @@ res_idx = pd.merge(
 res_join = clients_idx.join(commandes_idx, how="inner")
 ```
 
-Sortie :
+Sortie de `res_idx` :
 
-res_idx
 ```
              nom  ville  commande_id  montant
 client_id
@@ -310,26 +276,24 @@ client_id
 2             Bob  Paris          103     99.9
 ```
 
-`DataFrame.join` est un alias pratique pour joindre sur l’index (ou en mixant index/colonne avec `on=`).
+`DataFrame.join` est un alias pratique pour joindre sur l'index (ou en mixant index/colonne avec `on=`).
 
 ---
 
-## 8) Doublons de clés et lignes dupliquées
+## Doublons de clés et lignes dupliquées
 
-Les jointures many-to-many produisent un produit des correspondances. Parfois, c’est voulu; sinon, il faut dédoublonner ou agréger avant la jointure.
+Les jointures many-to-many produisent un produit des correspondances. Parfois c'est voulu, sinon il faut dédoublonner ou agréger avant la jointure.
 
 ```python
 # Supposons des doublons côté commandes sur (id_client)
-cmd_dedup = commandes.drop_duplicates(subset=["id_client", "commande_id"])  # exemple
+cmd_dedup = commandes.drop_duplicates(subset=["id_client", "commande_id"])
 
 # Ou agréger avant la jointure (ex: montant total par client)
 montants = commandes.groupby("id_client", as_index=False)["montant"].sum()
 clients_total = clients.merge(montants, left_on="client_id", right_on="id_client", how="left")
 ```
 
-Sortie :
-
-montants
+Sortie de `montants` :
 ```
    id_client  montant
 0          1     70.0
@@ -337,7 +301,7 @@ montants
 2          5     15.5
 ```
 
-clients_total
+Sortie de `clients_total` :
 ```
    client_id    nom  ville  id_client  montant
 0          1  Alice   Lyon        1.0     70.0
@@ -348,13 +312,13 @@ clients_total
 
 ---
 
-## 9) Valeurs manquantes et lignes orphelines
+## Valeurs manquantes et lignes orphelines
 
-- `how="left"` conserve tous les clients : les non-appariés auront des `NaN` côté commandes.
-- `how="right"` conserve toutes les commandes : on peut voir les `id_client` sans fiche client.
+- `how="left"` conserve tous les clients : les non-appariés auront des `NaN` côté commandes.
+- `how="right"` conserve toutes les commandes : on peut voir les `id_client` sans fiche client.
 - `how="outer"` montre tout et met `NaN` où il manque des infos.
 
-On peut filtrer les orphelins avec `indicator=True` ou des tests sur `NaN` :
+On peut filtrer les orphelins avec `indicator=True` ou des tests sur `NaN` :
 
 ```python
 outer_audit = pd.merge(
@@ -363,12 +327,11 @@ outer_audit = pd.merge(
     left_on="client_id", right_on="id_client",
     indicator=True,
 )
-orphelins_cmd = outer_audit[outer_audit["_merge"] == "right_only"]  # commandes sans client
+orphelins_cmd = outer_audit[outer_audit["_merge"] == "right_only"]
 ```
 
-Sortie :
+Sortie :
 
-orphelins_cmd
 ```
    client_id  nom  ville  id_client  commande_id  montant      _merge
 5        NaN  NaN    NaN        5.0        104.0     15.5  right_only
@@ -376,13 +339,13 @@ orphelins_cmd
 
 ---
 
-## 10) merge vs join vs concat
+## merge vs join vs concat
 
-- `merge` : jointures relationnelles sur colonnes et/ou index.
-- `join` : pratique pour joindre par l’index (syntaxe plus concise). Internellement, appelle `merge`.
-- `concat` : empilement (vertical) ou juxtapositions (horizontal) sans logiques de clés.
+- `merge` : jointures relationnelles sur colonnes et/ou index.
+- `join` : pratique pour joindre par l'index (syntaxe plus concise). En interne, appelle `merge`.
+- `concat` : empilement (vertical) ou juxtapositions (horizontal) sans logiques de clés.
 
-Exemples :
+Exemples :
 
 ```python
 # concat vertical (ajouter des lignes)
@@ -394,45 +357,21 @@ right = commandes.set_index("id_client").sort_index()
 horizontal = pd.concat([left, right], axis=1)
 ```
 
-Sortie :
-
-all_clients
-```
-   client_id    nom  ville
-0          1  Alice   Lyon
-1          2    Bob  Paris
-2          3  Chloé  Lille
-3          4  David   Lyon
-4          6   Emma   Nice
-```
-
-horizontal
-```
-             nom  ville  commande_id  montant
-client_id
-1           Alice   Lyon        101.0     50.0
-1           Alice   Lyon        102.0     20.0
-2             Bob  Paris        103.0     99.9
-3           Chloé  Lille          NaN      NaN
-4           David   Lyon          NaN      NaN
-5             NaN    NaN        104.0     15.5
-```
-
 ---
 
-## 11) Performance et bonnes pratiques
+## Performance et bonnes pratiques
 
 - Assurez la compatibilité des types de vos clés avant la jointure (ex: `int64` vs `object`).
-- Si peu de modalités répétées, convertissez les clés en `category` pour réduire mémoire et accélérer.
-- Indexez/tri ez par les clés avant les grosses jointures : `set_index`, `sort_values`.
+- Si peu de modalités répétées, convertissez les clés en `category` pour réduire la mémoire et accélérer.
+- Indexez ou triez par les clés avant les grosses jointures : `set_index`, `sort_values`.
 - Filtrez les colonnes nécessaires avec `[[...]]` avant de merger pour réduire le volume.
 - Utilisez `validate` pour détecter tôt les cardinalités inattendues.
-- Pour des jointures temporelles sur valeurs triées, regardez `pd.merge_asof` (approx. nearest key).
+- Pour des jointures temporelles sur valeurs triées, regardez `pd.merge_asof` (approximate nearest key).
 - Évitez `how="cross"` sur de grands DataFrame (croissance N×M).
 
 ---
 
-## 12) Exemple complet reproductible
+## Exemple complet reproductible
 
 ```python
 import pandas as pd
@@ -448,20 +387,20 @@ commandes = pd.DataFrame({
     "montant": [50.0, 20.0, 99.9, 15.5],
 })
 
-# 1) inner
+# inner
 inner = clients.merge(commandes, how="inner", left_on="client_id", right_on="id_client")
 print("INNER:\n", inner, sep="")
 
-# 2) left + audit
+# left + audit
 left = pd.merge(clients, commandes, how="left", left_on="client_id", right_on="id_client", indicator=True)
 print("\nLEFT + indicator:\n", left[["client_id", "commande_id", "_merge"]], sep="")
 
-# 3) agrégation avant merge (total par client)
+# agrégation avant merge (total par client)
 montants = commandes.groupby("id_client", as_index=False)["montant"].sum()
 clients_total = clients.merge(montants, left_on="client_id", right_on="id_client", how="left").drop(columns=["id_client"])
 print("\nTOTAL PAR CLIENT:\n", clients_total, sep="")
 
-# 4) join sur index
+# join sur index
 ci = clients.set_index("client_id")
 co = commandes.set_index("id_client")
 join_idx = ci.join(co, how="left")
@@ -472,20 +411,20 @@ print("\nJOIN INDEX:\n", join_idx, sep="")
 
 ## FAQ
 
-- Erreur `You are trying to merge on object and int64 columns` : convertissez les types (`astype`).
-- Résultat plus grand que prévu : vous avez une jointure many-to-many. Ajoutez `validate="one_to_many"` ou dédoublonnez/agrégez.
-- Colonnes en double après merge : utilisez `suffixes=("_g", "_d")` et/ou `drop` celles qui ne servent pas.
+- Erreur `You are trying to merge on object and int64 columns` : convertissez les types (`astype`).
+- Résultat plus grand que prévu : vous avez une jointure many-to-many. Ajoutez `validate="one_to_many"` ou dédoublonnez/agrégez.
+- Colonnes en double après merge : utilisez `suffixes=("_g", "_d")` et/ou `drop` celles qui ne servent pas.
 
 ---
 
 ## Pour aller plus loin
 
-- Documentation Pandas : [https://pandas.pydata.org/docs/reference/api/pandas.merge.html](https://pandas.pydata.org/docs/reference/api/pandas.merge.html)
-- `merge_asof` (temps triés) : [https://pandas.pydata.org/docs/reference/api/pandas.merge_asof.html](https://pandas.pydata.org/docs/reference/api/pandas.merge_asof.html)
-- [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+- [Documentation officielle de pandas.merge](https://pandas.pydata.org/docs/reference/api/pandas.merge.html)
+- [Documentation de pandas.merge_asof](https://pandas.pydata.org/docs/reference/api/pandas.merge_asof.html)
+
+## Voir aussi
+
 - [Comment sauvegarder un tableau numpy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
 - [Comment sauvegarder un dataframe pandas]({% post_url 2023-12-28-Comment-sauvegarder-un-dataframe-pandas %})
 - [Comment faire des group by en Python]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
 - [Automatiser le nettoyage de données avec pandas]({% post_url 2025-12-14-Automatiser-le-nettoyage-de-donnees-avec-pandas %})
-
-

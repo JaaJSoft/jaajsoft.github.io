@@ -1,11 +1,11 @@
 ---
 layout: article
 title: "Les Sealed classes en Java"
-author: Pierre Chopinet
 tags:
   - java
   - sealed
   - pattern-matching
+author: Pierre Chopinet
 ---
 
 Les sealed classes (classes scellées), finalisées dans Java 17, permettent de contrôler précisément quelles classes peuvent étendre ou implémenter une classe ou interface donnée. Cette fonctionnalité offre un contrôle granulaire sur les hiérarchies de types et améliore la sûreté du code grâce à la vérification d'exhaustivité du compilateur.
@@ -23,11 +23,11 @@ Pré-requis : Java 17+ (LTS) où les sealed classes sont finalisées.
 
 ---
 
-## 1) Problème : hiérarchies ouvertes incontrôlables
+## Problème : hiérarchies ouvertes incontrôlables
 
 Avant les sealed classes, Java ne permettait pas de contrôler qui pouvait étendre une classe ou interface. Cette limitation posait plusieurs problèmes de maintenabilité et de sûreté du code.
 
-### 1.1) Le problème avec les hiérarchies classiques
+### Le problème avec les hiérarchies classiques
 
 En Java traditionnel, une classe ou interface peut être étendue par n'importe quelle classe :
 
@@ -42,13 +42,13 @@ public class Hexagon implements Shape {
 }
 ```
 
-**Problèmes :**
+Problèmes :
 - Impossible de garantir l'exhaustivité dans un `switch` ou `if/else`
 - Les modifications de l'API peuvent casser du code client inconnu
 - Difficile de raisonner sur tous les cas possibles
 - Le compilateur ne peut pas aider avec des avertissements
 
-### 1.2) Solutions traditionnelles limitées
+### Solutions traditionnelles limitées
 
 Avant Java 17, les développeurs tentaient de contourner ce problème avec des solutions imparfaites :
 
@@ -67,11 +67,11 @@ interface Shape { } // package-private
 
 ---
 
-## 2) Sealed classes : contrôle explicite des sous-types
+## Sealed classes : contrôle explicite des sous-types
 
 Les sealed classes offrent un juste milieu : elles permettent l'héritage, mais uniquement pour un ensemble défini et contrôlé de sous-types.
 
-### 2.1) Syntaxe de base
+### Syntaxe de base
 
 Voici comment déclarer une hiérarchie scellée complète :
 
@@ -124,38 +124,36 @@ public final class Triangle implements Shape {
 }
 ```
 
-**Points clés :**
-- `sealed` déclare que la classe/interface contrôle ses sous-types
-- `permits` liste exhaustive des sous-types autorisés
+Points clés :
+- `sealed` déclare que la classe ou interface contrôle ses sous-types
+- `permits` est la liste exhaustive des sous-types autorisés
 - Les sous-types doivent être déclarés `final`, `sealed`, ou `non-sealed`
 
-### 2.2) Les trois modificateurs pour les sous-types
+### Les trois modificateurs pour les sous-types
 
 Chaque sous-type d'une classe scellée doit explicitement déclarer son comportement vis-à-vis de l'héritage :
 
 ```java
 public sealed interface Vehicle permits Car, Bike, Boat {}
 
-// 1) final : ne peut plus être étendu
+// final : ne peut plus être étendu
 public final class Car implements Vehicle {}
 
-// 2) sealed : contrôle à nouveau ses propres sous-types
+// sealed : contrôle à nouveau ses propres sous-types
 public sealed class Bike implements Vehicle permits MountainBike, RoadBike {}
 public final class MountainBike extends Bike {}
 public final class RoadBike extends Bike {}
 
-// 3) non-sealed : rouvre la hiérarchie (n'importe qui peut étendre)
+// non-sealed : rouvre la hiérarchie (n'importe qui peut étendre)
 public non-sealed class Boat implements Vehicle {}
 public class Sailboat extends Boat {} // OK, hiérarchie ouverte
 ```
 
 ---
 
-## 3) Sealed classes et records : la combinaison parfaite
+## Sealed classes et records : la combinaison parfaite
 
 Les records, introduits en Java 16, s'intègrent naturellement avec les sealed classes. Étant implicitement `final`, ils constituent des candidats idéaux pour les sous-types d'une hiérarchie scellée :
-
-
 
 ```java
 public sealed interface Result<T> permits Success, Error {}
@@ -178,11 +176,11 @@ public static <T> void handleResult(Result<T> result) {
 
 ---
 
-## 4) Pattern matching exhaustif avec sealed classes
+## Pattern matching exhaustif avec sealed classes
 
 L'un des avantages majeurs des sealed classes est la vérification d'exhaustivité par le compilateur. Combinées au pattern matching de Java 21+, elles offrent une sûreté de type remarquable.
 
-### 4.1) Switch exhaustif sans default
+### Switch exhaustif sans default
 
 Le compilateur peut garantir que tous les cas sont couverts, éliminant le besoin d'un `default` :
 
@@ -202,12 +200,12 @@ public static void processPayment(Payment payment) {
 }
 ```
 
-**Avantages :**
+Avantages :
 - Le compilateur vérifie que tous les cas sont couverts
 - Ajouter un nouveau type `PayPal` génère des erreurs de compilation partout où il faut le gérer
 - Pas de `default` qui masque des oublis
 
-### 4.2) Déconstruction avec record patterns (Java 21+)
+### Déconstruction avec record patterns (Java 21+)
 
 Avec Java 21, on peut déconstruire directement les records dans le `switch`, rendant le code encore plus expressif :
 
@@ -228,11 +226,11 @@ public static double calculateArea(Shape shape) {
 
 ---
 
-## 5) Modéliser des types algébriques (sum types)
+## Modéliser des types algébriques (sum types)
 
 Les sealed classes permettent de modéliser élégamment des types algébriques, un concept bien connu en programmation fonctionnelle. Voici les patterns les plus courants.
 
-### 5.1) Option/Maybe type
+### Option / Maybe type
 
 Représente une valeur qui peut être présente ou absente, alternative type-safe à `null` :
 
@@ -262,7 +260,7 @@ Option<String> name = new Some<>("Alice");
 String result = getOrDefault(name, "Unknown"); // "Alice"
 ```
 
-### 5.2) Either type (gauche/droite)
+### Either type (gauche/droite)
 
 Représente un choix entre deux valeurs possibles, souvent utilisé pour gérer les erreurs :
 
@@ -286,7 +284,7 @@ switch (result) {
 }
 ```
 
-### 5.3) AST (Abstract Syntax Tree)
+### AST (Abstract Syntax Tree)
 
 Les sealed classes excellent pour représenter des structures hiérarchiques comme les arbres syntaxiques abstraits :
 
@@ -297,11 +295,11 @@ public record Add(Expr left, Expr right) implements Expr {}
 public record Multiply(Expr left, Expr right) implements Expr {}
 public record Variable(String name) implements Expr {}
 
-public static int eval(Expr expr, Map<String, Integer> vars) {
+public static int evaluate(Expr expr, Map<String, Integer> vars) {
     return switch (expr) {
         case Constant(int n) -> n;
-        case Add(var left, var right) -> eval(left, vars) + eval(right, vars);
-        case Multiply(var left, var right) -> eval(left, vars) * eval(right, vars);
+        case Add(var left, var right) -> evaluate(left, vars) + evaluate(right, vars);
+        case Multiply(var left, var right) -> evaluate(left, vars) * evaluate(right, vars);
         case Variable(String name) -> vars.getOrDefault(name, 0);
     };
 }
@@ -312,16 +310,16 @@ Expr expression = new Multiply(
     new Constant(3)
 );
 
-int result = eval(expression, Map.of("x", 5)); // (2 + 5) * 3 = 21
+int result = evaluate(expression, Map.of("x", 5)); // (2 + 5) * 3 = 21
 ```
 
 ---
 
-## 6) Cas d'usage pratiques
+## Cas d'usage pratiques
 
 Explorons quelques exemples concrets où les sealed classes apportent une vraie valeur ajoutée dans le code métier.
 
-### 6.1) Modéliser un état d'application
+### Modéliser un état d'application
 
 Les machines à états se modélisent naturellement avec des sealed classes :
 
@@ -349,7 +347,7 @@ public class ConnectionManager {
 }
 ```
 
-### 6.2) Événements dans un système
+### Événements dans un système
 
 Pour les architectures événementielles, les sealed classes garantissent que tous les types d'événements sont gérés :
 
@@ -373,7 +371,7 @@ public class EventHandler {
 }
 ```
 
-### 6.3) Réponses HTTP typées
+### Réponses HTTP typées
 
 Modéliser les différentes réponses d'une API de manière type-safe :
 
@@ -397,17 +395,17 @@ public static <T> void handleResponse(ApiResponse<T> response) {
 
 ---
 
-## 7) Règles et contraintes
+## Règles et contraintes
 
 Les sealed classes sont soumises à plusieurs règles strictes pour garantir leur cohérence et leur sûreté.
 
-### 7.1) Règles de base
+### Règles de base
 
-1 **Les sous-types doivent être accessibles** à la classe scellée (même package ou module)
+- **Les sous-types doivent être accessibles** à la classe scellée (même package ou module).
+- **Déclaration explicite requise** : tous les sous-types listés dans `permits` doivent exister.
+- **Sous-types dans le même fichier** : si tous les sous-types sont dans le même fichier, `permits` peut être omis (inféré).
+- **Chaque sous-type doit choisir** : `final`, `sealed`, ou `non-sealed`.
 
-2 **Déclaration explicite requise** : tous les sous-types listés dans `permits` doivent exister
-
-3 **Sous-types dans le même fichier** : si tous les sous-types sont dans le même fichier, `permits` peut être omis (inféré)
 ```java
 // Fichier Shape.java
 public sealed interface Shape {
@@ -423,13 +421,10 @@ final class Rectangle implements Shape {
     public double area() { return 0; }
 }
 ```
-4 **Chaque sous-type doit choisir** : `final`, `sealed`, ou `non-sealed`
 
-### 7.2) Contraintes avec les modules
+### Contraintes avec les modules
 
 Le système de modules Java (JPMS) s'intègre avec les sealed classes pour un contrôle encore plus fin :
-
-
 
 ```java
 // module-info.java
@@ -446,7 +441,7 @@ public final class Circle implements Shape { }
 
 ---
 
-## 8) Sealed classes vs alternatives
+## Sealed classes vs alternatives
 
 Comparons les sealed classes aux autres approches pour contrôler l'héritage en Java :
 
@@ -458,26 +453,26 @@ Comparons les sealed classes aux autres approches pour contrôler l'héritage en
 | **package-private**    | Limite la portée                   | Facilement contournable                    |
 | **Visitor pattern**    | Extensible                         | Verbeux, complexe                          |
 
-**Quand utiliser sealed classes :**
+Quand utiliser sealed classes :
 - Hiérarchies de types fermées et bien définies
 - Besoin de vérification d'exhaustivité
 - Modélisation de types algébriques
 - APIs publiques nécessitant un contrôle strict
 
-**Quand utiliser autre chose :**
+Quand utiliser autre chose :
 - Enum : types simples sans données complexes
 - Classes ouvertes : hiérarchies extensibles par les utilisateurs
 - Interfaces : contrats flexibles sans contrôle des implémentations
 
 ---
 
-## 9) Bonnes pratiques
+## Bonnes pratiques
 
 Pour tirer le meilleur parti des sealed classes, voici les recommandations et pièges à éviter.
 
-### ✅ À faire
+### À faire
 
-1 **Combiner avec records** pour des hiérarchies concises et immuables
+- **Combiner avec records** pour des hiérarchies concises et immuables.
 
 ```java
 public sealed interface Message permits TextMessage, ImageMessage {}
@@ -485,23 +480,17 @@ public record TextMessage(String content) implements Message {}
 public record ImageMessage(String url, int width, int height) implements Message {}
 ```
 
-2 **Utiliser pour modéliser des états** ou des résultats d'opérations
+- **Utiliser pour modéliser des états** ou des résultats d'opérations.
+- **Documenter l'intention** : expliquer pourquoi la hiérarchie est fermée.
+- **Profiter de l'exhaustivité** : éviter les `default` inutiles dans les switch.
+- **Nommer clairement** les sous-types pour refléter leur rôle.
 
-3 **Documenter l'intention** : expliquer pourquoi la hiérarchie est fermée
+### À éviter
 
-4 **Profiter de l'exhaustivité** : éviter les `default` inutiles dans les switch
-
-5 **Nommer clairement** les sous-types pour refléter leur rôle
-
-### ❌ À éviter
-
-1 **Ne pas sceller systématiquement** : les hiérarchies extensibles ont leur place
-
-2 **Éviter trop de niveaux** : sealed → sealed → sealed devient complexe
-
-3 **Ne pas mélanger sealed et non-sealed** sans raison claire
-
-4 **Attention aux dépendances cycliques** entre sealed types
+- **Ne pas sceller systématiquement** : les hiérarchies extensibles ont leur place.
+- **Éviter trop de niveaux** : `sealed -> sealed -> sealed` devient complexe.
+- **Ne pas mélanger sealed et non-sealed** sans raison claire.
+- **Attention aux dépendances cycliques** entre sealed types.
 
 ---
 
@@ -514,7 +503,7 @@ Les sealed classes apportent un contrôle précis sur les hiérarchies de types 
 - **Exhaustivité** vérifiée par le compilateur dans les switch
 - **Combinaison puissante** avec records et pattern matching
 - **Modélisation claire** de types algébriques (Option, Either, AST)
-- **Évolution sûre** : ajout d'un sous-type = erreurs de compilation explicites
+- **Évolution sûre** : ajout d'un sous-type provoque des erreurs de compilation explicites
 
 Finalisées en Java 17 LTS, les sealed classes sont un outil essentiel du Java moderne pour écrire du code type-safe et maintenable.
 
@@ -530,5 +519,6 @@ Finalisées en Java 17 LTS, les sealed classes sont un outil essentiel du Java m
 
 - [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
 - [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})
-- [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
+- [Optional en Java : éviter les NullPointerException]({% post_url 2026-01-26-Optional-en-Java-eviter-les-NullPointerException %})
 - [Comment faire des group by en Java]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
+- [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})

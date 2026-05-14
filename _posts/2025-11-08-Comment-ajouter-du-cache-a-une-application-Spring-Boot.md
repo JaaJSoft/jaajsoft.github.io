@@ -1,7 +1,6 @@
 ---
 layout: article
 title: "Comment ajouter du cache à une application Spring Boot"
-author: Pierre Chopinet
 tags:
   - java
   - spring
@@ -10,41 +9,51 @@ tags:
   - performance
   - redis
   - caffeine
+author: Pierre Chopinet
 ---
 
-Le cache est l’un des leviers les plus efficaces pour améliorer la latence et réduire la charge d’une application. Spring Boot fournit une abstraction de cache très puissante, compatible avec plusieurs moteurs (Caffeine, Redis, Ehcache, Hazelcast, etc.).
-
-Dans cet article, vous verrez comment activer le cache, choisir un moteur, utiliser les annotations `@Cacheable`, `@CacheEvict`, `@CachePut`, définir les clés et TTL, exposer des métriques et mettre en place une stratégie d’invalidation.
+Le cache est l'un des leviers les plus efficaces pour améliorer la latence et réduire la charge d'une application. Spring Boot fournit une abstraction de cache très puissante, compatible avec plusieurs moteurs (Caffeine, Redis, Ehcache, Hazelcast).
 <!--more-->
 
+Dans cet article :
+- Pourquoi utiliser un cache et quand l'éviter
+- L'abstraction Spring Cache et ses annotations
+- Configurer Caffeine (en mémoire) et Redis (partagé)
+- Définir des clés, conditions et TTL
+- Stratégies d'invalidation et tests
+- Monitoring avec Actuator et Micrometer
+- Pièges courants et bonnes pratiques
+
+Pré-requis : Java 17 ou plus récent et Spring Boot 3.x. Les exemples utilisent Spring Boot 3.3.
+
 ---
 
-## 1) Pourquoi mettre du cache ?
+## Pourquoi mettre du cache ?
 
 - Diminuer la latence des endpoints et batchs.
 - Réduire la charge CPU/IO de services internes ou bases de données.
 - Lisser les pics de trafic et améliorer la résilience.
-- Faire des économies d’infrastructure.
+- Faire des économies d'infrastructure.
 
-Attention : le cache n’est pas un substitut à un modèle de données ou d’indexation correct. Il complète une conception saine.
+Attention : le cache n'est pas un substitut à un modèle de données ou d'indexation correct. Il complète une conception saine.
 
 ---
 
-## 2) Panorama rapide de l’abstraction Spring Cache
+## Panorama de l'abstraction Spring Cache
 
-L’API Spring Cache fournit :
+L'API Spring Cache fournit :
 
-- Des annotations déclaratives : `@EnableCaching`, `@Cacheable`, `@CacheEvict`, `@CachePut`, `@Caching`.
+- Des annotations déclaratives : `@EnableCaching`, `@Cacheable`, `@CacheEvict`, `@CachePut`, `@Caching`.
 - Un mécanisme de génération de clé (SpEL) et de conditions (`condition`, `unless`).
-- Une intégration transparente avec différents `CacheManager` (Caffeine, Redis, Ehcache…).
+- Une intégration transparente avec différents `CacheManager` (Caffeine, Redis, Ehcache).
 
-Le code métier reste identique ; seul le backend change via la configuration.
+Le code métier reste identique : seul le backend change via la configuration.
 
 ---
 
-## 3) Démarrage rapide
+## Démarrage rapide
 
-### 3.1) Dépendances Maven
+### Dépendances Maven
 
 ```xml
 <dependencies>
@@ -74,7 +83,7 @@ Le code métier reste identique ; seul le backend change via la configuration.
 </dependencies>
 ```
 
-Gradle (Kotlin DSL) :
+Gradle (Kotlin DSL) :
 
 ```kotlin
 dependencies {
@@ -84,9 +93,9 @@ dependencies {
 }
 ```
 
-### 3.2) Activer le cache
+### Activer le cache
 
-Dans votre classe d’application (ou une classe de config) :
+Dans votre classe d'application (ou une classe de config) :
 
 ```java
 import org.springframework.cache.annotation.EnableCaching;
@@ -97,7 +106,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class Application { }
 ```
 
-### 3.3) Première méthode cachée
+### Première méthode cachée
 
 ```java
 import org.springframework.cache.annotation.Cacheable;
@@ -114,24 +123,24 @@ public class PriceService {
 }
 ```
 
-- Premier appel → MISS, exécution réelle et mise en cache.
-- Appels suivants avec la même clé → HIT.
+- Premier appel : MISS, exécution réelle et mise en cache.
+- Appels suivants avec la même clé : HIT.
 
 ---
 
-## 4) Choisir un moteur de cache
+## Choisir un moteur de cache
 
-- Caffeine : en mémoire, ultra-rapide, TTL/size/expire-after-write/access, très simple en mono-process.
-- Redis : partagé (cluster/containers), persistant en mémoire, TTL par entrée, idéal multi-réplicas.
-- Ehcache/Hazelcast/Infinispan : alternatives JVM, parfois distribuées, selon vos contraintes.
+- Caffeine : en mémoire, ultra-rapide, TTL/size/expire-after-write/access, très simple en mono-process.
+- Redis : partagé (cluster/containers), persistant en mémoire, TTL par entrée, idéal multi-réplicas.
+- Ehcache, Hazelcast, Infinispan : alternatives JVM, parfois distribuées, selon vos contraintes.
 
-Commencez simple : Caffeine local en dev/POC ; passez à Redis en prod multi-instances.
+Commencez simple : Caffeine local en dev/POC, puis passez à Redis en prod multi-instances.
 
 ---
 
-## 5) Configuration Caffeine (recommandé en local/simple prod)
+## Configuration Caffeine
 
-`application.yml` :
+`application.yml` :
 
 ```yaml
 spring:
@@ -141,7 +150,7 @@ spring:
       spec: maximumSize=10000,expireAfterWrite=10m,recordStats
 ```
 
-Déclarer un `CacheManager` explicite (optionnel si vous utilisez la propriété ci-dessus) :
+Déclarer un `CacheManager` explicite (optionnel si vous utilisez la propriété ci-dessus) :
 
 ```java
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -167,21 +176,22 @@ public class CacheConfig {
 }
 ```
 
-Récupérer des stats (Micrometer) :
+Récupérer des stats (Micrometer) :
 
 ```yaml
 management:
   endpoints.web.exposure.include: ["metrics", "health"]
 ```
-Puis consultez `/actuator/metrics/cache.gets` etc.
+
+Puis consultez `/actuator/metrics/cache.gets`, etc.
 
 ---
 
-## 6) Configuration Redis (prod multi‑instances)
+## Configuration Redis (prod multi-instances)
 
-Dépendances : `spring-boot-starter-data-redis` (Lettuce par défaut).
+Dépendances : `spring-boot-starter-data-redis` (Lettuce par défaut).
 
-`application.yml` :
+`application.yml` :
 
 ```yaml
 spring:
@@ -194,7 +204,7 @@ spring:
     cache-names: [prices, products]
 ```
 
-Configurer TTL par cache et sérialisation :
+Configurer TTL par cache et sérialisation :
 
 ```java
 import org.springframework.context.annotation.Bean;
@@ -231,20 +241,20 @@ public class RedisCacheConfig {
 }
 ```
 
-Remarques :
-- Les clés sont des `String` ; les valeurs sérialisées en JSON (lisibles, évolutives).
+Remarques :
+- Les clés sont des `String` ; les valeurs sérialisées en JSON (lisibles, évolutives).
 - Adaptez le TTL à la volatilité métier de la donnée.
 
 ---
 
-## 7) Annotations essentielles et SpEL
+## Annotations essentielles et SpEL
 
-- `@Cacheable(cacheNames, key, unless, condition)` – lit/écrit si absence.
-- `@CachePut` – force l’écriture sans court-circuiter l’exécution.
-- `@CacheEvict(cacheNames, key, allEntries)` – supprime ; utile après une écriture.
-- `@Caching` – combiner plusieurs annotations.
+- `@Cacheable(cacheNames, key, unless, condition)` : lit/écrit si absence.
+- `@CachePut` : force l'écriture sans court-circuiter l'exécution.
+- `@CacheEvict(cacheNames, key, allEntries)` : supprime ; utile après une écriture.
+- `@Caching` : combiner plusieurs annotations.
 
-Exemples :
+Exemples :
 
 ```java
 // Clé composite avec SpEL
@@ -264,20 +274,20 @@ public Price updatePrice(Price p) { return repo.save(p); }
 public void clearAllCaches() {}
 ```
 
-Astuce: définissez des clés stables et explicites; évitez celles sensibles aux variations (locales, ordre de paramètres, etc.).
+Astuce : définissez des clés stables et explicites ; évitez celles sensibles aux variations (locales, ordre de paramètres).
 
 ---
 
-## 8) Stratégie d’invalidation
+## Stratégie d'invalidation
 
-La cohérence est clé. Quelques approches :
+La cohérence est clé. Quelques approches :
 
-- Invalidation au plus près des mutations : utilisez `@CacheEvict` dans les services qui écrivent.
-- Écouter des événements domain (DDDD) : `@TransactionalEventListener` pour évincer après commit.
-- TTL raisonnable pour limiter la dérive en cas d’oubli d’invalidation.
+- Invalidation au plus près des mutations : utilisez `@CacheEvict` dans les services qui écrivent.
+- Écouter des événements domain (DDD) : `@TransactionalEventListener` pour évincer après commit.
+- TTL raisonnable pour limiter la dérive en cas d'oubli d'invalidation.
 - Préremplissage (warmup) des caches les plus chauds au démarrage ou via un job.
 
-Exemple avec événement :
+Exemple avec événement :
 
 ```java
 public record PriceChangedEvent(String productId) {}
@@ -304,10 +314,9 @@ public class PriceCacheInvalidator {
 
 ---
 
-## 9) Tests du cache
+## Tests du cache
 
-- Test unitaire du `key` SpEL et du comportement : utilisez un `CacheManager` réel (Caffeine en mémoire) via `@SpringBootTest` ou `@DataJpaTest` + import de config.
-- Vidangez le cache entre scénarios si nécessaire.
+Test unitaire du `key` SpEL et du comportement : utilisez un `CacheManager` réel (Caffeine en mémoire) via `@SpringBootTest` ou `@DataJpaTest` + import de config. Vidangez le cache entre scénarios si nécessaire.
 
 ```java
 @SpringBootTest
@@ -329,16 +338,16 @@ class PriceServiceTest {
 }
 ```
 
-Pour Redis en test : utilisez Testcontainers Redis ou un Redis éphémère.
+Pour Redis en test : utilisez Testcontainers Redis ou un Redis éphémère.
 
 ---
 
-## 10) Monitoring et métriques
+## Monitoring et métriques
 
-Avec Actuator + Micrometer :
+Avec Actuator + Micrometer :
 
-- `cache.gets`, `cache.puts`, `cache.evictions`, `cache.size`, latences…
-- Export Prometheus/Grafana pour visualiser le taux de HIT (vise ≥ 80 % sur les chemins chauds).
+- `cache.gets`, `cache.puts`, `cache.evictions`, `cache.size`, latences.
+- Export Prometheus/Grafana pour visualiser le taux de HIT (visez 80% ou plus sur les chemins chauds).
 
 ```xml
 <!-- pom.xml -->
@@ -358,12 +367,12 @@ management:
 
 ---
 
-## 11) Pièges courants et bonnes pratiques
+## Pièges courants et bonnes pratiques
 
 - Ne cachez pas des données hautement sensibles dans un cache partagé sans chiffrement.
-- Attention à la cardinalité des clés (ex. : `vary` non contrôlé) → explosion mémoire.
-- Évitez de mettre en cache des erreurs/`null` sans TTL réduit ou garde-fou (`unless`).
-- Pour les applications multi-instances, évitez le cache en mémoire seul ; préférez Redis.
+- Attention à la cardinalité des clés (ex: `vary` non contrôlé) qui peut entraîner une explosion mémoire.
+- Évitez de mettre en cache des erreurs ou `null` sans TTL réduit ou garde-fou (`unless`).
+- Pour les applications multi-instances, évitez le cache en mémoire seul ; préférez Redis.
 - Pensez au versioning de schéma de vos objets mis en cache (compatibilité JSON lors des déploiements progressifs).
 - Définissez une politique de TTL par type de donnée, documentée et mesurable.
 
@@ -371,30 +380,30 @@ management:
 
 ## Conclusion
 
-En résumé, la mise en place du cache avec Spring Boot apporte des gains concrets
-et rapides :
+La mise en place du cache avec Spring Boot apporte des gains concrets et rapides.
 
-- Commencez simple avec Caffeine en local et mesurez les gains sur 2-3 méthodes
-  coûteuses
-- En production multi-instances, migrez vers Redis pour un cache partagé et
-  consistant
-- Mettez en place une stratégie d'invalidation au plus près des écritures avec
-  `@CacheEvict`
+**Points clés à retenir :**
+
+- Commencez simple avec Caffeine en local et mesurez les gains sur 2-3 méthodes coûteuses
+- En production multi-instances, migrez vers Redis pour un cache partagé et consistant
+- Mettez en place une stratégie d'invalidation au plus près des écritures avec `@CacheEvict`
 - Définissez des TTL adaptés à la volatilité de chaque type de donnée
-- Surveillez les taux de hit/miss et la taille des caches via les métriques
-  Actuator
-- Restez vigilant sur la cardinalité des clés et la sécurité des données
-  sensibles
-
-En suivant ces bonnes pratiques, vous améliorerez significativement les
-performances tout en gardant une dette technique maîtrisée.
+- Surveillez les taux de hit/miss et la taille des caches via les métriques Actuator
+- Restez vigilant sur la cardinalité des clés et la sécurité des données sensibles
 
 ---
 
 ## Pour aller plus loin
 
 - [Documentation Spring Cache](https://docs.spring.io/spring-framework/reference/integration/cache.html)
-- [Spring Boot – Cache auto-configuration](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#io.caching)
+- [Spring Boot - Cache auto-configuration](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#io.caching)
 - [Caffeine](https://github.com/ben-manes/caffeine)
 - [Spring Data Redis](https://docs.spring.io/spring-data/redis/docs/current/reference/html/)
 - [Micrometer](https://micrometer.io/)
+
+## Voir aussi
+
+- [Comment ajouter du cache à une application Django]({% post_url 2025-11-01-Comment-ajouter-du-cache-a-une-application-Django %})
+- [Comment utiliser un cache avec Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
+- [Limiter le rate d'une API FastAPI avec Redis]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
+- [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})

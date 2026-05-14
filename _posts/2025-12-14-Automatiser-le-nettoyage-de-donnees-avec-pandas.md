@@ -1,15 +1,15 @@
 ---
 layout: article
 title: "Automatiser le nettoyage de données avec pandas"
-author: Pierre Chopinet
 tags:
   - python
   - pandas
   - data
   - nettoyage
+author: Pierre Chopinet
 ---
 
-Le nettoyage de données représente souvent 60 à 80 % du travail en data science. Des données mal formatées, des valeurs manquantes, des doublons, des types incohérents : autant de problèmes qui peuvent saboter vos analyses. Heureusement, pandas offre un arsenal complet pour automatiser ces tâches fastidieuses.
+Le nettoyage de données représente souvent 60 à 80% du travail en data science. Des données mal formatées, des valeurs manquantes, des doublons, des types incohérents : autant de problèmes qui peuvent saboter vos analyses. Heureusement, pandas offre un arsenal complet pour automatiser ces tâches fastidieuses.
 <!--more-->
 
 Dans ce guide, vous allez apprendre à :
@@ -22,7 +22,7 @@ Dans ce guide, vous allez apprendre à :
 - Valider la qualité des données
 - Créer des pipelines de nettoyage réutilisables
 
-Prérequis :
+Pré-requis :
 - Python 3.8+
 - pandas (installation : `pip install pandas`)
 - Notions de base de pandas (DataFrame, Series)
@@ -78,9 +78,9 @@ Problèmes identifiés :
 
 ---
 
-## 1) Détecter et gérer les valeurs manquantes
+## Détecter et gérer les valeurs manquantes
 
-### a) Détection des valeurs manquantes
+### Détection des valeurs manquantes
 
 ```python
 # Compter les NaN par colonne
@@ -107,9 +107,9 @@ salaire           1
 date_embauche     1
 ```
 
-### b) Remplacer les marqueurs de valeurs manquantes
+### Remplacer les marqueurs de valeurs manquantes
 
-Certaines sources utilisent des chaînes comme "N/A", "", "NULL", "-", etc. Il faut les convertir en `NaN` :
+Certaines sources utilisent des chaînes comme "N/A", "", "NULL", "-". Il faut les convertir en `NaN` :
 
 ```python
 # Remplacer les marqueurs courants par NaN
@@ -117,7 +117,7 @@ df = df.replace(["N/A", "", "NULL", "-", "invalid"], np.nan)
 print(df.isnull().sum())
 ```
 
-### c) Supprimer les lignes/colonnes avec NaN
+### Supprimer les lignes ou colonnes avec NaN
 
 ```python
 # Supprimer lignes avec au moins un NaN
@@ -134,13 +134,13 @@ seuil = len(df) * 0.5
 df_clean = df.dropna(axis=1, thresh=seuil)
 ```
 
-### d) Imputer (remplacer) les valeurs manquantes
+### Imputer (remplacer) les valeurs manquantes
 
 ```python
 # Remplir avec une valeur fixe
 df["ville"] = df["ville"].fillna("Inconnu")
 
-# Remplir avec la moyenne (colonnes numériques)
+# Remplir avec la médiane (colonnes numériques)
 df["age"] = df["age"].fillna(df["age"].median())
 
 # Forward fill (propager la dernière valeur valide)
@@ -155,9 +155,9 @@ df["salaire"] = df["salaire"].interpolate()
 
 ---
 
-## 2) Identifier et supprimer les doublons
+## Identifier et supprimer les doublons
 
-### a) Détection des doublons
+### Détection des doublons
 
 ```python
 # Lignes complètement identiques
@@ -167,7 +167,7 @@ print(df.duplicated())
 print(df.duplicated(subset=["id"], keep=False))  # keep=False : marque tous les doublons
 ```
 
-### b) Suppression des doublons
+### Suppression des doublons
 
 ```python
 # Supprimer doublons complets (garder la première occurrence)
@@ -182,9 +182,9 @@ df_clean = df[~df.duplicated(subset=["id"], keep=False)]
 
 ---
 
-## 3) Normaliser les formats de texte
+## Normaliser les formats de texte
 
-### a) Nettoyer les chaînes (espaces, casse)
+### Nettoyer les chaînes (espaces, casse)
 
 ```python
 # Supprimer espaces avant/après
@@ -216,7 +216,7 @@ df["ville"] = df["ville"].apply(clean_string)
 df["nom"] = df["nom"].str.strip().str.capitalize()
 ```
 
-### b) Remplacer et normaliser les valeurs
+### Remplacer et normaliser les valeurs
 
 ```python
 # Dictionnaire de mapping pour normaliser
@@ -240,16 +240,16 @@ df["ville"] = df["ville"].apply(normaliser_ville)
 
 ---
 
-## 4) Corriger les types de données
+## Corriger les types de données
 
-### a) Détection des types
+### Détection des types
 
 ```python
 print(df.dtypes)
 print(df.info())
 ```
 
-### b) Conversion de types
+### Conversion de types
 
 ```python
 # Convertir en numérique (erreurs -> NaN)
@@ -269,7 +269,7 @@ df["date_embauche"] = pd.to_datetime(df["date_embauche"], errors="coerce", forma
 df["date_embauche"] = pd.to_datetime(df["date_embauche"], errors="coerce", infer_datetime_format=True)
 ```
 
-### c) Valider les conversions
+### Valider les conversions
 
 ```python
 # Vérifier les NaN créés par coerce
@@ -284,9 +284,9 @@ print(df.loc[mask, "age"])
 
 ---
 
-## 5) Détecter et traiter les valeurs aberrantes (outliers)
+## Détecter et traiter les valeurs aberrantes (outliers)
 
-### a) Méthode statistique (IQR - Interquartile Range)
+### Méthode statistique (IQR - Interquartile Range)
 
 ```python
 # Identifier les outliers via IQR
@@ -304,7 +304,7 @@ print("Outliers salaire:")
 print(outliers[["nom", "salaire"]])
 ```
 
-### b) Filtrage manuel (bornes métier)
+### Filtrage manuel (bornes métier)
 
 ```python
 # Règles métier : âge entre 18 et 70, salaire entre 20k et 200k
@@ -314,7 +314,7 @@ df_clean = df[
 ]
 ```
 
-### c) Winsorisation (cap values)
+### Winsorisation (cap values)
 
 ```python
 # Plafonner les valeurs extrêmes (99e percentile)
@@ -324,9 +324,9 @@ df["salaire"] = df["salaire"].clip(upper=upper_limit)
 
 ---
 
-## 6) Valider la qualité des données
+## Valider la qualité des données
 
-### a) Règles de validation
+### Règles de validation
 
 ```python
 def validate_data(df):
@@ -361,7 +361,7 @@ else:
     print("Validation OK")
 ```
 
-### b) Rapport de qualité
+### Rapport de qualité
 
 ```python
 def quality_report(df):
@@ -381,7 +381,7 @@ quality_report(df)
 
 ---
 
-## 7) Pipeline de nettoyage complet et réutilisable
+## Pipeline de nettoyage complet et réutilisable
 
 Créons une fonction pour automatiser tout le nettoyage :
 
@@ -435,24 +435,11 @@ df_clean = clean_employee_data(df)
 print(df_clean)
 ```
 
-Sortie (nettoyée) :
-
-```
-   id      nom  age    ville  salaire date_embauche
-0   1    Alice   25    Paris  50000.0    2020-01-15
-1   2      Bob   30    Paris  60000.0    2019-06-20
-2   3  Charlie   35     Lyon  70000.0    2021-03-10
-3   4    Diane   40   Nantes  80000.0           NaT
-4   5     Emma   30    Paris  60000.0    2022-01-01
-5   7    Frank   30  Marseille 90000.0    2020-12-01
-6   9      Nan   30    Paris  60000.0    2024-01-01
-```
-
 ---
 
-## 8) Sauvegarde et logging du nettoyage
+## Sauvegarde et logging du nettoyage
 
-### a) Logger les actions
+### Logger les actions
 
 ```python
 import logging
@@ -480,7 +467,7 @@ def clean_with_logging(df):
 df_clean = clean_with_logging(df)
 ```
 
-### b) Sauvegarder les données nettoyées
+### Sauvegarder les données nettoyées
 
 ```python
 # CSV
@@ -493,13 +480,11 @@ df_clean.to_excel("data_clean.xlsx", index=False)
 df_clean.to_parquet("data_clean.parquet", index=False)
 ```
 
-> Voir aussi : [Comment sauvegarder un dataframe pandas]({% post_url 2023-12-28-Comment-sauvegarder-un-dataframe-pandas %})
-
 ---
 
-## 9) Techniques avancées
+## Techniques avancées
 
-### a) Normalisation/standardisation des valeurs numériques
+### Normalisation et standardisation des valeurs numériques
 
 ```python
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -513,7 +498,7 @@ scaler = MinMaxScaler()
 df["age_normalized"] = scaler.fit_transform(df[["age"]])
 ```
 
-### b) Encodage de catégories
+### Encodage de catégories
 
 ```python
 # One-hot encoding
@@ -523,7 +508,7 @@ df_encoded = pd.get_dummies(df, columns=["ville"], prefix="ville")
 df["ville_code"] = df["ville"].astype("category").cat.codes
 ```
 
-### c) Détecter les incohérences entre colonnes
+### Détecter les incohérences entre colonnes
 
 ```python
 # Ex: date_embauche après aujourd'hui
@@ -535,7 +520,7 @@ df_invalid = df[(df["age"] < 25) & (df["salaire"] > 100000)]
 
 ---
 
-## 10) Bonnes pratiques et pièges
+## Bonnes pratiques et pièges
 
 ### Bonnes pratiques
 
@@ -543,7 +528,7 @@ df_invalid = df[(df["age"] < 25) & (df["salaire"] > 100000)]
 - Logger les étapes et le nombre de lignes affectées.
 - Valider les données avant et après nettoyage.
 - Créer des pipelines réutilisables (fonctions).
-- Sauvegarder les données intermédiaires (avant/après nettoyage).
+- Sauvegarder les données intermédiaires (avant et après nettoyage).
 - Documenter les règles métier et seuils utilisés.
 
 ### Pièges
@@ -551,15 +536,15 @@ df_invalid = df[(df["age"] < 25) & (df["salaire"] > 100000)]
 - `fillna(method="ffill")` peut propager des erreurs si mal utilisé.
 - `dropna()` peut supprimer trop de lignes : préférez `dropna(subset=[...])`.
 - `errors="coerce"` masque les erreurs de conversion : vérifiez les NaN créés.
-- Les outliers ne sont pas toujours des erreurs : valider avec le métier.
+- Les outliers ne sont pas toujours des erreurs : à valider avec le métier.
 - Ne pas normaliser les chaînes peut créer des doublons cachés (Paris vs paris).
-- Attention à l'ordre des opérations : supprimer doublons avant imputation.
+- Attention à l'ordre des opérations : supprimer les doublons avant l'imputation.
 
 ---
 
 ## Cheatsheet
 
-### Valeurs manquantes
+Valeurs manquantes :
 
 ```python
 df.isnull().sum()                    # Compter NaN
@@ -568,14 +553,14 @@ df.dropna(subset=["col"])            # Supprimer lignes
 df["col"].fillna(value)              # Imputer
 ```
 
-### Doublons
+Doublons :
 
 ```python
 df.duplicated()                      # Détecter
 df.drop_duplicates(subset=["id"])    # Supprimer
 ```
 
-### Normalisation texte
+Normalisation texte :
 
 ```python
 df["col"].str.strip()                # Espaces
@@ -583,7 +568,7 @@ df["col"].str.lower()                # Minuscules
 df["col"].str.capitalize()           # Première maj
 ```
 
-### Types
+Types :
 
 ```python
 pd.to_numeric(df["col"], errors="coerce")
@@ -591,7 +576,7 @@ pd.to_datetime(df["col"], errors="coerce")
 df["col"].astype("category")
 ```
 
-### Outliers
+Outliers :
 
 ```python
 Q1 = df["col"].quantile(0.25)
@@ -608,10 +593,14 @@ Le nettoyage de données avec pandas peut être largement automatisé en combina
 
 ---
 
+## Pour aller plus loin
+
+- [Documentation officielle pandas](https://pandas.pydata.org/docs/)
+- [pandas - Working with missing data](https://pandas.pydata.org/docs/user_guide/missing_data.html)
+
 ## Voir aussi
 
-- [Comment merger deux DataFrame pandas]({% post_url 2025-08-31-Comment-merger-deux-dataframe-pandas %})
+- [Python : Comment merger deux DataFrame pandas]({% post_url 2025-08-31-Comment-merger-deux-dataframe-pandas %})
 - [Comment faire des group by en Python]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
 - [Comment sauvegarder un dataframe pandas]({% post_url 2023-12-28-Comment-sauvegarder-un-dataframe-pandas %})
 - [Comment sauvegarder un tableau numpy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
-- [Documentation pandas](https://pandas.pydata.org/docs/)
