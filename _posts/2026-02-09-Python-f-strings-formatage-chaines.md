@@ -1,11 +1,11 @@
 ---
 layout: article
-title: "Python : Comment utiliser les f-string"
-author: Pierre Chopinet
+title: "Python : Comment utiliser les f-strings"
 tags:
   - python
   - strings
   - formatage
+author: Pierre Chopinet
 ---
 
 Les f-strings sont la façon la plus moderne et lisible de formater des chaînes en Python (depuis Python 3.6). Plus concises que `format()` et plus puissantes que `%`, elles permettent d'intégrer des expressions Python directement dans les chaînes avec une syntaxe simple et élégante.
@@ -21,9 +21,11 @@ Dans cet article :
 - Comparaison avec `format()` et `%`
 - Astuces et bonnes pratiques
 
+Pré-requis : Python 3.6 ou plus récent.
+
 ---
 
-## 1) Syntaxe de base
+## Syntaxe de base
 
 ### Intégrer des variables
 
@@ -43,13 +45,13 @@ print(message)  # Bonjour Alice, vous avez 30 ans.
 ```
 
 **Avantages** :
-- ✅ Plus court et plus lisible
-- ✅ Les variables sont insérées directement
-- ✅ Pas besoin de répéter les variables à la fin
+- Plus court et plus lisible
+- Les variables sont insérées directement
+- Pas besoin de répéter les variables à la fin
 
 ---
 
-## 2) Expressions dans les f-strings
+## Expressions dans les f-strings
 
 Vous pouvez évaluer des expressions Python directement dans les accolades :
 
@@ -91,7 +93,7 @@ print(f"Longueur : {len(texte)} caractères")
 
 ---
 
-## 3) Formatage des nombres
+## Formatage des nombres
 
 Les f-strings offrent une syntaxe puissante pour formater les nombres : précision décimale, séparateurs de milliers, pourcentages, notation scientifique et bases numériques.
 
@@ -156,7 +158,7 @@ print(f"Hex avec préfixe : {nombre:#x}")   # 0x2a
 
 ---
 
-## 4) Largeur, alignement et padding
+## Largeur, alignement et padding
 
 Pour créer des tableaux ou aligner du texte, les f-strings permettent de contrôler la largeur, l'alignement et le caractère de remplissage.
 
@@ -201,7 +203,7 @@ print(f"{prix:0>10.2f}") # 0000012.50 (padding zéros)
 
 ---
 
-## 5) Formatage des dates
+## Formatage des dates
 
 Les objets `datetime` peuvent être formatés directement dans les f-strings en utilisant les codes de format strftime.
 
@@ -235,7 +237,7 @@ print(f"{maintenant:%A %d %B %Y}")
 
 ---
 
-## 6) Échappement des accolades
+## Échappement des accolades
 
 Pour afficher des accolades littérales dans une f-string, doublez-les :
 
@@ -250,13 +252,13 @@ print(f"Pour afficher {{x}}, écrivez {{{{x}}}}")
 ```
 
 **Règle** :
-- `{variable}` → évalue la variable
-- `{{` → affiche `{`
-- `}}` → affiche `}`
+- `{variable}` -> évalue la variable
+- `{{` -> affiche `{`
+- `}}` -> affiche `}`
 
 ---
 
-## 7) F-strings multiligne
+## F-strings multiligne
 
 Les f-strings fonctionnent avec les chaînes multiligne (triple guillemets), pratique pour générer des messages longs ou des templates.
 
@@ -276,7 +278,7 @@ print(message)
 
 ---
 
-## 8) Debugging avec f-strings (Python 3.8+)
+## Debugging avec f-strings (Python 3.8+)
 
 La syntaxe `{variable=}` affiche le nom de la variable et sa valeur :
 
@@ -302,7 +304,7 @@ calculer_total(12.5, 3)
 
 ---
 
-## 9) F-strings imbriquées
+## F-strings imbriquées
 
 Pour des cas avancés, vous pouvez imbriquer des f-strings pour construire des formats dynamiques :
 
@@ -327,7 +329,7 @@ print(f"{texte:{alignement}{largeur}}")
 
 ---
 
-## 10) Comparaison avec les autres méthodes
+## Comparaison avec les autres méthodes
 
 Avant Python 3.6, deux méthodes principales existaient pour formater des chaînes. Voici pourquoi les f-strings sont supérieures.
 
@@ -340,10 +342,10 @@ age = 30
 message = "Bonjour %s, vous avez %d ans." % (nom, age)
 ```
 
-**Inconvénients** :
-- ❌ Syntaxe peu lisible
-- ❌ Types à spécifier (`%s`, `%d`, `%f`)
-- ❌ Erreurs si le nombre d'arguments ne correspond pas
+Inconvénients :
+- Syntaxe peu lisible
+- Types à spécifier (`%s`, `%d`, `%f`)
+- Erreurs si le nombre d'arguments ne correspond pas
 
 ### Méthode .format()
 
@@ -357,9 +359,9 @@ message = "Bonjour {0}, vous avez {1} ans. {0} est génial !".format(nom, age)
 message = "Bonjour {nom}, vous avez {age} ans.".format(nom=nom, age=age)
 ```
 
-**Inconvénients** :
-- ❌ Verbeux (répétition des variables)
-- ❌ Moins lisible que les f-strings
+Inconvénients :
+- Verbeux (répétition des variables)
+- Moins lisible que les f-strings
 
 ### f-strings (recommandé)
 
@@ -367,15 +369,15 @@ message = "Bonjour {nom}, vous avez {age} ans.".format(nom=nom, age=age)
 message = f"Bonjour {nom}, vous avez {age} ans."
 ```
 
-**Avantages** :
-- ✅ Syntaxe concise et lisible
-- ✅ Évaluation d'expressions directement
-- ✅ Plus rapide (évaluation au moment de l'exécution)
-- ✅ Debugging intégré avec `{variable=}`
+Avantages :
+- Syntaxe concise et lisible
+- Évaluation d'expressions directement
+- Plus rapide (évaluation au moment de l'exécution)
+- Debugging intégré avec `{variable=}`
 
 ---
 
-## 11) Cas d'usage pratiques
+## Cas d'usage pratiques
 
 Voici quelques exemples concrets d'utilisation des f-strings dans des situations réelles.
 
@@ -395,7 +397,7 @@ for nom, prix, qte in produits:
     print(f"{nom:<15} {prix:>8.2f} {qte:>5} {total:>8.2f}")
 ```
 
-**Résultat** :
+Résultat :
 
 ```
 Produit           Prix   Qté    Total
@@ -422,7 +424,7 @@ print(query)
 # VALUES ('Alice', 'alice@example.com', '30')
 ```
 
-**⚠️ Attention** : pour du vrai code SQL, utilisez des requêtes paramétrées pour éviter les injections SQL.
+> Attention : pour du vrai code SQL, utilisez des requêtes paramétrées pour éviter les injections SQL.
 
 ### Logs avec horodatage
 
@@ -441,11 +443,11 @@ log("Connexion à la base de données réussie")
 
 ---
 
-## 12) Pièges à éviter
+## Pièges à éviter
 
 Certaines erreurs courantes peuvent survenir avec les f-strings. Voici comment les éviter.
 
-### 1. Variables non définies
+### Variables non définies
 
 ```python
 # Erreur : nom n'est pas défini
@@ -453,52 +455,52 @@ print(f"Bonjour {nom}")
 # NameError: name 'nom' is not defined
 ```
 
-### 2. F-strings et backslashes
+### F-strings et backslashes
 
 Les backslashes ne sont **pas autorisés** directement dans les f-strings :
 
 ```python
-# ❌ Erreur
+# Erreur
 print(f"Chemin : {os.path.join('C:', 'Users', 'Alice')}")
 
-# ✅ Solution : stocker le résultat dans une variable
+# Solution : stocker le résultat dans une variable
 chemin = os.path.join('C:', 'Users', 'Alice')
 print(f"Chemin : {chemin}")
 ```
 
-### 3. Guillemets imbriqués
+### Guillemets imbriqués
 
 ```python
-# ❌ Erreur de syntaxe
+# Erreur de syntaxe
 print(f"Message : {"Hello"}")
 
-# ✅ Solution : alterner les guillemets
+# Solution : alterner les guillemets
 print(f"Message : {'Hello'}")
 print(f'Message : {"Hello"}')
 ```
 
 ---
 
-## 13) Bonnes pratiques
+## Bonnes pratiques
 
-### ✅ À faire
+### À faire
 
-1. **Utiliser les f-strings par défaut** (Python 3.6+)
-2. **Formater les nombres avec précision** : `{prix:.2f}`
-3. **Utiliser `{variable=}` pour le debugging**
-4. **Aligner les tableaux** avec `<`, `>`, `^`
-5. **Extraire les expressions complexes** dans des variables
+- **Utiliser les f-strings par défaut** (Python 3.6+)
+- **Formater les nombres avec précision** : `{prix:.2f}`
+- **Utiliser `{variable=}` pour le debugging**
+- **Aligner les tableaux** avec `<`, `>`, `^`
+- **Extraire les expressions complexes** dans des variables
 
 ```python
-# ❌ Difficile à lire
+# Difficile à lire
 print(f"Total : {sum([p['prix'] * p['qte'] for p in produits]):.2f}€")
 
-# ✅ Plus clair
+# Plus clair
 total = sum(p['prix'] * p['qte'] for p in produits)
 print(f"Total : {total:.2f}€")
 ```
 
-### ❌ À éviter
+### À éviter
 
 - Utiliser `%` ou `.format()` sans raison (hors compatibilité Python < 3.6)
 - Expressions trop complexes dans les f-strings
@@ -518,14 +520,17 @@ Les f-strings sont la méthode moderne, performante et lisible pour formater des
 - Alignement : `{texte:<10}`, `{texte:>10}`, `{texte:^10}`
 - Debugging : `{variable=}` (Python 3.8+)
 
-Adoptez les f-strings dès maintenant pour un code plus propre et plus lisible !
-
 ---
+
+## Pour aller plus loin
+
+- [Documentation officielle des f-strings](https://docs.python.org/3/reference/lexical_analysis.html#f-strings)
+- [PEP 498 - Literal String Interpolation](https://peps.python.org/pep-0498/)
 
 ## Voir aussi
 
+- [Python : Comment utiliser les décorateurs]({% post_url 2026-05-14-Python-les-decorateurs %})
+- [Python : Le pattern matching avec match et case]({% post_url 2026-05-18-Python-pattern-matching-avec-match-et-case %})
 - [Comment faire des group by en Python]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
 - [Comment créer une CLI en Python]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
 - [Comment envoyer des emails en Python]({% post_url 2026-02-02-Comment-envoyer-des-emails-en-Python %})
-- [Documentation officielle des f-strings](https://docs.python.org/3/reference/lexical_analysis.html#f-strings)
-- [PEP 498 – Literal String Interpolation](https://peps.python.org/pep-0498/)

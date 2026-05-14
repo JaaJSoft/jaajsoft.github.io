@@ -1,11 +1,11 @@
 ---
 layout: article
 title: "Optional en Java : éviter les NullPointerException"
-author: Pierre Chopinet
 tags:
   - java
   - optional
   - "null"
+author: Pierre Chopinet
 ---
 
 `Optional<T>` est un conteneur introduit en Java 8 pour gérer explicitement l'absence de valeur et éviter les redoutées `NullPointerException`. Au lieu de retourner `null`, vous retournez un `Optional` qui peut être vide ou contenir une valeur.
@@ -19,9 +19,11 @@ Dans cet article, vous découvrirez :
 - Les bonnes pratiques et cas d'usage
 - L'intégration avec Spring Data, Stream API et records
 
+Pré-requis : Java 8 ou plus récent (certaines méthodes sont disponibles à partir de Java 9 ou 11, indiqué au cas par cas).
+
 ---
 
-## 1) Le problème : NullPointerException
+## Le problème : NullPointerException
 
 `NullPointerException` (NPE) est l'erreur la plus fréquente en Java. Elle survient quand on tente d'accéder à une méthode ou un champ sur une référence `null`.
 
@@ -40,14 +42,14 @@ public String getUserEmail(Long userId) {
 }
 ```
 
-**Problèmes** :
+Problèmes :
 - Code verbeux avec des checks `!= null` imbriqués
 - Facile d'oublier un check et déclencher une NPE
 - Pas d'indication explicite qu'une valeur peut être absente
 
 ---
 
-## 2) La solution : Optional<T>
+## La solution : Optional<T>
 
 `Optional<T>` est un conteneur qui :
 - Contient une valeur de type `T` (Optional "présent")
@@ -63,16 +65,16 @@ public Optional<String> getUserEmail(Long userId) {
 }
 ```
 
-**Avantages** :
+Avantages :
 - Code concis et lisible
 - Type-safe : le compilateur force la gestion de l'absence
 - Moins de NPE en production
 
 ---
 
-## 3) Créer un Optional
+## Créer un Optional
 
-### 3.1) Optional.of(value)
+### Optional.of(value)
 
 Crée un Optional contenant `value`. **Lance une NPE si `value` est `null`**.
 
@@ -81,9 +83,9 @@ Optional<String> opt = Optional.of("Hello");
 // Optional<String> opt = Optional.of(null); // NPE !
 ```
 
-**Usage** : quand vous êtes certain que la valeur n'est jamais `null`.
+Usage : quand vous êtes certain que la valeur n'est jamais `null`.
 
-### 3.2) Optional.ofNullable(value)
+### Optional.ofNullable(value)
 
 Crée un Optional contenant `value`, ou un Optional vide si `value` est `null`.
 
@@ -92,9 +94,9 @@ String name = getName(); // peut retourner null
 Optional<String> opt = Optional.ofNullable(name);
 ```
 
-**Usage** : quand la valeur peut être `null` (cas le plus courant).
+Usage : quand la valeur peut être `null` (cas le plus courant).
 
-### 3.3) Optional.empty()
+### Optional.empty()
 
 Crée un Optional vide.
 
@@ -103,11 +105,11 @@ Optional<String> opt = Optional.empty();
 System.out.println(opt.isPresent()); // false
 ```
 
-**Usage** : pour signaler explicitement l'absence de valeur.
+Usage : pour signaler explicitement l'absence de valeur.
 
 ---
 
-## 4) Vérifier la présence d'une valeur
+## Vérifier la présence d'une valeur
 
 ### isPresent() et isEmpty()
 
@@ -124,13 +126,13 @@ if (opt.isEmpty()) {
 }
 ```
 
-⚠️ **Anti-pattern** : utiliser `isPresent()` + `get()` revient à faire un check `!= null`. Préférez les méthodes fonctionnelles ci-dessous.
+> Anti-pattern : utiliser `isPresent()` + `get()` revient à faire un check `!= null`. Préférez les méthodes fonctionnelles ci-dessous.
 
 ---
 
-## 5) Extraire la valeur
+## Extraire la valeur
 
-### 5.1) get() ⚠️
+### get()
 
 Retourne la valeur si présente, sinon **lance `NoSuchElementException`**.
 
@@ -142,9 +144,9 @@ Optional<String> empty = Optional.empty();
 // String value = empty.get(); // NoSuchElementException !
 ```
 
-**⚠️ À éviter** : préférez les méthodes sûres ci-dessous.
+À éviter : préférez les méthodes sûres ci-dessous.
 
-### 5.2) orElse(defaultValue)
+### orElse(defaultValue)
 
 Retourne la valeur si présente, sinon `defaultValue`.
 
@@ -153,9 +155,9 @@ String name = Optional.ofNullable(getName())
     .orElse("Anonyme");
 ```
 
-**Attention** : `defaultValue` est **toujours évaluée**, même si l'Optional est présent.
+Attention : `defaultValue` est **toujours évaluée**, même si l'Optional est présent.
 
-### 5.3) orElseGet(Supplier)
+### orElseGet(Supplier)
 
 Retourne la valeur si présente, sinon appelle le `Supplier`.
 
@@ -164,9 +166,9 @@ String name = Optional.ofNullable(getName())
     .orElseGet(() -> fetchDefaultName()); // appelé seulement si absent
 ```
 
-**⚡ Performance** : préférez `orElseGet` si le calcul de la valeur par défaut est coûteux.
+Performance : préférez `orElseGet` si le calcul de la valeur par défaut est coûteux.
 
-### 5.4) orElseThrow()
+### orElseThrow()
 
 Lance une exception si l'Optional est vide.
 
@@ -175,11 +177,11 @@ User user = userRepository.findById(id)
     .orElseThrow(() -> new UserNotFoundException("User " + id + " not found"));
 ```
 
-**Usage** : quand l'absence de valeur est une erreur métier.
+Usage : quand l'absence de valeur est une erreur métier.
 
 ---
 
-## 6) Transformation avec map()
+## Transformation avec map()
 
 `map()` applique une fonction à la valeur si présente, retourne un Optional du résultat.
 
@@ -192,7 +194,7 @@ Optional<Integer> length = name.map(String::length);
 // Optional[5]
 ```
 
-**Chaînage** :
+Chaînage :
 
 ```java
 Optional<User> user = findUser(id);
@@ -206,7 +208,7 @@ Si `user`, `getAddress()` ou `getEmail()` retourne `null` ou Optional vide, la c
 
 ---
 
-## 7) Aplatissement avec flatMap()
+## Aplatissement avec flatMap()
 
 `flatMap()` est utilisé quand la fonction retourne déjà un `Optional`.
 
@@ -226,7 +228,7 @@ Optional<Address> address = user.flatMap(User::getOptionalAddress);
 // retourne directement Optional<Address>
 ```
 
-**Exemple complet** :
+Exemple complet :
 
 ```java
 public Optional<String> getUserCityName(Long userId) {
@@ -239,7 +241,7 @@ public Optional<String> getUserCityName(Long userId) {
 
 ---
 
-## 8) Filtrage avec filter()
+## Filtrage avec filter()
 
 `filter()` garde la valeur si elle satisfait le prédicat, sinon retourne `Optional.empty()`.
 
@@ -253,7 +255,7 @@ Optional<String> shortName = name.filter(n -> n.length() > 10);
 // Optional.empty
 ```
 
-**Cas d'usage** : validation conditionnelle.
+Cas d'usage : validation conditionnelle.
 
 ```java
 public Optional<User> getActiveUser(Long id) {
@@ -264,7 +266,7 @@ public Optional<User> getActiveUser(Long id) {
 
 ---
 
-## 9) Exécuter une action avec ifPresent()
+## Exécuter une action avec ifPresent()
 
 `ifPresent(Consumer)` exécute le `Consumer` si la valeur est présente.
 
@@ -284,7 +286,7 @@ user.ifPresentOrElse(
 
 ---
 
-## 10) Combinaison avec or() (Java 9+)
+## Combinaison avec or() (Java 9+)
 
 `or(Supplier<Optional>)` retourne l'Optional si présent, sinon appelle le `Supplier`.
 
@@ -298,7 +300,7 @@ Optional<User> user = findUserInCache(id)
 
 ---
 
-## 11) Conversion en Stream (Java 9+)
+## Conversion en Stream (Java 9+)
 
 `stream()` convertit un `Optional` en `Stream` de 0 ou 1 élément.
 
@@ -318,24 +320,24 @@ Avant Java 9, on utilisait :
 
 ---
 
-## 12) Anti-patterns à éviter
+## Anti-patterns à éviter
 
-### ❌ 1. Utiliser get() sans vérification
+### Utiliser get() sans vérification
 
-**Mauvais** :
+Mauvais :
 ```java
 String name = optional.get(); // peut lancer NoSuchElementException
 ```
 
-**Bon** :
+Bon :
 ```java
 String name = optional.orElse("default");
 String name = optional.orElseThrow(() -> new RuntimeException("Absent"));
 ```
 
-### ❌ 2. isPresent() + get() (check null déguisé)
+### isPresent() + get() (check null déguisé)
 
-**Mauvais** :
+Mauvais :
 ```java
 if (optional.isPresent()) {
     return optional.get();
@@ -343,34 +345,34 @@ if (optional.isPresent()) {
 return "default";
 ```
 
-**Bon** :
+Bon :
 ```java
 return optional.orElse("default");
 ```
 
-### ❌ 3. Optional imbriqués : Optional<Optional<T>>
+### Optional imbriqués : Optional<Optional<T>>
 
-**Mauvais** :
+Mauvais :
 ```java
 Optional<User> user = findUser(id);
 Optional<Optional<Address>> address = user.map(User::getOptionalAddress);
 ```
 
-**Bon** :
+Bon :
 ```java
 Optional<Address> address = user.flatMap(User::getOptionalAddress);
 ```
 
-### ❌ 4. Optional en paramètre de méthode
+### Optional en paramètre de méthode
 
-**Mauvais** :
+Mauvais :
 ```java
 public void setName(Optional<String> name) {
     // ...
 }
 ```
 
-**Bon** :
+Bon :
 ```java
 // Utilisez @Nullable ou surcharge
 public void setName(String name) { /* ... */ }
@@ -380,16 +382,16 @@ public void setName() { /* sans nom */ }
 public void setName(@Nullable String name) { /* ... */ }
 ```
 
-### ❌ 5. Optional en champ de classe
+### Optional en champ de classe
 
-**Mauvais** :
+Mauvais :
 ```java
 public class User {
     private Optional<String> middleName;
 }
 ```
 
-**Bon** :
+Bon :
 ```java
 public class User {
     private String middleName; // peut être null
@@ -400,9 +402,9 @@ public class User {
 }
 ```
 
-### ❌ 6. Retourner null au lieu d'Optional.empty()
+### Retourner null au lieu d'Optional.empty()
 
-**Mauvais** :
+Mauvais :
 ```java
 public Optional<User> findUser(Long id) {
     if (notFound) {
@@ -412,7 +414,7 @@ public Optional<User> findUser(Long id) {
 }
 ```
 
-**Bon** :
+Bon :
 ```java
 public Optional<User> findUser(Long id) {
     if (notFound) {
@@ -424,11 +426,11 @@ public Optional<User> findUser(Long id) {
 
 ---
 
-## 13) Bonnes pratiques
+## Bonnes pratiques
 
-### ✅ À faire
+### À faire
 
-1. **Retourner `Optional` dans les méthodes publiques** quand l'absence de valeur est possible et normale.
+- **Retourner `Optional` dans les méthodes publiques** quand l'absence de valeur est possible et normale.
 
 ```java
 public Optional<User> findUserByEmail(String email) {
@@ -436,13 +438,13 @@ public Optional<User> findUserByEmail(String email) {
 }
 ```
 
-2. **Utiliser `orElseGet` pour calculs coûteux**
+- **Utiliser `orElseGet` pour les calculs coûteux**
 
 ```java
 .orElseGet(() -> database.queryDefault())
 ```
 
-3. **Chaîner avec `map` / `flatMap` / `filter`**
+- **Chaîner avec `map` / `flatMap` / `filter`**
 
 ```java
 return user
@@ -452,7 +454,9 @@ return user
     .orElse("Unknown");
 ```
 
-4. **Ne pas retourner `Optional` de collection**, retournez une collection vide
+### À éviter
+
+- **Retourner `Optional` d'une collection** ; retournez plutôt une collection vide.
 
 ```java
 // NON
@@ -464,7 +468,7 @@ public List<User> getUsers() {
 }
 ```
 
-5. **Ne pas utiliser `Optional` pour des champs de classe**
+- **Utiliser `Optional` pour des champs de classe**
 
 ```java
 // NON
@@ -476,7 +480,7 @@ private String middleName; // peut être null
 
 ---
 
-## 14) Optional avec Spring Data
+## Optional avec Spring Data
 
 Spring Data JPA supporte `Optional` nativement dans les repositories.
 
@@ -487,7 +491,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 }
 ```
 
-**Usage** :
+Usage :
 
 ```java
 @Service
@@ -509,7 +513,7 @@ public class UserService {
 
 ---
 
-## 15) Optional avec Stream API
+## Optional avec Stream API
 
 `Optional` s'intègre parfaitement avec les Streams.
 
@@ -530,7 +534,7 @@ Optional<User> firstActive = users.stream()
 
 ---
 
-## 16) Optional avec Records (Java 16+)
+## Optional avec Records (Java 16+)
 
 Les records s'intègrent bien avec `Optional` pour les champs optionnels.
 
@@ -538,7 +542,7 @@ Les records s'intègrent bien avec `Optional` pour les champs optionnels.
 public record UserDTO(
     Long id,
     String name,
-    Optional<String> middleName,    // ❌ Anti-pattern
+    Optional<String> middleName,    // anti-pattern
     String email
 ) {}
 
@@ -570,19 +574,19 @@ public Optional<UserDTO> findUser(Long id) {
 
 ---
 
-## 17) Performances
+## Performances
 
 `Optional` ajoute un léger overhead (allocation d'objet). Pour du code critique en performance :
 
-- **Évitez** `Optional` dans des boucles très fréquentes
-- **Préférez** `Optional` pour les API publiques (lisibilité > micro-optimisation)
+- Évitez `Optional` dans des boucles très fréquentes
+- Préférez `Optional` pour les API publiques (lisibilité avant micro-optimisation)
 - Dans 99% des cas, l'overhead est négligeable
 
 ---
 
-## 18) Exemples concrets
+## Exemples concrets
 
-### Cas 1 : Configuration optionnelle
+### Configuration optionnelle
 
 ```java
 public class AppConfig {
@@ -599,7 +603,7 @@ public class AppConfig {
 }
 ```
 
-### Cas 2 : Parsing sécurisé
+### Parsing sécurisé
 
 ```java
 public Optional<Integer> parseInteger(String value) {
@@ -616,7 +620,7 @@ int port = parseInteger(input)
     .orElse(8080);
 ```
 
-### Cas 3 : Recherche en cascade
+### Recherche en cascade
 
 ```java
 public User getUser(Long id) {
@@ -627,7 +631,7 @@ public User getUser(Long id) {
 }
 ```
 
-### Cas 4 : Transformation conditionnelle
+### Transformation conditionnelle
 
 ```java
 public String formatName(User user) {
@@ -647,11 +651,9 @@ public String formatName(User user) {
 
 - Utilisez `Optional` dans les **retours de méthodes** quand l'absence est possible
 - Privilégiez `map`, `flatMap`, `filter`, `orElse` plutôt que `isPresent()` + `get()`
-- **Ne pas utiliser** `Optional` en paramètres de méthodes ou champs de classe
+- N'utilisez pas `Optional` en paramètres de méthodes ou en champs de classe
 - Intégration native avec Spring Data et Stream API
-- Performance acceptable pour 99% des cas
-
-`Optional` est un incontournable du Java moderne depuis Java 8 !
+- Performance acceptable pour la quasi-totalité des cas
 
 ---
 

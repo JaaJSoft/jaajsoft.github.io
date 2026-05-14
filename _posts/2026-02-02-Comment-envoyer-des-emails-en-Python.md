@@ -1,11 +1,11 @@
 ---
 layout: article
 title: "Python : Comment envoyer des emails"
-author: Pierre Chopinet
 tags:
   - python
   - email
   - smtp
+author: Pierre Chopinet
 ---
 
 Envoyer des emails en Python est simple grâce aux modules natifs `smtplib` et `email`. Que ce soit pour des notifications automatiques, des rapports ou des alertes, Python offre une API complète pour gérer l'envoi d'emails (texte, HTML, pièces jointes).
@@ -19,20 +19,11 @@ Dans ce tutoriel, vous découvrirez :
 - Gérer les erreurs et les bonnes pratiques de sécurité
 - Intégration avec Flask (Flask-Mail)
 
----
-
-## 1) Installation et prérequis
-
-Les modules `smtplib` et `email` sont **natifs** en Python (aucune installation requise).
-
-```bash
-python --version
-# Python 3.7+ recommandé
-```
+Pré-requis : Python 3.7 ou plus récent. Les modules `smtplib` et `email` sont natifs (aucune installation requise).
 
 ---
 
-## 2) Envoyer un email simple (texte brut)
+## Envoyer un email simple (texte brut)
 
 ### Code minimal
 
@@ -55,7 +46,7 @@ with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
     print("Email envoyé avec succès !")
 ```
 
-**Explication** :
+Explication :
 - `EmailMessage()` : crée un message email
 - `msg['Subject']`, `msg['From']`, `msg['To']` : en-têtes
 - `set_content()` : corps du message en texte brut
@@ -66,17 +57,17 @@ with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
 
 ---
 
-## 3) Configuration des serveurs SMTP populaires
+## Configuration des serveurs SMTP populaires
 
-L'exemple precedent utilise Gmail, mais `smtplib` fonctionne avec n'importe quel fournisseur SMTP. Voici les paramètres des plus courants.
+L'exemple précédent utilise Gmail, mais `smtplib` fonctionne avec n'importe quel fournisseur SMTP. Voici les paramètres des plus courants.
 
 ### Gmail
 
-**Prérequis** : activer les "Mots de passe d'application" (App Passwords)
+Pré-requis : activer les "Mots de passe d'application" (App Passwords).
 
-1. Aller dans [Compte Google > Sécurité](https://myaccount.google.com/security)
-2. Activer la validation en deux étapes
-3. Générer un "Mot de passe d'application"
+- Aller dans [Compte Google > Sécurité](https://myaccount.google.com/security)
+- Activer la validation en deux étapes
+- Générer un "Mot de passe d'application"
 
 ```python
 SMTP_SERVER = 'smtp.gmail.com'
@@ -123,7 +114,7 @@ PASSWORD = 'mot_de_passe'
 
 ---
 
-## 4) Envoyer un email HTML
+## Envoyer un email HTML
 
 ### Avec mise en forme
 
@@ -165,14 +156,14 @@ with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
     print("Email HTML envoyé !")
 ```
 
-**Points clés** :
+Points clés :
 - `set_content()` : version texte (fallback)
 - `add_alternative(..., subtype='html')` : version HTML
 - Les clients email afficheront le HTML, sinon le texte brut
 
 ---
 
-## 5) Envoyer à plusieurs destinataires
+## Envoyer à plusieurs destinataires
 
 ### Destinataires multiples (To, Cc, Bcc)
 
@@ -192,7 +183,7 @@ with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
     smtp.send_message(msg)
 ```
 
-**Alternative avec une liste** :
+Alternative avec une liste :
 
 ```python
 destinataires = ['alice@example.com', 'bob@example.com', 'charlie@example.com']
@@ -201,7 +192,7 @@ msg['To'] = ', '.join(destinataires)
 
 ---
 
-## 6) Ajouter des pièces jointes
+## Ajouter des pièces jointes
 
 ### Fichier texte, PDF, image
 
@@ -278,7 +269,7 @@ with open('logo.png', 'rb') as img:
 
 ---
 
-## 7) Gestion des erreurs
+## Gestion des erreurs
 
 ### Erreurs courantes
 
@@ -297,17 +288,17 @@ try:
         smtp.starttls()
         smtp.login('votre.email@gmail.com', 'votre_mot_de_passe')
         smtp.send_message(msg)
-        print("✅ Email envoyé avec succès")
+        print("Email envoyé avec succès")
 
 except smtplib.SMTPAuthenticationError:
-    print("❌ Erreur d'authentification (email/mot de passe incorrect)")
+    print("Erreur d'authentification (email/mot de passe incorrect)")
 except smtplib.SMTPException as e:
-    print(f"❌ Erreur SMTP : {e}")
+    print(f"Erreur SMTP : {e}")
 except Exception as e:
-    print(f"❌ Erreur : {e}")
+    print(f"Erreur : {e}")
 ```
 
-**Erreurs fréquentes** :
+Erreurs fréquentes :
 - `SMTPAuthenticationError` : identifiants incorrects
 - `SMTPRecipientsRefused` : email destinataire invalide
 - `SMTPServerDisconnected` : connexion perdue
@@ -315,9 +306,9 @@ except Exception as e:
 
 ---
 
-## 8) Utiliser SSL (port 465) au lieu de STARTTLS
+## Utiliser SSL (port 465) au lieu de STARTTLS
 
-Tous les exemples precedents utilisent `starttls()` sur le port 587. Certains serveurs supportent aussi une connexion SSL directe sur le port 465 via `SMTP_SSL`.
+Tous les exemples précédents utilisent `starttls()` sur le port 587. Certains serveurs supportent aussi une connexion SSL directe sur le port 465 via `SMTP_SSL`.
 
 ```python
 import smtplib
@@ -336,15 +327,15 @@ with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
     print("Email envoyé via SSL")
 ```
 
-**Différence** :
+Différence :
 - **Port 587 + STARTTLS** : connexion non chiffrée upgradée vers TLS (recommandé)
 - **Port 465 + SSL** : connexion chiffrée dès le début (ancien standard, toujours supporté)
 
 ---
 
-## 9) Sécurité : ne pas hardcoder les mots de passe
+## Sécurité : ne pas hardcoder les mots de passe
 
-Les exemples precedents utilisent des mots de passe en clair pour rester lisibles. En production, il faut externaliser ces secrets dans des variables d'environnement.
+Les exemples précédents utilisent des mots de passe en clair pour rester lisibles. En production, il faut externaliser ces secrets dans des variables d'environnement.
 
 ```python
 import os
@@ -360,22 +351,22 @@ PASSWORD = os.getenv('EMAIL_PASSWORD')
 smtp.login(EMAIL, PASSWORD)
 ```
 
-**Fichier `.env`** :
+Fichier `.env` :
 ```
 EMAIL=votre.email@gmail.com
 EMAIL_PASSWORD=abcd efgh ijkl mnop
 ```
 
-**Installation** :
+Installation :
 ```bash
 pip install python-dotenv
 ```
 
-**⚠️ Important** : ajoutez `.env` à votre `.gitignore` pour ne pas committer vos secrets.
+> Important : ajoutez `.env` à votre `.gitignore` pour ne pas committer vos secrets. Voir l'article dédié sur [python-dotenv]({% post_url 2026-04-20-Comment-utiliser-les-variables-d-environnement-avec-python-dotenv %}) pour aller plus loin.
 
 ---
 
-## 10) Intégration avec Flask (Flask-Mail)
+## Intégration avec Flask (Flask-Mail)
 
 Pour envoyer des emails dans une application web Flask.
 
@@ -417,7 +408,7 @@ if __name__ == '__main__':
 
 ---
 
-## 11) Envoi asynchrone avec threading
+## Envoi asynchrone avec threading
 
 Pour ne pas bloquer l'exécution lors de l'envoi d'emails.
 
@@ -448,7 +439,7 @@ envoyer_email_async('destinataire@example.com', 'Test async', 'Message de test')
 print("L'envoi est en cours en arrière-plan...")
 ```
 
-**Alternative avec asyncio** (Python 3.7+) :
+Alternative avec asyncio (Python 3.7+) :
 
 ```python
 import asyncio
@@ -477,9 +468,9 @@ asyncio.run(envoyer_email_async('destinataire@example.com', 'Test', 'Message'))
 
 ---
 
-## 12) Templates d'emails avec Jinja2
+## Templates d'emails avec Jinja2
 
-Plutôt que de construire le HTML a la main comme dans la section 4, Jinja2 permet de separer le template des donnees.
+Plutôt que de construire le HTML à la main, Jinja2 permet de séparer le template des données.
 
 ### Installation
 
@@ -545,20 +536,20 @@ with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
 
 ---
 
-## 13) Bonnes pratiques
+## Bonnes pratiques
 
-### ✅ À faire
+### À faire
 
-1. **Utiliser des mots de passe d'application** (Gmail, Yahoo) plutôt que le mot de passe principal
-2. **Stocker les credentials dans des variables d'environnement** (`.env`)
-3. **Gérer les erreurs** avec des try/except appropriés
-4. **Ajouter un timeout** : `SMTP(..., timeout=10)`
-5. **Utiliser STARTTLS ou SSL** pour chiffrer les connexions
-6. **Valider les adresses email** avant l'envoi (regex ou lib `email-validator`)
-7. **Limiter le taux d'envoi** pour éviter d'être banni (rate limiting)
-8. **Respecter le RGPD** : permettre le désabonnement
+- **Utiliser des mots de passe d'application** (Gmail, Yahoo) plutôt que le mot de passe principal
+- **Stocker les credentials dans des variables d'environnement** (`.env`)
+- **Gérer les erreurs** avec des try/except appropriés
+- **Ajouter un timeout** : `SMTP(..., timeout=10)`
+- **Utiliser STARTTLS ou SSL** pour chiffrer les connexions
+- **Valider les adresses email** avant l'envoi (regex ou lib `email-validator`)
+- **Limiter le taux d'envoi** pour éviter d'être banni (rate limiting)
+- **Respecter le RGPD** : permettre le désabonnement
 
-### ❌ À éviter
+### À éviter
 
 - Hardcoder les mots de passe dans le code
 - Envoyer des emails en masse sans throttling
@@ -568,11 +559,11 @@ with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
 
 ---
 
-## 14) Cas d'usage pratiques
+## Cas d'usage pratiques
 
 Voici quelques exemples concrets qui combinent les techniques vues dans cet article.
 
-### 1. Notification d'erreur
+### Notification d'erreur
 
 ```python
 def notifier_erreur(exception):
@@ -588,7 +579,7 @@ def notifier_erreur(exception):
         smtp.send_message(msg)
 ```
 
-### 2. Rapport quotidien automatisé
+### Rapport quotidien automatisé
 
 ```python
 import schedule
@@ -618,7 +609,7 @@ while True:
     time.sleep(60)
 ```
 
-### 3. Email de confirmation d'inscription
+### Email de confirmation d'inscription
 
 ```python
 def envoyer_confirmation_inscription(email_utilisateur, token):
@@ -650,7 +641,7 @@ def envoyer_confirmation_inscription(email_utilisateur, token):
 
 ## Conclusion
 
-Avec `smtplib` et `email`, Python couvre la plupart des besoins d'envoi d'emails sans dépendance externe. Pour une integration web, `Flask-Mail` simplifie encore les choses.
+Avec `smtplib` et `email`, Python couvre la plupart des besoins d'envoi d'emails sans dépendance externe. Pour une intégration web, `Flask-Mail` simplifie encore les choses.
 
 **Points clés à retenir :**
 
@@ -662,15 +653,17 @@ Avec `smtplib` et `email`, Python couvre la plupart des besoins d'envoi d'emails
 - Flask-Mail : intégration web
 - Templates dynamiques avec Jinja2
 
-Envoyez vos premiers emails automatisés dès maintenant ! 📧
-
 ---
+
+## Pour aller plus loin
+
+- [Documentation smtplib](https://docs.python.org/3/library/smtplib.html)
+- [Documentation email](https://docs.python.org/3/library/email.html)
 
 ## Voir aussi
 
-- [Comment faire une API web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
-- [Comment faire des requêtes HTTP en Python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
-- [Comment créer une CLI en Python]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
-- [Comment faire une API web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
-- [Documentation smtplib](https://docs.python.org/3/library/smtplib.html)
-- [Documentation email](https://docs.python.org/3/library/email.html)
+- [Python : Comment utiliser les variables d'environnement avec python-dotenv]({% post_url 2026-04-20-Comment-utiliser-les-variables-d-environnement-avec-python-dotenv %})
+- [Python : Comment faire une API web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
+- [Python : Comment faire une API web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
+- [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+- [Python : Comment créer une CLI]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
