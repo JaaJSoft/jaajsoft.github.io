@@ -241,6 +241,7 @@ print(f"{maintenant:%A %d %B %Y}")
 
 Pour afficher des accolades littérales dans une f-string, doublez-les :
 
+{% raw %}
 ```python
 x = 10
 
@@ -255,6 +256,7 @@ print(f"Pour afficher {{x}}, écrivez {{{{x}}}}")
 - `{variable}` -> évalue la variable
 - `{{` -> affiche `{`
 - `}}` -> affiche `}`
+{% endraw %}
 
 ---
 
@@ -530,7 +532,6 @@ Les f-strings sont la méthode moderne, performante et lisible pour formater des
 ## Voir aussi
 
 - [Python : Comment utiliser les décorateurs]({% post_url 2026-05-14-Python-les-decorateurs %})
-- [Python : Le pattern matching avec match et case]({% post_url 2026-05-18-Python-pattern-matching-avec-match-et-case %})
 - [Comment faire des group by en Python]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
 - [Comment créer une CLI en Python]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
 - [Comment envoyer des emails en Python]({% post_url 2026-02-02-Comment-envoyer-des-emails-en-Python %})
