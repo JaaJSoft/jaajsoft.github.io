@@ -125,6 +125,12 @@ print(f"Mode debug : {debug}")
 si la variable n'est pas définie. C'est utile pour les paramètres qui ont une
 valeur raisonnable par défaut.
 
+À noter : si le fichier `.env` n'existe pas, `load_dotenv()` ne lève pas
+d'erreur et retourne simplement `False`. C'est ce comportement silencieux
+qui permet au même code de fonctionner en local (où le `.env` est présent)
+et en production (où les variables sont déjà injectées dans l'environnement
+par l'orchestrateur).
+
 ### Utilisation avec dotenv_values()
 
 Si vous préférez ne pas modifier les variables d'environnement du processus,
@@ -182,8 +188,8 @@ from dotenv import load_dotenv
 load_dotenv(".env.production")
 ```
 
-C'est utile pour gérer **plusieurs environnements** avec des fichiers
-distincts :
+Ce mécanisme est utile pour gérer **plusieurs environnements** avec des
+fichiers distincts :
 
 ```text
 mon_projet/
@@ -205,6 +211,17 @@ elif env == "production":
     load_dotenv(".env.production")
 else:
     load_dotenv()  # .env par défaut
+```
+
+Enfin, si votre script peut être lancé depuis n'importe quel répertoire (par
+exemple un cron, un test ou un import depuis un sous-package), la fonction
+`find_dotenv()` localise automatiquement le fichier `.env` en remontant
+l'arborescence à partir du fichier appelant :
+
+```python
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 ```
 
 ## Exemple concret : une connexion à une base de données
@@ -255,6 +272,12 @@ print(f"Connexion à : {config.database_url}")
 Ce pattern de classe `Config` est très courant dans les projets Flask et
 FastAPI. Il centralise toute la configuration au même endroit.
 
+Pour une approche plus moderne avec typage strict et validation automatique
+au démarrage, on peut utiliser [`pydantic-settings`](https://docs.pydantic.dev/latest/concepts/pydantic_settings/),
+qui s'intègre particulièrement bien avec FastAPI. Pydantic se charge alors
+de convertir les types (un `int` reste un `int`, un `bool` reste un `bool`)
+et de lever une erreur explicite si une variable obligatoire est absente.
+
 ## Protéger ses secrets avec .gitignore
 
 Le fichier `.env` contient des secrets. Il ne doit **jamais** être commité
@@ -271,7 +294,7 @@ En revanche, on peut créer un fichier `.env.example` (sans les vraies
 valeurs) pour documenter les variables nécessaires :
 
 ```
-# .env.example — Copiez ce fichier en .env et remplissez les valeurs
+# .env.example - Copiez ce fichier en .env et remplissez les valeurs
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=
@@ -312,30 +335,34 @@ services:
       - DB_NAME=mon_app
 ```
 
-Dans les deux cas, le code Python reste identique grâce au comportement par
-défaut de `load_dotenv()` qui ne remplace pas les variables déjà définies :
+Dans les deux cas, le code Python reste identique. En développement,
+`load_dotenv()` lit le `.env` et peuple l'environnement du processus. Dans
+le conteneur Docker, le `.env` n'est en général pas embarqué dans l'image :
+Docker lit lui-même le fichier au démarrage pour injecter les variables, et
+`load_dotenv()` ne trouve rien à charger (il retourne `False` silencieusement).
+Dans tous les cas, `os.getenv("DB_HOST")` récupère la bonne valeur :
 
 ```python
-load_dotenv()  # En dev : charge le .env / En Docker : les variables existent déjà
+load_dotenv()  # En dev : charge le .env / En Docker : no-op, les variables sont déjà là
 db_host = os.getenv("DB_HOST")
 ```
 
 ## Bonnes pratiques
 
-✅ **À faire**
+### ✅ À faire
 
- - Toujours ajouter `.env` au `.gitignore`
- - Fournir un `.env.example` avec des valeurs vides ou d'exemple
- - Utiliser des valeurs par défaut raisonnables avec `os.getenv("CLÉ", "défaut")`
- - Centraliser la configuration dans un module dédié (`config.py`)
- - Valider les variables critiques au démarrage de l'application
+- Toujours ajouter `.env` au `.gitignore`
+- Fournir un `.env.example` avec des valeurs vides ou d'exemple
+- Utiliser des valeurs par défaut raisonnables avec `os.getenv("CLÉ", "défaut")`
+- Centraliser la configuration dans un module dédié (`config.py`)
+- Valider les variables critiques au démarrage de l'application
 
-❌ **À éviter**
+### ❌ À éviter
 
- - Commiter le fichier `.env` dans le dépôt Git
- - Utiliser `override=True` en production
- - Mettre des valeurs de production dans le `.env.example`
- - Appeler `load_dotenv()` plusieurs fois sans raison
+- Commiter le fichier `.env` dans le dépôt Git
+- Utiliser `override=True` en production
+- Mettre des valeurs de production dans le `.env.example`
+- Appeler `load_dotenv()` plusieurs fois sans raison
 
 ## Voir aussi
 
