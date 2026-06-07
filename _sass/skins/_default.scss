@@ -5,7 +5,7 @@
 ///
 
 // main colors
-$main-color-1:     #4287f5;
+$main-color-1:     #3273dc; // darkened from #4287f5 for WCAG AA contrast (4.5:1) on white
 $text-color-1:     #fff;
 
 $main-color-2:     #612675;
@@ -23,7 +23,7 @@ $background-color: #fff;
 // text colors
 $text-color-theme-light-d: #000;
 $text-color-theme-light:   #222;
-$text-color-theme-light-l: #888;
+$text-color-theme-light-l: #767676; // darkened from #888 for WCAG AA contrast (4.5:1) on white
 
 $text-color-theme-dark-d:  #fff;
 $text-color-theme-dark:    rgba(#fff, .95);
