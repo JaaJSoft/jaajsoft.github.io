@@ -83,15 +83,19 @@ toc:
 
 ## => Markdown Enhancements
 ##############################
+## Ces bibliotheques ne sont pas chargees par defaut.
+## Pour les utiliser dans un article, ajouter dans son front matter :
+##   mathjax: true / mermaid: true / chart: true
+
 ## Mathjax
-mathjax: true # false (default), true
+mathjax: false # false (default), true
 mathjax_autoNumber: # false (default), true
 
 ## Mermaid
-mermaid: true # false (default), true
+mermaid: false # false (default), true
 
 ## Chart
-chart: true # false (default), true
+chart: false # false (default), true
 
 
 ## => Paginate
