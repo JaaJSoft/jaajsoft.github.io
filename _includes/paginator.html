@@ -4,6 +4,11 @@
     {%- include snippets/get-locale-string.html key='STATISTICS' -%}
     {%- assign _locale_statistics = __return -%}
 
+    {%- include snippets/get-locale-string.html key='PREVIOUS' -%}
+    {%- assign _locale_previous = __return -%}
+    {%- include snippets/get-locale-string.html key='NEXT' -%}
+    {%- assign _locale_next = __return -%}
+
     {%- assign _post_count = site.posts | size -%}
     {%- assign _page_count = paginator.total_pages -%}
     <p>{{ _locale_statistics | replace: '[POST_COUNT]', _post_count | replace: '[PAGE_COUNT]', _page_count }}</p>
@@ -35,7 +40,7 @@
         {%- if paginator.previous_page -%}
           {%- include snippets/prepend-baseurl.html path=paginator.previous_page_path -%}
           {%- assign _href = __return -%}
-          <li><a class="button button--secondary button--circle" href="{{ _href }}">
+          <li><a class="button button--secondary button--circle" href="{{ _href }}" aria-label="{{ _locale_previous }}">
             <i class="fas fa-angle-left"></i>
           </a></li>
         {%- else -%}
@@ -84,7 +89,7 @@
         {%- if paginator.next_page -%}
           {%- include snippets/prepend-baseurl.html path=paginator.next_page_path -%}
           {%- assign _href = __return -%}
-          <li><a class="button button--secondary button--circle" href="{{ _href }}">
+          <li><a class="button button--secondary button--circle" href="{{ _href }}" aria-label="{{ _locale_next }}">
             <i class="fas fa-angle-right"></i>
           </a></li>
         {%- else -%}

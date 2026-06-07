@@ -82,7 +82,7 @@ layout: base
       {%- endif -%}
 
 
-        <div class="page__content">
+        <main class="page__content">
         {%- if _article_header_type == 'overlay' or _article_header_type == 'cover' -%}
 
           {%- if _article_header_type == 'overlay' -%}
@@ -232,7 +232,7 @@ layout: base
         {%- if _full_width == false -%}
           </div>
         {%- endif -%}
-        </div>
+        </main>
 
         {%- if _footer != false -%}
           <div class="page__footer d-print-none">{%- include footer.html -%}</div>
