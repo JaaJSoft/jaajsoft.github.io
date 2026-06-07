@@ -3,7 +3,7 @@ layout: article
 title: "Kubernetes : Programmer des tâches avec CronJob"
 tags:
   - kubernetes
-  - cronjob
+  - cron
   - k8s
   - jobs
   - devops
