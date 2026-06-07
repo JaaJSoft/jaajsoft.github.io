@@ -5,7 +5,6 @@ tags:
   - kubernetes
   - cron
   - k8s
-  - jobs
   - devops
 author: Pierre Chopinet
 ---

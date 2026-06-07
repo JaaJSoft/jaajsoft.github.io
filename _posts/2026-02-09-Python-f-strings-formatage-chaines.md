@@ -4,7 +4,6 @@ title: "Python : Comment utiliser les f-strings"
 tags:
   - python
   - strings
-  - formatage
 author: Pierre Chopinet
 ---
 
