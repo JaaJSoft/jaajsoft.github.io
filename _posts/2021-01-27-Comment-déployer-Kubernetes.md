@@ -21,7 +21,7 @@ Dans ce tutoriel, nous allons voir comment déployer un *cluster* kubernetes bar
 
 Pour ce tutoriel, vous aurez besoin d'un PC, et de plusieurs serveurs que vous voulez mettre en *cluster*. (Ce tutoriel peut fonctionner sur un seul serveur)
 
-Pour déployer notre *cluster,* nous allons utiliser une version allégée de kubernetes nommée [K3s](https://k3s.io), qui est fait pour les appareils ARM comme un *Raspberry PI* ou des serveurs peu puissants. C'est une version simplifiée de k8s avec seulement l'essentiel qui est plus simple à installer et maintenir.
+Pour déployer notre *cluster,* nous allons utiliser une version allégée de kubernetes nommée [K3s](https://k3s.io), qui est faite pour les appareils ARM comme un *Raspberry Pi* ou des serveurs peu puissants. C'est une version simplifiée de k8s avec seulement l'essentiel qui est plus simple à installer et maintenir.
 
 ## Préparation des nodes
 
@@ -33,23 +33,23 @@ sudo apt install openssh-client
 Maintenant que vous avez les outils SSH installés sur votre PC, créez une clé SSH avec la commande :
 
 ```bash
-ssh-keygen -b 4096
+ssh-keygen -t ed25519
 ```
 Laissez l'emplacement du fichier par défaut et ne mettez pas de *passphrase*.
 Vous devriez avoir quelque chose dans ce genre :
 
 ```bash
-Generating public/private rsa key pair.
-Enter file in which to save the key (/home/pierre/.ssh/id_rsa):
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/home/pierre/.ssh/id_ed25519):
 Created directory '/home/pierre/.ssh'.
 Enter passphrase (empty for no passphrase):
 Enter same passphrase again:
-Your identification has been saved in /home/pierre/.ssh/id_rsa
-Your public key has been saved in /home/pierre/.ssh/id_rsa.pub
+Your identification has been saved in /home/pierre/.ssh/id_ed25519
+Your public key has been saved in /home/pierre/.ssh/id_ed25519.pub
 The key fingerprint is:
 SHA256:JJKJFEFEG/EfzLJZGREZE fuuf@fuuf-jaaj
 The key's randomart image is:
-+---[RSA 4096]----+
++--[ED25519 256]--+
 |  E  .==O .      |
 |X +.x.@ o        |
 |oB +.= O         |
@@ -75,7 +75,7 @@ ssh user@host
 ##  Installation de K3sup
 
 Nous allons utiliser [K3sup](https://github.com/alexellis/k3sup) pour installer notre *cluster*, c'est un utilitaire simple et rapide pour installer et mettre à jour K3s.
-Pour l'installer K3sup sur son PC :
+Pour installer K3sup sur son PC :
 
 ```bash
 curl -sLS https://get.k3sup.dev | sh
@@ -102,9 +102,9 @@ Maintenant, il faut ajouter vos autres serveurs en tant que *nodes* du *cluster*
 SERVER_IP=          # IP du master
 SERVER_USER=root    # USER pour se connecter sur le master
 NODE1_IP=           # IP de la 1ère node
-NODE1_user=root     # USER pour se connecter sur la 1ère node
+NODE1_USER=root     # USER pour se connecter sur la 1ère node
 
-k3sup join --ip $NODE1_IP --user $NODE1_user --server-ip $SERVER_IP --server-user $SERVER_USER
+k3sup join --ip $NODE1_IP --user $NODE1_USER --server-ip $SERVER_IP --server-user $SERVER_USER
 ```
 Effectuez cette étape pour chacune des *nodes* voulues.
 
@@ -118,9 +118,9 @@ Voici le script complet pour réinstaller rapidement K3s, ou mettre à jour la v
 SERVER_IP=
 SERVER_USER=root
 NODE1_IP=
-NODE1_user=root
+NODE1_USER=root
 NODE2_IP=
-NODE2_user=root
+NODE2_USER=root
 
 curl -sLS https://get.k3sup.dev | sh
 sudo install k3sup /usr/local/bin/
@@ -129,9 +129,9 @@ rm k3sup # fichier temporaire
 
 k3sup install --no-extras --ip $SERVER_IP --user $SERVER_USER
 
-k3sup join --ip $NODE1_IP --user $NODE1_user --server-ip $SERVER_IP --server-user $SERVER_USER
+k3sup join --ip $NODE1_IP --user $NODE1_USER --server-ip $SERVER_IP --server-user $SERVER_USER
 
-k3sup join --ip $NODE2_IP --user $NODE2_user --server-ip $SERVER_IP --server-user $SERVER_USER
+k3sup join --ip $NODE2_IP --user $NODE2_USER --server-ip $SERVER_IP --server-user $SERVER_USER
 ```
 
 ##  Installation de kubectl et test du cluster
@@ -141,13 +141,19 @@ Pour tester si le *cluster* k8s est bien installé et interagir avec celui-ci, n
 ### Pour Debian/Ubuntu
 
 ```bash
-sudo apt-get update && sudo apt-get install -y apt-transport-https
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.36/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+sudo chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.36/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
+
 sudo apt-get update
 sudo apt-get install -y kubectl
 ```
-Code repris depuis la documentation officielle.
+Code repris depuis la documentation officielle. Remplacez `v1.36` par la version mineure de Kubernetes souhaitée. Sur certaines distributions plus anciennes, le répertoire `/etc/apt/keyrings` n'existe pas par défaut, créez-le avec `sudo mkdir -p -m 755 /etc/apt/keyrings`.
 
 ### Pour d'autres OS
 
@@ -155,7 +161,7 @@ Suivez le guide ici : [https://kubernetes.io/fr/docs/tasks/tools/install-kubectl
 
 ### Test du cluster
 
-Maintenant que `kubectl` est installé, nous allons pouvons tester notre *cluster*. Pour cela, il faut définir une variable d'environnement `KUBECONFIG` correspondant à l'emplacement de notre fichier de config kubernetes généré par K3sup.
+Maintenant que `kubectl` est installé, nous allons pouvoir tester notre *cluster*. Pour cela, il faut définir une variable d'environnement `KUBECONFIG` correspondant à l'emplacement de notre fichier de config kubernetes généré par K3sup.
 
 ```bash
 export KUBECONFIG=/chemin/vers/votre/kubeconfig
@@ -184,4 +190,4 @@ Maintenant que votre *cluster* est installé, vous pouvez commencer à déployer
 - [https://github.com/alexellis/k3sup](https://github.com/alexellis/k3sup)
 - [https://k3s.io](https://k3s.io/)
 - [https://github.com/k3s-io/k3s](https://github.com/k3s-io/k3s)
-- [Https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/](https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/)
+- [https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/](https://kubernetes.io/fr/docs/tasks/tools/install-kubectl/)

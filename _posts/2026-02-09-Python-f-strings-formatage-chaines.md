@@ -113,17 +113,29 @@ nombre = 1234567.89
 
 print(f"{nombre:,.2f}")     # 1,234,567.89 (virgule US)
 print(f"{nombre:_.2f}")     # 1_234_567.89 (underscore)
-print(f"{nombre: .2f}")     # 1 234 567.89 (espace)
 ```
 
-**Pour le format français** (espace comme séparateur) :
+Seuls deux séparateurs de milliers existent : `,` et `_`. Attention au faux ami `{nombre: .2f}` : l'espace n'est pas un séparateur de milliers mais une option de signe (elle réserve un espace devant les nombres positifs).
+
+**Pour le format français** (espace comme séparateur), on passe par un `replace` :
+
+```python
+print(f"{nombre:,.2f}".replace(",", " "))  # 1 234 567.89
+```
+
+Autre possibilité, le format `n` qui utilise la locale du système :
 
 ```python
 import locale
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 
-print(f"{nombre:n}")  # 1 234 567,89
+nombre_entier = 1234567
+print(f"{nombre_entier:n}")  # 1 234 567
 ```
+
+Le format `n` n'insère les séparateurs de la locale que pour les entiers : sur un float, il se comporte comme `g` (6 chiffres significatifs) et afficherait `1,23457e+06`.
+
+> Note : selon la version de Windows, la locale `fr_FR.UTF-8` peut ne pas être disponible ; utilisez alors `'French_France.1252'`.
 
 ### Pourcentages
 
@@ -233,6 +245,8 @@ locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
 print(f"{maintenant:%A %d %B %Y}")
 # lundi 09 février 2026
 ```
+
+> Même remarque que plus haut : sous Windows, remplacez au besoin `'fr_FR.UTF-8'` par `'French_France.1252'`.
 
 ---
 
@@ -458,27 +472,34 @@ print(f"Bonjour {nom}")
 
 ### F-strings et backslashes
 
-Les backslashes ne sont **pas autorisés** directement dans les f-strings :
+Avant Python 3.12, les backslashes n'étaient **pas autorisés** dans la partie expression des f-strings :
 
 ```python
-# Erreur
-print(f"Chemin : {os.path.join('C:', 'Users', 'Alice')}")
+items = ["pomme", "poire", "cerise"]
 
-# Solution : stocker le résultat dans une variable
-chemin = os.path.join('C:', 'Users', 'Alice')
-print(f"Chemin : {chemin}")
+# Erreur avant Python 3.12
+print(f"Liste : {'\n'.join(items)}")
+# SyntaxError: f-string expression part cannot include a backslash
+
+# Solution compatible avec toutes les versions : passer par une variable
+saut = "\n"
+print(f"Liste : {saut.join(items)}")
 ```
+
+Depuis Python 3.12 (PEP 701), cette limite a disparu et le premier exemple fonctionne sans erreur.
 
 ### Guillemets imbriqués
 
 ```python
-# Erreur de syntaxe
+# Erreur de syntaxe avant Python 3.12
 print(f"Message : {"Hello"}")
 
 # Solution : alterner les guillemets
 print(f"Message : {'Hello'}")
 print(f'Message : {"Hello"}')
 ```
+
+Là aussi, la PEP 701 a levé la restriction : depuis Python 3.12, on peut réutiliser le même type de guillemets à l'intérieur de l'expression.
 
 ---
 

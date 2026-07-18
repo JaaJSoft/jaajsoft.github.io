@@ -25,7 +25,7 @@ Une CLI permet de rendre vos scripts Python interactifs et configurables sans mo
 - Automatiser des tâches dans des scripts bash ou pipelines CI/CD
 - Fournir une interface utilisateur simple et efficace
 
-## Méthode 1 : argparse (bibliothèque standard)
+## argparse (bibliothèque standard)
 
 `argparse` est inclus dans Python, aucune installation nécessaire.
 
@@ -117,7 +117,7 @@ python tasks.py list --all
 python tasks.py delete 5
 ```
 
-## Méthode 2 : Click
+## Click
 
 `click` est une bibliothèque qui simplifie la création de CLI avec des décorateurs.
 
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     status()
 ```
 
-## Méthode 3 : Typer (moderne et typé)
+## Typer (moderne et typé)
 
 `typer` utilise les type hints de Python pour générer automatiquement une CLI.
 
@@ -241,8 +241,9 @@ pip install typer
 
 ```python
 import typer
+from typing import Optional
 
-def main(nom: str, age: int = None):
+def main(nom: str, age: Optional[int] = None):
     """Un outil CLI simple."""
     print(f"Bonjour {nom}!")
     if age:
@@ -386,7 +387,7 @@ Votre commande `mon-outil` sera disponible globalement.
 | Courbe d'apprentissage | Moyenne    | Facile      | Très facile |
 | Sous-commandes         | Oui        | Oui         | Oui         |
 | Couleurs/style         | Non        | Oui         | Oui         |
-| Autocomplétion         | Non        | Plugin      | Intégré     |
+| Autocomplétion         | Non        | Intégré     | Intégré     |
 | Validation             | Basique    | Avancée     | Avancée     |
 
 **Recommandations :**

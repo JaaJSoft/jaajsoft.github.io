@@ -15,7 +15,7 @@ tags:
 Dans ce tutoriel, nous allons voir comment passer (uploader) des fichiers à une API web réalisée avec FastAPI : un fichier simple, plusieurs fichiers, des champs de formulaire additionnels, la sauvegarde sur disque et quelques validations utiles.
 <!--more-->
 
-Pré‑requis (recommandé) :
+Pré-requis (recommandé) :
 
 - Côté serveur : [Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - Côté client : [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
@@ -175,7 +175,7 @@ async def save_file(file: UploadFile = File(...)):
 
 ## Valider le type et la taille
 
-Exemple simple de validation du type MIME et d'une limite de taille (lecture en mémoire — pour de gros fichiers, préférez vérifier pendant la copie et interrompre au‑delà d'un seuil) :
+Exemple simple de validation du type MIME et d'une limite de taille (lecture en mémoire — pour de gros fichiers, préférez vérifier pendant la copie et interrompre au-delà d'un seuil) :
 
 ```python
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -293,6 +293,6 @@ async def upload_validate(file: UploadFile = File(...)):
 - [Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
 - [Comment dockeriser une application FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
-- [Limiter le rate d’une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
+- [Limiter le rate d'une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
 - [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 - [Documentation FastAPI - Request Files](https://fastapi.tiangolo.com/tutorial/request-files/)

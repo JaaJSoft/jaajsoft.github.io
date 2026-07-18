@@ -28,8 +28,7 @@ L'objectif de ce tutoriel est d'apprendre comment :
 
 ## Installation
 
-Pour commencer, il vous faut un interpréteur python en version 3. Ensuite,
-installez pytest avec pip :
+Pour commencer, il vous faut Python. Ensuite, installez pytest avec pip :
 
 ```bash
 pip3 install pytest
@@ -247,13 +246,16 @@ test_calcul.py::test_addition[1-2-3] PASSED
 test_calcul.py::test_addition[0-0-0] PASSED
 test_calcul.py::test_addition[-1-1-0] PASSED
 test_calcul.py::test_addition[100-200-300] PASSED
-test_calcul.py::test_addition[0.1-0.2-0.3] PASSED
+test_calcul.py::test_addition[0.1-0.2-attendu4] PASSED
 ```
 
 > Notez l'utilisation de `pytest.approx(0.3)` pour la comparaison de
 > flottants. En raison de la représentation en virgule flottante,
 > `0.1 + 0.2` ne donne pas exactement `0.3` en Python. `pytest.approx`
-> permet de comparer avec une tolérance par défaut.
+> permet de comparer avec une tolérance par défaut. C'est aussi pour ça
+> que le dernier identifiant affiche `attendu4` : pour un objet comme
+> `approx`, pytest génère un id à partir du nom du paramètre et de
+> l'indice du cas, plutôt que de la valeur.
 
 ## Tester les exceptions
 

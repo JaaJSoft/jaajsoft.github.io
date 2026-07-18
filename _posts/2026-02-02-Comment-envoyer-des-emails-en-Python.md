@@ -329,7 +329,7 @@ with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
 
 Différence :
 - **Port 587 + STARTTLS** : connexion non chiffrée upgradée vers TLS (recommandé)
-- **Port 465 + SSL** : connexion chiffrée dès le début (ancien standard, toujours supporté)
+- **Port 465 + SSL** : connexion chiffrée dès le début (TLS implicite). Longtemps considéré comme obsolète, ce mode est de nouveau recommandé par la RFC 8314 (2018), au même titre que 587 + STARTTLS
 
 ---
 
@@ -447,7 +447,7 @@ import smtplib
 from email.message import EmailMessage
 
 async def envoyer_email_async(destinataire, sujet, contenu):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, envoyer_email_sync, destinataire, sujet, contenu)
 
 def envoyer_email_sync(destinataire, sujet, contenu):
@@ -584,6 +584,7 @@ def notifier_erreur(exception):
 ```python
 import schedule
 import time
+from datetime import date
 
 def envoyer_rapport_quotidien():
     # Générer le rapport

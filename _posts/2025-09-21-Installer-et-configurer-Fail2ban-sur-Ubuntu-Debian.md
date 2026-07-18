@@ -13,21 +13,21 @@ tags:
   - serveur
 ---
 
-Fail2ban est un outil indispensable pour protéger un serveur exposé sur Internet contre les tentatives de brute‑force (SSH, HTTP, etc.).
+Fail2ban est un outil indispensable pour protéger un serveur exposé sur Internet contre les tentatives de brute-force (SSH, HTTP, etc.).
 <!--more-->
-L'outil surveille les logs, détecte les échecs répétés, puis bannit temporairement l’adresse IP via le pare‑feu.
+L'outil surveille les logs, détecte les échecs répétés, puis bannit temporairement l'adresse IP via le pare-feu.
 
 Objectifs de cet article :
 
 - Installer Fail2ban sur Ubuntu/Debian
 - Comprendre sa philosophie (filters, jails, actions)
 - Activer une protection SSH simple et efficace
-- Comment vérifier le bon fonctionnement, dépanner et des pistes pour aller plus loin (recidive, notifications)
+- Vérifier le bon fonctionnement, dépanner, puis aller plus loin (recidive, notifications)
 
-Pré‑requis :
+Pré-requis :
 
 - Un serveur Debian/Ubuntu avec accès sudo
-- Un pare‑feu actif (UFW recommandé sur Ubuntu) ou iptables/nftables
+- Un pare-feu actif (UFW recommandé sur Ubuntu) ou iptables/nftables
 
 ---
 
@@ -72,16 +72,16 @@ Créer un fichier `/etc/fail2ban/jail.local` :
 [DEFAULT]
 # Temps de bannissement (ex : 10 minutes)
 bantime = 10m
-# Fenêtre d’observation des échecs
+# Fenêtre d'observation des échecs
 findtime = 10m
-# Nombre d’échecs avant ban
+# Nombre d'échecs avant ban
 maxretry = 5
 # Adresse(s) à ne jamais bannir (mettez votre IP publique)
 ignoreip = 127.0.0.1/8 ::1
 # Lecture de logs via systemd (souvent plus fiable sur Ubuntu/Debian)
 backend = systemd
 
-# Choisissez l’action selon votre pare‑feu (voir plus bas)
+# Choisissez l'action selon votre pare-feu (voir plus bas)
 # banaction = ufw
 # banaction = iptables-multiport
 # banaction = nftables-multiport
@@ -94,6 +94,8 @@ filter  = sshd
 # Journal : laissez Fail2ban deviner avec backend=systemd
 # (Sinon: logpath = /var/log/auth.log)
 ```
+
+> Note : avec `backend = systemd`, Fail2ban s'appuie sur la bibliothèque Python de systemd. Sur une Debian minimale, installez le paquet `python3-systemd` (`sudo apt install python3-systemd`), sinon le service refusera de démarrer avec ce backend.
 
 Sauvegardez, puis rechargez la configuration :
 
@@ -109,11 +111,11 @@ Vérifiez quel firewall est installé :
 
 ```bash
 sudo ufw status               # si actif, privilégier banaction=ufw
-sudo which iptables           # compat couche iptables-nft possible
-sudo which nft                # présence de nftables
+which iptables                # compat couche iptables-nft possible
+which nft                     # présence de nftables
 ```
 
-- Si UFW est votre pare‑feu :
+- Si UFW est votre pare-feu :
 
 ```ini
 # dans [DEFAULT]
@@ -186,7 +188,7 @@ sudo tail -f /var/log/fail2ban.log
 
 - bantime : durée de ban (ex : 10m, 1h, 24h). Unité : s, m, h, d, w.
 - findtime : fenêtre pendant laquelle on compte les échecs.
-- maxretry : nombre d’échecs permis dans la fenêtre.
+- maxretry : nombre d'échecs permis dans la fenêtre.
 
 Exemple « plus strict » :
 
@@ -213,7 +215,7 @@ Rechargez ensuite Fail2ban.
 
 ---
 
-## Aller plus loin
+## Jails avancés et notifications
 
 ### Jail « recidive » (récidivistes)
 
@@ -222,17 +224,20 @@ Le jail `recidive` bannit plus longtemps les IP qui déclenchent plusieurs bans 
 ```ini
 [recidive]
 enabled  = true
+# Indispensable si backend=systemd est défini dans [DEFAULT] :
+# le backend systemd ignore logpath, on force la lecture du fichier
+backend  = auto
 logpath  = /var/log/fail2ban.log
 bantime  = 1w
 findtime = 1d
 maxretry = 5
 ```
 
-> Note : ce jail opère au‑dessus des autres jails (il lit le log Fail2ban). Utile en production.
+> Note : ce jail opère au-dessus des autres jails (il lit le log Fail2ban). Utile en production. Avec `backend = systemd` en global, Fail2ban lirait le journal et ignorerait `logpath`, d'où le `backend = auto` dans ce jail.
 
 ### Protéger Nginx
 
-Plusieurs filtres sont fournis (selon la distribution) : `nginx-http-auth`, `nginx-botsearch`, etc. Exemple d’un jail basique :
+Plusieurs filtres sont fournis (selon la distribution) : `nginx-http-auth`, `nginx-botsearch`, etc. Exemple d'un jail basique :
 
 ```ini
 [nginx-botsearch]
@@ -258,7 +263,7 @@ sudo fail2ban-regex /var/log/nginx/access.log /etc/fail2ban/filter.d/nginx-botse
 
 ### Notifications email
 
-Vous pouvez recevoir un email lors d’un ban, en utilisant une action prédéfinie (ex : `action_mw`, `action_mwl`). Il faut disposer d’un agent de mail (ex : `postfix`).
+Vous pouvez recevoir un email lors d'un ban, en utilisant une action prédéfinie (ex : `action_mw`, `action_mwl`). Il faut disposer d'un agent de mail (ex : `postfix`).
 
 Exemple :
 
@@ -273,12 +278,12 @@ action = %(action_mwl)s
 
 ## Bonnes pratiques
 
-- Toujours utiliser des fichiers `.local`, ne pas modifier les `.conf` d’origine.
+- Toujours utiliser des fichiers `.local`, ne pas modifier les `.conf` d'origine.
 - Recharger la configuration après modification : `sudo fail2ban-client reload`.
 - Tester les filtres avec `fail2ban-regex` si un jail ne matche pas.
 - Surveiller `journalctl -u fail2ban` pour les erreurs (permissions de logs, chemins).
-- Ne mettez pas un gros `bantime` au début , combinez plutôt avec `recidive`.
-- Avec UFW, assurez‑vous que les ports légitimes restent ouverts (allow) avant d’activer des jails.
+- Ne mettez pas un gros `bantime` au début, combinez plutôt avec `recidive`.
+- Avec UFW, assurez-vous que les ports légitimes restent ouverts (allow) avant d'activer des jails.
 
 
 ---

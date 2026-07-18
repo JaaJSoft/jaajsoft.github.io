@@ -24,8 +24,8 @@ L'objectif de ce tutoriel est d'apprendre comment faire :
 
 ## Installation
 
-Pour commencer, il vous faut un interpréteur python en version 3, dans mon cas,
-j'utiliserai python 3.8
+Pour commencer, il vous faut un interpréteur Python en version 3 (les exemples
+fonctionnent avec toute version récente de Python 3).
 
 ### Linux - Ubuntu (& toutes distributions utilisant APT comme gestionnaire de paquets)
 
@@ -89,7 +89,7 @@ instructions pour linux afin d'installer *flask*.
 
 Source Wikipédia.
 
-Il existe 5 principales requêtes HTTP :
+Il existe 5 principales méthodes HTTP :
 
 - GET, permet d'accéder à une ressource.
 - HEAD, permet de récupérer l'entête d'une ressource, pour par exemple connaitre
@@ -102,7 +102,7 @@ Il existe 5 principales requêtes HTTP :
 ## Qu'est-ce qu'une API web ?
 
 > Une API Web est une interface de programmation composée d'un ou de plusieurs
-> points endpoints exposés publiquement via le Web, le plus souvent au moyen d'un
+> endpoints exposés publiquement via le Web, le plus souvent au moyen d'un
 > système basé sur serveur web HTTP.
 
 Source Wikipédia.

@@ -188,7 +188,9 @@ public record Temperature(double celsius) {
     }
 
     public double fahrenheit() {
-        return celsius * 9.0 / 5.0 + 32.0;
+        // On passe par l'accesseur celsius() pour profiter de l'arrondi.
+        // Avec le champ brut (celsius), on obtiendrait 74.2208.
+        return celsius() * 9.0 / 5.0 + 32.0;
     }
 }
 
@@ -341,7 +343,7 @@ Sérialisation et désérialisation automatique :
 Ce qu'un record **ne peut pas** faire :
 
 - Étendre une autre classe (mais peut implémenter des interfaces)
-- Avoir des champs d'instance non-finaux
+- Déclarer des champs d'instance en dehors de ses composants (même `final`) : seul l'état défini par les composants est autorisé
 - Être abstrait
 - Être déclaré non-final
 

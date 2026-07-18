@@ -13,10 +13,10 @@ tags:
   - outils
 ---
 
-`jq` est un couteau suisse pour lire, filtrer et transformer du JSON en ligne de commande. Il s’intègre parfaitement avec `curl`, `kubectl`, `docker`, des logs JSON, etc.
+`jq` est un couteau suisse pour lire, filtrer et transformer du JSON en ligne de commande. Il s'intègre parfaitement avec `curl`, `kubectl`, `docker`, des logs JSON, etc.
 <!--more-->
 
-Objectifs de l’article :
+Objectifs de l'article :
 - Installer `jq` (Linux/macOS/Windows)
 - Comprendre les bases (filtres, pipe, tableaux)
 - Appliquer 15 cas concrets (extractions, filtres, agrégations, tri, mise à jour, concat, variables…)
@@ -36,7 +36,7 @@ Objectifs de l’article :
 
 ---
 
-## Données d’exemple
+## Données d'exemple
 
 Nous utiliserons l'exemple JSON ci-dessous (fichier `data.json`) :
 
@@ -54,11 +54,11 @@ Nous utiliserons l'exemple JSON ci-dessous (fichier `data.json`) :
 
 ## Les bases de jq
 
-- Filtre identité : `.` renvoie l’entrée telle quelle.
+- Filtre identité : `.` renvoie l'entrée telle quelle.
 - Accéder à un champ : `.users`, puis `.users[0]`, `.users[].name`.
 - Chaîner les filtres : `.users[] | select(.active == true) | .name`.
 - Construire un objet : `{id: .id, label: .name}`.
-- Interpolation de chaînes : `"\(.name) — id=\(.id)"`.
+- Interpolation de chaînes : `"\(.name) - id=\(.id)"`.
 
 > Option `-r` (raw) : sort des chaînes brutes sans guillemets. Très pratique pour des boucles shell.
 
@@ -66,7 +66,7 @@ Nous utiliserons l'exemple JSON ci-dessous (fichier `data.json`) :
 
 ## 15 commandes jq qui changent la vie
 
-### 1) Pretty‑print et validation rapide
+### Pretty-print et validation rapide
 
 ```bash
 cat data.json | jq .            # mise en forme + couleurs
@@ -91,12 +91,11 @@ OK
 ```
 
 Explications :
-- `jq .` applique le filtre identité pour pretty‑printer le JSON d’entrée.
-- Avec `-e`, jq renvoie un code de sortie 0 si l’entrée est un JSON valide (d’où "OK").
+- `jq .` applique le filtre identité pour pretty-printer le JSON d'entrée.
+- Avec `-e`, jq renvoie un code de sortie 0 si l'entrée est un JSON valide (d'où "OK").
+- Côté couleurs, `-C` les force (utile dans un pipe) et `-M` les désactive.
 
-- `-C` force les couleurs, `-M` les désactive.
-
-### 2) Extraire un champ simple
+### Extraire un champ simple
 
 ```bash
 jq -r '.users[0].name' data.json      # Alice
@@ -110,9 +109,9 @@ Bob
 ```
 
 Explication :
-- `select(.id==2)` filtre l’élément voulu, `-r` supprime les guillemets autour des chaînes.
+- `select(.id==2)` filtre l'élément voulu, `-r` supprime les guillemets autour des chaînes.
 
-### 3) Lister les noms de tous les utilisateurs
+### Lister les noms de tous les utilisateurs
 
 ```bash
 jq -r '.users[].name' data.json
@@ -125,7 +124,7 @@ Bob
 Chloé
 ```
 
-### 4) Filtrer sur une condition (select)
+### Filtrer sur une condition (select)
 
 ```bash
 jq -r '.users[] | select(.active) | .name' data.json   # actifs uniquement
@@ -159,9 +158,9 @@ Chloé
 ```
 
 Explication :
-- `select(expr)` laisse passer uniquement les éléments pour lesquels l’expression est vraie.
+- `select(expr)` laisse passer uniquement les éléments pour lesquels l'expression est vraie.
 
-### 5) Formater des lignes personnalisées
+### Formater des lignes personnalisées
 
 ```bash
 jq -r '.users[] | "\(.id)\t\(.name)\tactive=\(.active)"' data.json
@@ -176,7 +175,7 @@ Sortie :
 
 Explication : Les interpolations `\( ... )` insèrent des valeurs dans une chaîne et `-r` évite les guillemets et conserve les tabulations.
 
-### 6) Trier (sort_by) et inverser
+### Trier (sort_by) et inverser
 
 ```bash
 jq '.users | sort_by(.score)' data.json
@@ -192,22 +191,21 @@ Sortie :
   {"id": 1, "name": "Alice", "active": true,  "tags": ["admin", "ops"], "score": 42.5, "created_at": "2025-09-01T12:00:00Z"}
 ]
 ```
-- Noms triés par date (récents d’abord) :
+- Noms triés par date (récents d'abord) :
 ```text
 Chloé
 Alice
 Bob
 ```
 
-> Note : `reverse` inverse l’ordre après le tri croissant par `created_at`.
+> Note : `reverse` inverse l'ordre après le tri croissant par `created_at`.
 
-### 7) Sommes, min/max, moyenne
+### Sommes, min/max, moyenne
 
 ```bash
 # somme des scores
 jq '[.users[].score] | add' data.json
 # min / max
-jq 'min_by(.users[].score)?' data.json   # pas idéal; préférez:
 jq '.users | min_by(.score)' data.json
 jq '.users | max_by(.score)' data.json
 # moyenne approximative
@@ -233,9 +231,9 @@ null
 28.766666666666666
 ```
 
-> Note : Préférez toujours `.users | min_by(.score)`/`max_by(.score)` sur le tableau plutôt que d’essayer d’y accéder depuis la racine.
+> Note : Préférez toujours `.users | min_by(.score)`/`max_by(.score)` sur le tableau plutôt que d'essayer d'y accéder depuis la racine.
 
-### 8) Valeurs uniques (unique, unique_by)
+### Valeurs uniques (unique, unique_by)
 
 ```bash
 jq '.users | map(.tags) | add | unique' data.json              # tags uniques
@@ -254,7 +252,7 @@ Sortie :
 
 > Note : `unique`/`unique_by` dédupliquent. Ici, on garde un seul utilisateur par statut actif/inactif.
 
-### 9) Groupement et comptage (group_by + length)
+### Groupement et comptage (group_by + length)
 
 ```bash
 jq '.users | group_by(.active) | map({active: .[0].active, count: length})' data.json
@@ -267,7 +265,7 @@ Sortie :
 
 > Note : `group_by` regroupe par clé (il trie par la clé avant de grouper).
 
-### 10) Changer la structure du JSON (projection)
+### Changer la structure du JSON (projection)
 
 ```bash
 jq '.users | map({id, name, score})' data.json
@@ -292,9 +290,9 @@ Sortie :
 ]
 ```
 
-Ces projections permettent d’extraire/alléger les payloads pour logs, exports, etc.
+Ces projections permettent d'extraire/alléger les payloads pour logs, exports, etc.
 
-### 11) Mettre à jour des champs (update)
+### Mettre à jour des champs (update)
 
 ```bash
 # Augmenter tous les scores de 10%
@@ -325,9 +323,9 @@ Sortie :
 }
 ```
 
-Explication : L’opérateur `|=` met à jour le champ ciblé. Utilisez `if/then/else` pour modifier conditionnellement.
+Explication : L'opérateur `|=` met à jour le champ ciblé. Utilisez `if/then/else` pour modifier conditionnellement.
 
-### 12) Concaténer/assembler des tableaux (plusieurs fichiers)
+### Concaténer/assembler des tableaux (plusieurs fichiers)
 
 ```bash
 # Concat simple (deux fichiers contenant des tableaux JSON)
@@ -350,9 +348,9 @@ Sortie :
 [1, 2, 3, 4]
 ```
 
-> Note : `-s` (slurp) lit tous les fichiers/entrées et crée un tableau d’entrées avant d’appliquer le filtre.
+> Note : `-s` (slurp) lit tous les fichiers/entrées et crée un tableau d'entrées avant d'appliquer le filtre.
 
-### 13) Extraire seulement certaines clés
+### Extraire seulement certaines clés
 
 ```bash
 jq '.users | map({id, name})' data.json
@@ -379,7 +377,7 @@ Sortie :
 
 Explication : `join(",")` fusionne un tableau de chaînes en une seule chaîne.
 
-### 14) JSON Lines (une ligne par objet) et compact
+### JSON Lines (une ligne par objet) et compact
 
 ```bash
 # Sortie compacte (-c) et une ligne par élément
@@ -404,7 +402,7 @@ Sortie :
 
 > Astuce : `-c` est idéal pour logs/streams (une ligne par objet). `-s` (slurp) recompose un tableau.
 
-### 15) Variables depuis la CLI (--arg, --argjson)
+### Variables depuis la CLI (--arg, --argjson)
 
 ```bash
 # --arg crée une variable chaîne
@@ -462,7 +460,7 @@ kubectl get pods -o json | jq -r '.items[] | "\(.metadata.name)\t\(.status.phase
 
 - Toujours penser à `-r` si vous attendez du texte (sinon vous aurez des guillemets).
 - Préférez `select(...)` plutôt que des `if` imbriqués quand vous filtrez.
-- Pour de gros volumes, utilisez `-c` et évitez les pretty‑prints inutiles qui peuvent ralentir jq.
+- Pour de gros volumes, utilisez `-c` et évitez les pretty-prints inutiles qui peuvent ralentir jq.
 - Utilisez `--arg` / `--argjson` plutôt que de bidouiller des chaînes JSON en shell.
 - Pour déboguer un pipeline, insérez `| debug` ou `. as $x | ... | $x`.
 
@@ -482,7 +480,7 @@ kubectl get pods -o json | jq -r '.items[] | "\(.metadata.name)\t\(.status.phase
 
 ## Conclusion
 
-`jq` est indispensable pour trier, filtrer, agréger et reformater du JSON sans écrire un script. Gardez cette page sous la main, et n’hésitez pas à adapter les recettes à vos données.
+`jq` est indispensable pour trier, filtrer, agréger et reformater du JSON sans écrire un script. Gardez cette page sous la main, et n'hésitez pas à adapter les recettes à vos données.
 
 ---
 

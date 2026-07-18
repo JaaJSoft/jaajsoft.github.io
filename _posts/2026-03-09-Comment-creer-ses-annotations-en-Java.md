@@ -17,9 +17,9 @@ Dans cet article, vous découvrirez :
 - Comment déclarer une annotation avec ou sans paramètres
 - Comment lire les annotations à l'exécution via la réflexion
 - Comment créer un processeur d'annotations à la compilation
-- Des cas d'usage concrets : validation, audit, injection
+- Des cas d'usage concrets : validation, audit
 
-Pré-requis : Java 8+ pour les bases, Java 17+ recommandé pour les exemples avancés.
+Pré-requis : Java 8+ pour les bases, Java 16+ pour certains exemples (`instanceof` avec pattern matching, `toList()`), Java 17+ recommandé pour les exemples avancés.
 
 ---
 
@@ -228,6 +228,7 @@ public @interface Entity {
     String table();
     String schema() default "public";
     Class<?>[] listeners() default {};
+    // CascadeType est ici un enum maison (à ne pas confondre avec celui de JPA)
     CascadeType cascade() default CascadeType.NONE;
 }
 ```
@@ -688,7 +689,7 @@ public @interface MyAnnotation {}
 
 **Quelle est la différence entre `@interface` et `interface` ?**
 
-`@interface` déclare une annotation, `interface` déclare une interface classique. Les annotations ne peuvent pas être instanciées ni implémentées manuellement. Le compilateur génère automatiquement une interface qui étend `java.lang.annotation.Annotation`.
+`@interface` déclare une annotation, `interface` déclare une interface classique. Les annotations ne s'instancient pas avec `new` : le compilateur génère automatiquement une interface qui étend `java.lang.annotation.Annotation`. Écrire une classe qui implémente une annotation reste techniquement possible (le JLS l'autorise), mais c'est fortement déconseillé : on perd les garanties du mécanisme d'annotations.
 
 **Peut-on mettre une annotation sur une annotation ?**
 

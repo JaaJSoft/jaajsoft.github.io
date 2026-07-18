@@ -7,24 +7,26 @@ tags:
 - python
 - pandas
 - dataframe
-- persistence
+- persistance
 - excel
 - csv
 
 ---
 
-Dans ce tutoriel, nous allons apprendre à sauvegarder et charger des _dataframes_ Pandas en csv ou excel, afin
-ajouter de la persistence à vos applications python ou _notebooks_ jupyter. <!--more-->
+Dans ce tutoriel, nous allons apprendre à sauvegarder et charger des _dataframes_ Pandas en csv ou Excel, afin
+d'ajouter de la persistance à vos applications python ou _notebooks_ jupyter. <!--more-->
 
-## Notre premiere persistence
+## Notre première persistance
 
-Pour notre première persistence, nous allons utiliser le format de fichier `.csv`. Format texte simple, mais très
+Pour notre première persistance, nous allons utiliser le format de fichier `.csv`. Format texte simple, mais très
 pratique pour de la _datascience_.
 
 Dans l'intégralité de ce guide, nous allons utiliser un dataframe de test nommé `df` que nous initialisons de la façon
 suivante :
 
 ```python
+import pandas as pd
+
 df = pd.DataFrame({
     "A": [1, 2, 3, 4],
     "B": [6, 7, 8, 9],
@@ -148,14 +150,14 @@ Pour régler ça, on peut passer en paramètre de la fonction _pandas_ les noms 
 ```python
 new_df = pd.read_csv(
      "export_without_header.csv",
-     sep='3',
+     sep=';',
      header=None,
      names=['A', 'B', 'C', 'D']
 )
 print(new_df.to_string())
 ```
 
-Et voilà, pandas charge correctement le _dataframe_ en utilisant les noms des colonnes que nous avons définies :
+Et voilà, pandas charge correctement le _dataframe_ en utilisant les noms des colonnes que nous avons définis :
 
 ```
    A  B   C   D
@@ -165,23 +167,23 @@ Et voilà, pandas charge correctement le _dataframe_ en utilisant les noms des c
 3  4  9  13  17
 ```
 
-Super, on a notre première persistence de données avec pandas !
+Super, on a notre première persistance de données avec pandas !
 
-## Persistence au format excel
+## Persistance au format Excel
 
-Excel est utilisé partout de nos jours, il peut être pratique d'extraire nos données de notre dataframe au format excel
+Excel est utilisé partout de nos jours, il peut être pratique d'extraire nos données de notre dataframe au format Excel
 afin de le partager à d'autres équipes.
-Ou à l'inverse d'autres équipes non techniques peuvent nous fournir des données au format excel.
+Ou à l'inverse d'autres équipes non techniques peuvent nous fournir des données au format Excel.
 
 ### Pré-requis
 
-Afin d'utiliser excel avec pandas, il est nécessaire d'installer le paquet `openpyxl` :
+Afin d'utiliser Excel avec pandas, il est nécessaire d'installer le paquet `openpyxl` :
 
 ```shell
 pip3 install openpyxl # (ou python3 -m pip)
 ```
 
-### Sauvegarde des données vers un excel
+### Sauvegarde des données vers un Excel
 
 On utilise une autre méthode pandas sur notre _dataframe_, nommée `to_excel` :
 
@@ -196,9 +198,9 @@ df.to_excel(
 Toutes les options présentées précédemment avec le format csv sont aussi disponibles : `header=`, `index=`, etc. !
 (Sauf le séparateur `sep=` qui est spécifique au format csv)
 
-### Chargement des données depuis un excel
+### Chargement des données depuis un Excel
 
-Pour charger des données depuis un excel comme avec un csv, on utilise une fonction de pandas `read_excel`.
+Pour charger des données depuis un Excel comme avec un csv, on utilise une fonction de pandas `read_excel`.
 
 ```python
 excel_df = pd.read_excel(
@@ -222,7 +224,7 @@ Ce qui donne bien le résultat attendu :
 
 ## Conclusion
 
-Voilà, vous êtes maintenant capable de sauvegarder et charger vos _dataframes_ pandas avec des fichiers excel ou csv.
+Voilà, vous êtes maintenant capable de sauvegarder et charger vos _dataframes_ pandas avec des fichiers Excel ou csv.
 
 ## Voir aussi
 

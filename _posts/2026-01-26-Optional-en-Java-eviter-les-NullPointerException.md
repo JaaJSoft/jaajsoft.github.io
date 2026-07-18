@@ -65,6 +65,8 @@ public Optional<String> getUserEmail(Long userId) {
 }
 ```
 
+Notez que la signature de `findById` a changé au passage : le repository retourne désormais `Optional<User>` au lieu de `User`, ce qui permet le chaînage (c'est d'ailleurs la signature proposée par Spring Data JPA, voir plus bas).
+
 Avantages :
 - Code concis et lisible
 - Type-safe : le compilateur force la gestion de l'absence
@@ -206,6 +208,8 @@ Optional<String> email = user
 
 Si `user`, `getAddress()` ou `getEmail()` retourne `null` ou Optional vide, la chaîne retourne `Optional.empty()`.
 
+Ici, `getAddress()` et `getEmail()` retournent directement l'objet (éventuellement `null`) : c'est le modèle adapté à `map`. Si vos getters retournent eux-mêmes des `Optional`, c'est `flatMap` qu'il faut utiliser, comme dans la section suivante.
+
 ---
 
 ## Aplatissement avec flatMap()
@@ -238,6 +242,8 @@ public Optional<String> getUserCityName(Long userId) {
         .map(City::getName);                         // Optional<String>
 }
 ```
+
+Contrairement à l'exemple de la section `map`, `getAddress()` et `getCity()` retournent ici directement des `Optional` : ce sont deux modélisations différentes du domaine, et c'est le type de retour du getter qui dicte le choix entre `map` et `flatMap`.
 
 ---
 
@@ -553,12 +559,14 @@ public record UserDTO(
     String middleName,  // peut être null
     String email
 ) {
-    // Méthode accesseur pour Optional
-    public Optional<String> middleName() {
+    // Méthode séparée pour la version Optional
+    public Optional<String> middleNameOpt() {
         return Optional.ofNullable(middleName);
     }
 }
 ```
+
+À noter : impossible de redéfinir l'accesseur `middleName()` pour qu'il retourne un `Optional<String>`. Un accesseur de record doit avoir exactement le type de son composant (ici `String`), sinon le compilateur rejette le code ("invalid accessor method"). D'où la méthode séparée `middleNameOpt()`.
 
 Ou mieux encore, gardez le record simple :
 
@@ -660,8 +668,7 @@ public String formatName(User user) {
 ## Pour aller plus loin
 
 - [JDK 8 Optional Javadoc](https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html)
-- [JEP 303: Optional improvements (Java 9)](https://openjdk.org/jeps/303)
-- [Oracle Tutorial: Optional](https://docs.oracle.com/javase/tutorial/java/javaOO/optional.html)
+- [Javadoc Optional Java 21 (avec les ajouts de Java 9 : `or`, `ifPresentOrElse`, `stream`)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Optional.html)
 - [Baeldung: Guide to Java Optional](https://www.baeldung.com/java-optional)
 
 ## Voir aussi

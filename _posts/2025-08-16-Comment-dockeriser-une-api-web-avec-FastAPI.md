@@ -14,18 +14,18 @@ tags:
 - devops
 ---
 
-Dans ce tutoriel, nous allons apprendre à dockeriser une API web développée avec FastAPI, en utilisant un Dockerfile multi‑étapes (builder + image finale Alpine) optimisé pour la taille et la vitesse d'installation.
+Dans ce tutoriel, nous allons apprendre à dockeriser une API web développée avec FastAPI, en utilisant un Dockerfile multi-étapes (builder + image finale Alpine) optimisé pour la taille et la vitesse d'installation.
 
 <!--more-->
 
 Objectifs :
 
 - Construire une image légère et reproductible
-- Comprendre le multi‑stage build (wheels Python en étape de build)
+- Comprendre le multi-stage build (wheels Python en étape de build)
 - Ajouter une healthcheck HTTP vers l'endpoint `/info/status`
 - Démarrer l'API avec `uvicorn`
 
-Pré‑requis : savoir créer une API FastAPI minimale. Si ce n'est pas encore fait, suivez d'abord ce guide:
+Pré-requis : savoir créer une API FastAPI minimale. Si ce n'est pas encore fait, suivez d'abord ce guide:
 
 [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 
@@ -72,9 +72,9 @@ uvicorn[standard]
 
 > Remarque: `uvicorn[standard]` installe les extras recommandés (uvloop, httptools,…) pour de meilleures performances.
 
-## Dockerfile (multi‑étapes)
+## Dockerfile (multi-étapes)
 
-Copiez‑collez ce Dockerfile à la racine du projet. Il construit d'abord des wheels (étape builder) puis installe ces wheels dans une image finale propre et compacte.
+Copiez-collez ce Dockerfile à la racine du projet. Il construit d'abord des wheels (étape builder) puis installe ces wheels dans une image finale propre et compacte.
 
 ```dockerfile
 # ============================================================================
@@ -206,7 +206,7 @@ docker inspect --format='{{json .State.Health}}' fastapi-app | jq
 
 - Article précédent : [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
-- [Limiter le rate d’une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
+- [Limiter le rate d'une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
 - [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %})
 - [Comment dockeriser une application Django]({% post_url 2025-10-25-Comment-dockeriser-une-application-Django %})
 - Ajoutez un reverse proxy (Nginx, Traefik) devant votre API.

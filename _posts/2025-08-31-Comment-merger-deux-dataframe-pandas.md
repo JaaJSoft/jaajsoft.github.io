@@ -214,10 +214,11 @@ print(outer_audit["_merge"].value_counts())
 Sortie :
 
 ```
+_merge
 both          3
 left_only     2
 right_only    1
-Name: _merge, dtype: int64
+Name: count, dtype: int64
 ```
 
 Utile pour vérifier ce qui matche ou pas.
@@ -343,7 +344,7 @@ Sortie :
 
 - `merge` : jointures relationnelles sur colonnes et/ou index.
 - `join` : pratique pour joindre par l'index (syntaxe plus concise). En interne, appelle `merge`.
-- `concat` : empilement (vertical) ou juxtapositions (horizontal) sans logiques de clés.
+- `concat` : empilement (vertical) ou juxtaposition (horizontale) sans logique de clés.
 
 Exemples :
 

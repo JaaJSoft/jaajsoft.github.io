@@ -154,13 +154,13 @@ Le nom des variables de binding doit être unique par alternative. Évitez les c
 ## Null et switch
 
 - `case null` est supporté et recommandé si `o` peut être `null`.
-- Sans `case null` ni `default`, un `switch` sur une référence `null` lancerait un `NullPointerException`.
+- Sans `case null` ni `default`, un `switch` sur une référence `null` lancerait une `NullPointerException`.
 
 ---
 
 ## Bonnes pratiques
 
-- Préférez les `switch` expression (`switch (...) { ... }`) pour des retours clairs et immutables.
+- Préférez les `switch` expressions (`switch (...) { ... }`) pour des retours clairs et immutables.
 - Limitez la logique dans les `when`.
 - Combinez `sealed` + records + patterns pour coder des sum types lisibles.
 - Conservez l'exhaustivité : évitez `default` quand une hiérarchie scellée la rend vérifiable.
@@ -180,7 +180,7 @@ Le nom des variables de binding doit être unique par alternative. Évitez les c
 ## FAQ
 
 Peut-on utiliser les patterns avec des types primitifs ?
-- Les patterns de type s'appliquent aux références. Pour les primitifs, on continue d'utiliser les `case` littéraux (`case 1, 2, 3 -> ...`).
+- En Java 21, les patterns de type de niveau supérieur ne s'appliquent qu'aux références : pour un `int` seul, on continue d'utiliser les `case` littéraux (`case 1, 2, 3 -> ...`). En revanche, les record patterns peuvent déstructurer des composants primitifs, comme `Point(int x, int y)` vu plus haut. Les primitive type patterns généralisés sont en preview depuis Java 23 (JEP 455).
 
 Est-ce disponible en Java 17 ?
 - `instanceof` avec binding fonctionne. Les `switch` et record patterns finalisés arrivent en Java 21. Sur Java 17, certaines fonctionnalités n'existent pas encore.
@@ -198,7 +198,7 @@ Le pattern matching apporte des `switch` plus lisibles, moins de casts et des lo
 - [JEP 441 : Pattern Matching for switch (Final, JDK 21)](https://openjdk.org/jeps/441)
 - [JEP 440 : Record Patterns (Final, JDK 21)](https://openjdk.org/jeps/440)
 - [JEP 409 : Sealed Classes (Final, JDK 17)](https://openjdk.org/jeps/409)
-- [Javadoc : switch expressions et statements](https://docs.oracle.com/en/java/javase/21/language/pattern-matching.html)
+- [Guide Oracle : pattern matching](https://docs.oracle.com/en/java/javase/21/language/pattern-matching.html)
 
 ## Voir aussi
 

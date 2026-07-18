@@ -72,10 +72,10 @@ N'ayant pas de Mac, je ne peux pas tester l'installation, il faut toutefois auss
 
 Source Wikipédia
 
-Il existe 5 principales requêtes HTTP
+Il existe 5 principales méthodes HTTP :
 
 - GET, permet d'accéder à une ressource.
-- HEAD, permet de récupérer l’en‑tête d’une ressource, par exemple pour connaître la date de sa dernière modification (utile pour le système de cache d’un navigateur)
+- HEAD, permet de récupérer l'en-tête d'une ressource, par exemple pour connaître la date de sa dernière modification (utile pour le système de cache d'un navigateur)
 - POST, permet d'ajouter une ressource
 - PUT, permet de mettre à jour une ressource
 - DELETE, permet de supprimer une ressource
@@ -128,11 +128,11 @@ Pour passer un json en paramètre dans le _body_ :
 import requests
 
 data = {"example": "test"}
-response = requests.post("https://blog.jaaj.dev/archive.html", json=data)
+response = requests.post("https://httpbin.org/post", json=data)
 print(response.status_code)
 ```
 
-Explication : `params=` ajoute des paramètres dans l’URL, `data=` envoie un formulaire (application/x-www-form-urlencoded) et `json=` envoie un JSON (application/json). Choisissez le bon champ selon ce que l’API attend.
+Explication : `params=` ajoute des paramètres dans l'URL, `data=` envoie un formulaire (application/x-www-form-urlencoded) et `json=` envoie un JSON (application/json). Choisissez le bon champ selon ce que l'API attend.
 
 Exemples :
 
@@ -180,9 +180,9 @@ print(response.json())
 > Note : En REST, PUT remplace généralement la ressource entière. Pour une mise à jour partielle, utilisez plutôt PATCH. Selon les API, la réponse peut être 200 (avec un corps JSON) ou 204 No Content.
 >
 > Explication :
-> - PUT est idempotent : répéter la même requête ne change pas l’état après la première.
-> - Avec `requests`, `json=` sérialise l’objet Python et ajoute l’en‑tête `Content-Type: application/json` automatiquement. `data=` enverrait un formulaire.
-> - Certaines API exigent un contrôle de concurrence optimiste via `ETag`/`If-Match` pour éviter d’écraser des modifications.
+> - PUT est idempotent : répéter la même requête ne change pas l'état après la première.
+> - Avec `requests`, `json=` sérialise l'objet Python et ajoute l'en-tête `Content-Type: application/json` automatiquement. `data=` enverrait un formulaire.
+> - Certaines API exigent un contrôle de concurrence optimiste via `ETag`/`If-Match` pour éviter d'écraser des modifications.
 
 ### Requête DELETE (supprimer une ressource)
 
@@ -196,16 +196,16 @@ print(response.status_code)  # ex: 200 ou 204
 print(response.text)         # souvent vide (No Content)
 ```
 
-> Note : Beaucoup d’API renvoient 204 No Content pour un DELETE réussi.
+> Note : Beaucoup d'API renvoient 204 No Content pour un DELETE réussi.
 >
 > Explication :
-> - DELETE est idempotent : un second appel sur la même ressource renvoie souvent `204` (aucun changement) ou `404` si elle n’existe plus.
+> - DELETE est idempotent : un second appel sur la même ressource renvoie souvent `204` (aucun changement) ou `404` si elle n'existe plus.
 > - Le corps de la réponse est souvent vide. Vérifiez `response.status_code` ou utilisez `response.raise_for_status()`.
-> - Selon les API, l’opération peut être asynchrone et renvoyer `202 Accepted`.
+> - Selon les API, l'opération peut être asynchrone et renvoyer `202 Accepted`.
 
 ## Timeout et gestion des erreurs (basique)
 
-Utilisez toujours un `timeout` pour éviter qu’un appel ne bloque indéfiniment, et pensez à `raise_for_status()` pour déclencher une exception en cas d’erreur HTTP (4xx/5xx).
+Utilisez toujours un `timeout` pour éviter qu'un appel ne bloque indéfiniment, et pensez à `raise_for_status()` pour déclencher une exception en cas d'erreur HTTP (4xx/5xx).
 
 ```python
 import requests
@@ -224,7 +224,7 @@ except RequestException as e:
     print(f"Erreur réseau: {e}")
 ```
 
-> Astuce : fixez un `timeout` (ex. 5–10s) sur toutes vos requêtes côté client.
+> Astuce : fixez un `timeout` (ex. 5-10s) sur toutes vos requêtes côté client.
 
 ## Traiter le résultat d'une requête vers une API REST
 
@@ -326,7 +326,7 @@ with requests.get(url, stream=True, timeout=10) as r:
                 f.write(chunk)
 ```
 
-> Astuce : pour de petits contenus, `response.content` (bytes) suffit ; `response.text` applique un encodage (UTF‑8 par défaut ou `response.encoding`).
+> Astuce : pour de petits contenus, `response.content` (bytes) suffit. `response.text` décode les bytes avec `response.encoding`, deviné à partir du charset annoncé dans le header Content-Type. Sans charset, requests retombe sur ISO-8859-1 pour les contenus `text/*` ou tente une détection automatique (`apparent_encoding`). Si le texte s'affiche mal, forcez l'encodage avec `response.encoding = "utf-8"` avant d'accéder à `response.text`.
 
 ## Voir aussi
 

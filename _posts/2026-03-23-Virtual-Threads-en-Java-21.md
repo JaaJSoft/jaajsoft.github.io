@@ -91,7 +91,7 @@ Le pool de carrier threads est dimensionné automatiquement par la JVM (par déf
 
 ### Ce que ça change concrètement
 
-Avec les Virtual Threads, le code reste identique : on écrit du code bloquant classique. La différence est invisible dans le code source — elle se joue dans la JVM.
+Avec les Virtual Threads, le code reste identique : on écrit du code bloquant classique. La différence est invisible dans le code source : elle se joue dans la JVM.
 
 ```java
 // Avant (platform threads) : limité à quelques centaines de requêtes simultanées
@@ -186,7 +186,11 @@ void startServer() throws IOException {
 
     server.createContext("/api", exchange -> {
         // Simuler un appel à une base de données (100 ms)
-        Thread.sleep(100);
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         byte[] response = "OK".getBytes();
         exchange.sendResponseHeaders(200, response.length);
         exchange.getResponseBody().write(response);
@@ -197,7 +201,7 @@ void startServer() throws IOException {
 }
 ```
 
-Avec 200 threads, ce serveur sature à 200 requêtes concurrentes. La 201ème requête attend qu'un thread se libère.
+Avec 200 threads, ce serveur sature à 200 requêtes concurrentes. La 201e requête attend qu'un thread se libère.
 
 ### Version Virtual Threads
 
@@ -207,7 +211,11 @@ void startServer() throws IOException {
     server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());  // Pas de limite pratique
 
     server.createContext("/api", exchange -> {
-        Thread.sleep(100);
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         byte[] response = "OK".getBytes();
         exchange.sendResponseHeaders(200, response.length);
         exchange.getResponseBody().write(response);
@@ -270,7 +278,7 @@ ExecutorService executor = Executors.newFixedThreadPool(200);
 ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 ```
 
-> Le `newVirtualThreadPerTaskExecutor()` ne réutilise pas les threads : chaque tâche obtient un nouveau Virtual Thread. C'est voulu — les Virtual Threads sont tellement légers qu'un pool n'a pas de sens.
+> Le `newVirtualThreadPerTaskExecutor()` ne réutilise pas les threads : chaque tâche obtient un nouveau Virtual Thread. C'est voulu : les Virtual Threads sont tellement légers qu'un pool n'a pas de sens.
 
 ### Spring Boot
 
@@ -350,7 +358,7 @@ ScopedValue.where(CONTEXT, new RequestContext(userId))
     });
 ```
 
-Les `ScopedValue` sont immuables, liées à un scope, et automatiquement nettoyées — idéales pour les Virtual Threads.
+Les `ScopedValue` sont immuables, liées à un scope, et automatiquement nettoyées : idéales pour les Virtual Threads.
 
 ### Travail CPU-bound
 

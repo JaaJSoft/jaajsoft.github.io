@@ -8,7 +8,7 @@ tags:
   - list
 ---
 
-Dans cet article (partie 2 de la série sur les collections), nous allons nous concentrer sur la famille List du Framework Collections : ses caractéristiques, ses principales implémentations (ArrayList, LinkedList…), leurs performances et les bonnes pratiques d’utilisation au quotidien.
+Dans cet article (partie 2 de la série sur les collections), nous allons nous concentrer sur la famille List du Framework Collections : ses caractéristiques, ses principales implémentations (ArrayList, LinkedList…), leurs performances et les bonnes pratiques d'utilisation au quotidien.
 <!--more-->
 
 1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
@@ -18,13 +18,13 @@ Dans cet article (partie 2 de la série sur les collections), nous allons nous c
 5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
 6. Utilisations avancées des collections (article à venir)
 
-## Qu’est‑ce qu’une List ?
+## Qu'est-ce qu'une List ?
 
-`List` est une sous‑interface de `Collection` qui représente une séquence ordonnée d’éléments :
+`List` est une sous-interface de `Collection` qui représente une séquence ordonnée d'éléments :
 
 - Les éléments ont un ordre (position/index).
 - Les doublons sont autorisés.
-- L’accès indexé est possible (méthodes `get`, `set`, `add(int, E)`, `remove(int)`, etc.).
+- L'accès indexé est possible (méthodes `get`, `set`, `add(int, E)`, `remove(int)`, etc.).
 
 La signature :
 
@@ -36,15 +36,15 @@ En plus des méthodes héritées de `Collection`, `List` ajoute entre autres :
 
 | Méthode                                     | Description                                                                           |
 |---------------------------------------------|---------------------------------------------------------------------------------------|
-| E get(int index)                            | Retourne l’élément à l’index donné.                                                   |
-| E set(int index, E element)                 | Remplace l’élément à l’index par element et retourne l’ancien.                        |
+| E get(int index)                            | Retourne l'élément à l'index donné.                                                   |
+| E set(int index, E element)                 | Remplace l'élément à l'index par element et retourne l'ancien.                        |
 | void add(int index, E element)              | Insère element à la position index (décale les éléments suivants).                    |
-| E remove(int index)                         | Supprime et retourne l’élément à la position index.                                   |
-| int indexOf(Object o)                       | Retourne le premier index de o, ou -1 s’il est absent.                                |
-| int lastIndexOf(Object o)                   | Retourne le dernier index de o, ou -1 s’il est absent.                                |
+| E remove(int index)                         | Supprime et retourne l'élément à la position index.                                   |
+| int indexOf(Object o)                       | Retourne le premier index de o, ou -1 s'il est absent.                                |
+| int lastIndexOf(Object o)                   | Retourne le dernier index de o, ou -1 s'il est absent.                                |
 | ListIterator<E> listIterator()              | Itérateur bidirectionnel sur la liste.                                                |
 | ListIterator<E> listIterator(int index)     | Itérateur bidirectionnel démarrant à index.                                           |
-| List<E> subList(int fromIndex, int toIndex) | retourne une vue d'une portion [fromIndex, toIndex) de la liste (liée à l’originale). |
+| List<E> subList(int fromIndex, int toIndex) | Retourne une vue d'une portion [fromIndex, toIndex) de la liste (liée à l'originale). |
 | void replaceAll(UnaryOperator<E> operator)  | Remplace chaque élément par operator.apply(élément).                                  |
 | void sort(Comparator<? super E> c)          | Trie en place selon le comparateur.                                                   |
 
@@ -56,19 +56,19 @@ En plus des méthodes héritées de `Collection`, `List` ajoute entre autres :
 - Accès par index très rapide (en `O(1)`), insertion/suppression en fin rapides, mais insertion/suppression au milieu coûteuses (décalage des éléments).
 - Mémoire compacte, très utilisée par défaut.
 
-Cas d’usage : lecture fréquente par index, ajout en fin, listes majoritairement immuables après construction.
+Cas d'usage : lecture fréquente par index, ajout en fin, listes majoritairement immuables après construction.
 
 ### LinkedList
 
 - Liste doublement chaînée (chaque élément connaît son précédent et son suivant).
-- Insertion/suppression au début/au milieu rapides si vous disposez déjà d’un `ListIterator` positionné, mais accès par index en `O(n)`.
+- Insertion/suppression au début/au milieu rapides si vous disposez déjà d'un `ListIterator` positionné, mais accès par index en `O(n)`.
 - Surcoût mémoire (pointeurs) + moins bonne avec le cache CPU.
 
-Cas d’usage : scénarios spécialisés où l’on enlève/insère souvent au milieu via un itérateur, ou quand on utilise l’API `Deque` que `LinkedList` implémente aussi (pile/queue simple).
+Cas d'usage : scénarios spécialisés où l'on enlève/insère souvent au milieu via un itérateur, ou quand on utilise l'API `Deque` que `LinkedList` implémente aussi (pile/queue simple).
 
 ### Autres options utiles
 
-- `CopyOnWriteArrayList` : thread‑safe, excellente en lecture majoritaire (chaque écriture copie la liste). À éviter si beaucoup d’écritures.
+- `CopyOnWriteArrayList` : thread-safe, excellente en lecture majoritaire (chaque écriture copie la liste). À éviter si beaucoup d'écritures.
 - `Collections.synchronizedList(new ArrayList<>())` : wrapper synchronisé basique.
 - Listes immuables : `List.of(...)` (Java 9+) ou `Collections.unmodifiableList(list)` pour exposer une vue non modifiable.
 
@@ -99,18 +99,18 @@ fruits.set(2, "prune");        // [pomme, poire, prune]
 Attention à la surcharge `remove(int)` vs `remove(Object)` :
 
 ```java
-fruits.remove(1);               // supprime l’élément à l’index 1
+fruits.remove(1);               // supprime l'élément à l'index 1
 fruits.remove("pomme");        // supprime la première occurrence de "pomme"
 ```
 
-### Recherche et sous‑liste
+### Recherche et sous-liste
 
 ```java
 int i = fruits.indexOf("prune");     // -1 si absent
 List<String> debut = fruits.subList(0, 2); // vue [0,2[
 ```
 
-`subList` retourne une vue adossée à la liste d’origine : modifier l’une modifie l’autre. Pour obtenir une copie indépendante :
+`subList` retourne une vue adossée à la liste d'origine : modifier l'une modifie l'autre. Pour obtenir une copie indépendante :
 
 ```java
 List<String> copie = new ArrayList<>(fruits.subList(0, 2));
@@ -139,7 +139,7 @@ for (String f : fruits) {
 ```java
 Iterator<String> it = fruits.iterator();
 while (it.hasNext()) {
-    if (it.next().startsWith("P")) {
+    if (it.next().startsWith("p")) {
         it.remove(); // OK
     }
 }
@@ -147,7 +147,7 @@ while (it.hasNext()) {
 
 ## ListIterator : parcours bidirectionnel
 
-`ListIterator` permet de parcourir dans les deux sens et d’insérer/remplacer au vol :
+`ListIterator` permet de parcourir dans les deux sens et d'insérer/remplacer au vol :
 
 ```java
 List<Integer> nums = new ArrayList<>(List.of(1, 2, 3));
@@ -155,7 +155,7 @@ ListIterator<Integer> li = nums.listIterator();
 while (li.hasNext()) {
     Integer n = li.next();
     if (n == 2) {
-        li.add(99);   // insère avant l’élément suivant
+        li.add(99);   // insère avant l'élément suivant
     }
 }
 // nums => [1, 2, 99, 3]
@@ -169,7 +169,7 @@ while (li.hasNext()) {
 List<String> roles = List.of("ADMIN", "USER");
 ```
 
-- Exposer une vue non modifiable d’une liste interne :
+- Exposer une vue non modifiable d'une liste interne :
 
 ```java
 class Service {
@@ -182,22 +182,22 @@ class Service {
 
 ## Concurrence
 
-- Lecture majoritaire, peu d’écritures : `CopyOnWriteArrayList`.
+- Lecture majoritaire, peu d'écritures : `CopyOnWriteArrayList`.
 - Besoin simple de synchronisation : `Collections.synchronizedList(new ArrayList<>())`.
 - Sinon, envisagez une conception sans partage (immutabilité, confinement de thread) ou des structures concurrentes adaptées.
 
 ## Bonnes pratiques
 
-- Déclarez par l’interface : `List<String> l = new ArrayList<>();`
-- Choisissez l’implémentation selon le pattern d’accès (lecture par index ? insertions fréquentes ?).
-- Évitez `LinkedList` par défaut ; mesurez les perfs avant d’optimiser.
-- Attention à `remove` en boucle for‑each : utilisez un itérateur ou `removeIf`.
-- Copiez une `subList` si vous avez besoin d’une liste indépendante.
+- Déclarez par l'interface : `List<String> l = new ArrayList<>();`
+- Choisissez l'implémentation selon le pattern d'accès (lecture par index ? insertions fréquentes ?).
+- Évitez `LinkedList` par défaut ; mesurez les perfs avant d'optimiser.
+- Attention à `remove` en boucle for-each : utilisez un itérateur ou `removeIf`.
+- Copiez une `subList` si vous avez besoin d'une liste indépendante.
 
 ## Quand préférer une List, un Set ou une Queue ?
 
-- Utilisez `List` si l’ordre compte et si les doublons sont permis.
-- Utilisez `Set` si vous devez garantir l’unicité des éléments.
+- Utilisez `List` si l'ordre compte et si les doublons sont permis.
+- Utilisez `Set` si vous devez garantir l'unicité des éléments.
 - Utilisez `Queue`/`Deque` pour des modèles FIFO/LIFO et des opérations en tête/queue optimisées.
 
 ## Conclusion

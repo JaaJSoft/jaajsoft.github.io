@@ -156,10 +156,10 @@ public class Sailboat extends Boat {} // OK, hiérarchie ouverte
 Les records, introduits en Java 16, s'intègrent naturellement avec les sealed classes. Étant implicitement `final`, ils constituent des candidats idéaux pour les sous-types d'une hiérarchie scellée :
 
 ```java
-public sealed interface Result<T> permits Success, Error {}
+public sealed interface Result<T> permits Success, Failure {}
 
 public record Success<T>(T value) implements Result<T> {}
-public record Error<T>(String message, Throwable cause) implements Result<T> {}
+public record Failure<T>(String message, Throwable cause) implements Result<T> {}
 ```
 
 Utilisation :
@@ -168,7 +168,7 @@ Utilisation :
 public static <T> void handleResult(Result<T> result) {
     switch (result) {
         case Success<T> s -> System.out.println("Valeur : " + s.value());
-        case Error<T> e -> System.err.println("Erreur : " + e.message());
+        case Failure<T> f -> System.err.println("Erreur : " + f.message());
         // Pas de default nécessaire : le compilateur vérifie l'exhaustivité
     }
 }
@@ -324,11 +324,11 @@ Explorons quelques exemples concrets où les sealed classes apportent une vraie 
 Les machines à états se modélisent naturellement avec des sealed classes :
 
 ```java
-public sealed interface ConnectionState permits Disconnected, Connecting, Connected, Error {}
+public sealed interface ConnectionState permits Disconnected, Connecting, Connected, Failure {}
 public record Disconnected() implements ConnectionState {}
 public record Connecting(int attempts) implements ConnectionState {}
 public record Connected(String sessionId) implements ConnectionState {}
-public record Error(String message) implements ConnectionState {}
+public record Failure(String message) implements ConnectionState {}
 
 public class ConnectionManager {
     private ConnectionState state = new Disconnected();
@@ -340,7 +340,7 @@ public class ConnectionManager {
                 System.out.println("Tentative " + attempts + "...");
             case Connected(String sessionId) ->
                 System.out.println("Connecté : " + sessionId);
-            case Error(String msg) ->
+            case Failure(String msg) ->
                 System.err.println("Erreur : " + msg);
         }
     }
@@ -401,7 +401,7 @@ Les sealed classes sont soumises à plusieurs règles strictes pour garantir leu
 
 ### Règles de base
 
-- **Les sous-types doivent être accessibles** à la classe scellée (même package ou module).
+- **Les sous-types doivent être proches de la classe scellée** : dans le même module, ou dans le même package si la classe scellée se trouve dans le module non nommé (pas de `module-info.java`).
 - **Déclaration explicite requise** : tous les sous-types listés dans `permits` doivent exister.
 - **Sous-types dans le même fichier** : si tous les sous-types sont dans le même fichier, `permits` peut être omis (inféré).
 - **Chaque sous-type doit choisir** : `final`, `sealed`, ou `non-sealed`.

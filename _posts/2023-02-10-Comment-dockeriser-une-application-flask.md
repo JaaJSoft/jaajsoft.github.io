@@ -40,7 +40,7 @@ D'après [Wikipedia](https://fr.wikipedia.org/wiki/Docker_(logiciel)) :
 > conteneurisation, une forme plus légère qui s'appuie sur certaines parties de
 > la
 > machine hôte pour son fonctionnement. Cette approche permet d'accroître la
-> flexibilité et la portabilité d’exécution d'une application, laquelle va
+> flexibilité et la portabilité d'exécution d'une application, laquelle va
 > pouvoir
 > tourner de façon fiable et prévisible sur une grande variété de machines
 > hôtes,

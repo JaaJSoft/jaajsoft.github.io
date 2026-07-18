@@ -20,7 +20,7 @@ On commence par un cache en mémoire (simple, sans dépendance), puis on passe �
 Redis pour
 un cache partagé et persistant. <!--more-->
 
-Prérequis : savoir démarrer une API minimaliste. Si besoin, lisez d’abord
+Prérequis : savoir démarrer une API minimaliste. Si besoin, lisez d'abord
 [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %}).
 
 ## Installation
@@ -43,11 +43,11 @@ python -m pip install redis
 ## Rappel: pourquoi mettre du cache ?
 
 - Réduire la charge CPU/IO lorsque les mêmes requêtes reviennent souvent.
-- Accélérer les réponses (moins d’appels vers des services externes ou bases de
+- Accélérer les réponses (moins d'appels vers des services externes ou bases de
   données).
 - Stabiliser la latence pour certaines routes "coûteuses".
 
-`fastapi-cache2` propose un décorateur `@cache()` qui mémorise le résultat d’une
+`fastapi-cache2` propose un décorateur `@cache()` qui mémorise le résultat d'une
 route
 pendant une durée donnée. Vous pouvez choisir le backend: mémoire (
 InMemoryBackend) ou Redis.
@@ -119,11 +119,11 @@ curl "http://127.0.0.1:8000/slow?q=42"
 Notes importantes :
 
 - `@cache(expire=10)` définit la durée de vie (TTL) pour cette route.
-- La clé de cache par défaut inclut l’URL et les paramètres de requête. Les
+- La clé de cache par défaut inclut l'URL et les paramètres de requête. Les
   en-têtes ne sont
   pas pris en compte par défaut.
 - Utilisez `namespace="v1"` dans le décorateur pour regrouper des caches et les
-  purger d’un coup
+  purger d'un coup
   via `FastAPICache.clear(namespace="v1")`.
 
 ---
@@ -229,7 +229,7 @@ from fastapi_cache import JsonCoder
 from fastapi_cache.key_builder import default_key_builder
 
 async def user_lang_key_builder(func, namespace: str, request: Request, response=None, *args, **kwargs) -> str:
-    # Repart d’un builder par défaut et y ajoute l’Accept-Language et un user-id (fictif)
+    # Repart d'un builder par défaut et y ajoute l'Accept-Language et un user-id (fictif)
     base = default_key_builder(func, namespace, request, response, *args, **kwargs)
     lang = request.headers.get("accept-language", "*")
     user = request.headers.get("x-user-id", "anon")
@@ -239,17 +239,17 @@ async def user_lang_key_builder(func, namespace: str, request: Request, response
 # @cache(expire=60, namespace="v1", key_builder=user_lang_key_builder, coder=JsonCoder)
 ```
 
-### Bonnes pratiques et points d’attention
+### Bonnes pratiques et points d'attention
 
 - Préfixe : définissez un `prefix` explicite (par exemple avec le nom de votre
   app et la version) pour isoler vos clés.
 - Namespace : utile pour invalider sélectivement des sous-ensembles de clés.
-- Sécurité : éviter d’exposer un endpoint de purge sans protection; ajoutez
+- Sécurité : éviter d'exposer un endpoint de purge sans protection; ajoutez
   auth/rôle.
 - TTL (time to live) : choisissez une durée adaptée à la fraîcheur des données et
   au coût de recalcul.
-- Multi‑workers: avec Uvicorn/Gunicorn en multi‑processus, utilisez Redis (
-  l’in‑memory n’est pas partagé entre workers).
+- Multi-workers: avec Uvicorn/Gunicorn en multi-processus, utilisez Redis (
+  l'in-memory n'est pas partagé entre workers).
 
 ---
 
@@ -263,4 +263,4 @@ async def user_lang_key_builder(func, namespace: str, request: Request, response
   - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
   - [Comment dockeriser une API FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
   - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
-  - [Limiter le rate d’une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
+  - [Limiter le rate d'une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})

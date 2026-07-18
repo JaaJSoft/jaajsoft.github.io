@@ -17,6 +17,10 @@ Dans cet article :
 - Groupement puissant avec Streams et `Collectors.groupingBy()`
 - Agrégations avancées (count, sum, average, max, min)
 - Groupement par plusieurs clés
+- Personnaliser le type de Map résultante
+- Transformer les résultats après groupement
+- Filtrer avant ou après le groupement
+- Cas d'usage : construire un rapport d'agrégation
 - Utilisation avec les records (Java 16+)
 - Pièges et bonnes pratiques
 
@@ -75,10 +79,12 @@ for (Vente v : ventes) {
     compteParVille.merge(v.ville(), 1, Integer::sum);
 }
 
-System.out.println(compteParVille); // {Paris=3, Lyon=2, Nantes=1}
+System.out.println(compteParVille); // {Nantes=1, Lyon=2, Paris=3}
 ```
 
 `merge(key, 1, Integer::sum)` ajoute 1 si la clé existe, sinon initialise à 1.
+
+Notez que l'ordre d'itération d'une `HashMap` n'est pas garanti : l'ordre affiché ici peut varier, ne basez aucune logique dessus.
 
 ### Calculer des totaux
 
@@ -92,7 +98,7 @@ for (Vente v : ventes) {
 }
 
 System.out.println(caParVille);
-// {Paris=40.6, Lyon=31.0, Nantes=12.5}
+// {Nantes=12.5, Lyon=31.0, Paris=40.6}
 ```
 
 ---
@@ -131,7 +137,7 @@ Map<String, Long> compteParVille = ventes.stream()
     ));
 
 System.out.println(compteParVille);
-// {Paris=3, Lyon=2, Nantes=1}
+// {Nantes=1, Lyon=2, Paris=3}
 ```
 
 ### Calculer une somme par groupe
@@ -146,7 +152,7 @@ Map<String, Double> caParVille = ventes.stream()
     ));
 
 System.out.println(caParVille);
-// {Paris=40.6, Lyon=31.0, Nantes=12.5}
+// {Nantes=12.5, Lyon=31.0, Paris=40.6}
 ```
 
 ---
@@ -261,14 +267,14 @@ parVillePuisProduit.forEach((ville, parProduit) -> {
 
 Sortie :
 ```
-Ville : Paris
+Ville : Nantes
   Livre : 1
-  Stylo : 1
-  Cahier : 1
 Ville : Lyon
   Stylo : 1
   Livre : 1
-Ville : Nantes
+Ville : Paris
+  Cahier : 1
+  Stylo : 1
   Livre : 1
 ```
 
@@ -336,7 +342,7 @@ Map<String, List<String>> produitsParVille = ventes.stream()
     ));
 
 System.out.println(produitsParVille);
-// {Paris=[Livre, Stylo, Cahier], Lyon=[Stylo, Livre], Nantes=[Livre]}
+// {Nantes=[Livre], Lyon=[Stylo, Livre], Paris=[Livre, Stylo, Cahier]}
 ```
 
 ### Éliminer les doublons avec Set
@@ -369,7 +375,7 @@ Map<String, String> produitsJointsParVille = ventes.stream()
     ));
 
 System.out.println(produitsJointsParVille);
-// {Paris=Livre, Stylo, Cahier, Lyon=Stylo, Livre, Nantes=Livre}
+// {Nantes=Livre, Lyon=Stylo, Livre, Paris=Livre, Stylo, Cahier}
 ```
 
 ---
@@ -401,7 +407,7 @@ Map<String, List<Vente>> villesAvecPlusieursVentes = ventes.stream()
     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 System.out.println(villesAvecPlusieursVentes.keySet());
-// [Paris, Lyon]
+// [Lyon, Paris]
 ```
 
 ---

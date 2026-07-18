@@ -9,6 +9,8 @@ tags:
 author: Pierre Chopinet
 ---
 
+> **Note (2026) :** cet article date de 2019 et n'est plus réalisable en l'état : l'API Twitter/X est devenue payante en 2023, l'endpoint de streaming v1.1 a été supprimé et tweepy 4+ a changé d'API. Je le conserve ici à titre historique.
+
 Dans ce tutoriel, je vais vous apprendre comment créer un bot twitter en utilisant le langage de programmation python et la librairie tweepy.
 <!--more-->
 Ce bot sera capable de répondre automatiquement à des mots-clés présents dans des tweets.
@@ -100,7 +102,7 @@ Remplissez les informations sur votre bot.
 
 Pour les liens demandés, vous pouvez mettre un lien vers le profil twitter de votre bot.
 
-Une fois l’application créée. Dans le detail de l’application, allez dans Keys and Access Tokens, en bas de la page, cliquez sur "Create my access token"
+Une fois l'application créée. Dans le detail de l'application, allez dans Keys and Access Tokens, en bas de la page, cliquez sur "Create my access token"
 
 Sur cette page, notez votre :
 
@@ -128,7 +130,7 @@ def auth():
     consumer_key = "xxxxxxxxxxxxxxxxxxxxxxxxxx"
     consumer_secret = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-    # le access_token est le token de l'application twitter que nous avons créée précédement
+    # le access_token est le token de l'application twitter que nous avons créée précédemment
     access_token = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     access_token_secret = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
@@ -164,6 +166,7 @@ Un stream twitter est une fonctionnalité de l'api twitter, qui permet de recevo
 Le code :
 
 ```python
+from tweepy import Stream
 from tweepy.streaming import StreamListener
 import time
 import auth
@@ -259,7 +262,7 @@ twitterStream.filter(track=["saucisse"])
 
 Notez que cette version peut planter de temps en temps, pour régler ce problème, vous pouvez mettre en place une gestion des exceptions pour gérer les soucis que vous rencontrez. Une autre solution, est de faire un script bash, qui teste si le programme a planté et si oui, le relance.
 
-Par exemple une petite fonction bash présent dans mon projet [Automation Scripts](https://github.com/pchopinet/Automation-Scripts) :
+Par exemple une petite fonction bash présente dans mon projet [Automation Scripts](https://github.com/pchopinet/Automation-Scripts) :
 
 ```bash
 sys-process-test(){
@@ -270,7 +273,7 @@ sys-process-test(){
 
 Cette fonction renvoie 0 si aucun programme avec le nom passé en paramètre n'est lancé.
 
-On crée un script qui test le bon fonctionnement du bot et on le lance régulièrement via un [crontab](https://doc.ubuntu-fr.org/cron)
+On crée un script qui teste le bon fonctionnement du bot et on le lance régulièrement via un [crontab](https://doc.ubuntu-fr.org/cron)
 
 Il est aussi possible de mettre en place un conteneur docker pour facilement relancer le bot. Je pense traiter ce sujet dans un article sur la mise en production d'une application python.
 

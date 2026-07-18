@@ -14,11 +14,11 @@ tags:
   - performance
 ---
 
-Dans ce tutoriel, on met en place un rate limiting pour une API FastAPI à l’aide
+Dans ce tutoriel, on met en place un rate limiting pour une API FastAPI à l'aide
 de
 la bibliothèque `fastapi-limiter`, avec Redis.
 <!--more-->
-L’objectif est de protéger vos
+L'objectif est de protéger vos
 endpoints contre les abus (pics de trafic, scripts, DDoS applicatif léger) et de
 mieux contrôler votre consommation de ressources.
 
@@ -63,7 +63,7 @@ docker compose up -d
 
 ## Mise en place minimale avec fastapi-limiter
 
-`fastapi-limiter` s’initialise au démarrage de l’application avec un client
+`fastapi-limiter` s'initialise au démarrage de l'application avec un client
 Redis.
 Ensuite, on ajoute une dépendance `RateLimiter` sur les routes à protéger.
 
@@ -121,13 +121,13 @@ Test rapide :
 for i in {1..7}; do curl -i http://127.0.0.1:8000/ping; echo; done
 ```
 
-Par défaut, `fastapi-limiter` identifie le client par son IP (en s’aidant des
+Par défaut, `fastapi-limiter` identifie le client par son IP (en s'aidant des
 en-têtes classiques si vous utilisez un proxy). Vous pouvez cependant personnaliser cet
 identifiant si besoin.
 
 ---
 
-## Personnaliser l’identifiant (IP, clé API, utilisateur, etc.)
+## Personnaliser l'identifiant (IP, clé API, utilisateur, etc.)
 
 Souvent, on veut limiter par clé API ou par utilisateur authentifié plutôt que
 par IP.
@@ -155,7 +155,7 @@ async def get_data(request: Request):
 
 Autre exemple : limitation par utilisateur connecté (ex: `request.state.user.id`
 ou
-`request.user.id` selon votre middleware d’authentification).
+`request.user.id` selon votre middleware d'authentification).
 
 ```python
 @app.get(
@@ -178,8 +178,8 @@ async def me():
 
 ## Appliquer une limite par défaut à un groupe de routes
 
-Vous pouvez appliquer un rate limit à l’échelle d’un router, afin qu’il
-s’applique
+Vous pouvez appliquer un rate limit à l'échelle d'un router, afin qu'il
+s'applique
 à toutes les routes incluses.
 
 ```python
@@ -203,15 +203,15 @@ app.include_router(api_router)
 
 Vous pouvez toujours surcharger/compléter le comportement sur une route précise
 en
-ajoutant un autre `Depends(RateLimiter(...))` directement sur l’endpoint.
+ajoutant un autre `Depends(RateLimiter(...))` directement sur l'endpoint.
 
 ---
 
 ## Cas derrière un reverse proxy (Nginx, Traefik, Cloudflare)
 
-Pour que l’IP réelle du client soit correctement vue, pensez à activer la prise
+Pour que l'IP réelle du client soit correctement vue, pensez à activer la prise
 en
-compte des en‑têtes proxy. Par exemple:
+compte des en-têtes proxy. Par exemple:
 
 ```python
 from starlette.middleware import Middleware
@@ -249,14 +249,14 @@ async def too_many_requests_handler(request: Request, exc: HTTPException):
 
 ---
 
-## Bonnes pratiques et points d’attention
+## Bonnes pratiques et points d'attention
 
 - Granularité : adaptez les paramètres (secondes, minutes, heures) à vos usages.
-- Identifiant : préférez un identifiant stable (clé API, user id) quand c’est
+- Identifiant : préférez un identifiant stable (clé API, user id) quand c'est
   pertinent.
 - Proxies : gérez correctement les IP réelles (ProxyHeadersMiddleware, trusted
   hops).
-- Endpoints sensibles : combinez avec de l’authentification, voire du captcha sur
+- Endpoints sensibles : combinez avec de l'authentification, voire du captcha sur
   les routes publiques.
 - Observabilité : loggez les 429 et surveillez vos métriques.
 

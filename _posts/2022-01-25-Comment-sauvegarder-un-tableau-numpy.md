@@ -6,21 +6,23 @@ tags:
 - python
 - numpy
 - array
-- persistence
+- persistance
 
 ---
 
 Dans ce tutoriel, nous allons apprendre à sauvegarder des tableaux numpy pour
-ajouter de la persistence à votre application python. <!--more-->
+ajouter de la persistance à votre application python. <!--more-->
 
-## Notre premiere persistence
+## Notre première persistance
 
 ### Sauvegarde des données
 
 Pour sauvegarder votre tableau NumPy, on utilise le comportement natif de python
-pour l'ouverture d'un fichier, et on appelle la function save de NumPy :
+pour l'ouverture d'un fichier, et on appelle la fonction save de NumPy :
 
 ```python
+import numpy as np
+
 array = np.array([6, 9])
 
 with open('array.npy', 'wb') as f:
@@ -34,7 +36,7 @@ ligne, on trouve les paramètres de notre tableau persisté :
 �NUMPYv{'descr': '<i8', 'fortran_order': False, 'shape': (2,), }
 ```
 
-La suite du fichier est composé d'octets correspondant aux valeurs du tableau.
+La suite du fichier est composée d'octets correspondant aux valeurs du tableau.
 
 ### Chargement des données
 
@@ -53,9 +55,9 @@ Ce qui donne le résultat suivant :
 [6 9]
 ```
 
-Et voilà, on a notre première persistence de données avec numpy !
+Et voilà, on a notre première persistance de données avec numpy !
 
-## Persistence au format texte
+## Persistance au format texte
 
 Il arrive qu'on veuille utiliser des données traitées avec numpy dans un autre
 langage de programmation, ou par exemple sur excel. On doit donc enregistrer nos
@@ -99,7 +101,7 @@ Finalement, on obtient un format en entier :
 Maintenant pour charger nos données enregistrées en format texte, on utilise `loadtxt` :
 
 ```python
-array_loaded_from_text = np.loadtxt('array_int.csv', delimiter=',', )
+array_loaded_from_text = np.loadtxt('array_int.csv', delimiter=',')
 print(array_loaded_from_text)
 ```
 
@@ -117,17 +119,20 @@ fichier de sortie possède l'extension .gz (pour gzip ou GNU zip).
 
 ```python
 big_array = np.random.rand(1000, 1000) # tableau de 1000x1000
-np.savetxt('array_test.csv', big_array, delimiter=',', fmt='%i')
-np.savetxt('array_compressed.gz', big_array, delimiter=',', fmt='%i')
+np.savetxt('array_test.csv', big_array, delimiter=',')
+np.savetxt('array_compressed.gz', big_array, delimiter=',')
 ```
 
-| Fichier | Taille  |
-|---------|---------|
-| .csv    | 1954 Ko |
-| .gz     | 4 Ko    |
+| Fichier | Taille   |
+|---------|----------|
+| .csv    | ~25,0 Mo |
+| .gz     | ~10,6 Mo |
 
-Le gain de place est très intéressant, cependant l'enregistrement et le
-chargement des données sauvegardées au format gz sera plus long.
+Le gain de place est intéressant (le fichier compressé est plus de deux fois
+plus petit), cependant l'enregistrement et le chargement des données
+sauvegardées au format gz seront plus longs. Notez que sur des données
+aléatoires comme ici, la compression est loin d'être optimale : sur des données
+réelles, souvent plus régulières, le gain est généralement meilleur.
 
 Le chargement se fait de la même façon que précédemment, la fonction `loadtxt`
 se charge de décompresser pour nous les données.
@@ -136,12 +141,12 @@ se charge de décompresser pour nous les données.
 big_array_loaded = np.loadtxt('array_compressed.gz', delimiter=',')
 ```
 
-## Persistence au format npz
+## Persistance au format npz
 
 NumPy propose une dernière façon de persister vos données avec le format npz,
 qui a l'avantage de pouvoir sauvegarder plusieurs tableaux numpy dans le même
 fichier et contrairement au format texte, ce format supporte des tableaux à n
-dimensions
+dimensions.
 
 ```python
 np.savez('test.npz', array=array, big_array=big_array)
