@@ -19,6 +19,8 @@ Dans cet article :
 - Exemples utiles et patterns courants
 - Débogage et observabilité
 - Migration depuis cron classique vers CronJob
+- Bonnes pratiques
+- FAQ
 
 Pré-requis :
 - Un cluster Kubernetes (1.27+ recommandé pour `spec.timeZone`)
@@ -66,7 +68,7 @@ Différences clés :
 - Exécution dans un Pod (conteneurisé), pas sur l'hôte.
 - Gestion des chevauchements via `concurrencyPolicy` (Allow / Forbid / Replace).
 - Historique conservé via `successfulJobsHistoryLimit` et `failedJobsHistoryLimit`.
-- `startingDeadlineSeconds` rattrape les exécutions manquées si le contrôleur était indisponible.
+- `startingDeadlineSeconds` : délai maximum pour démarrer une exécution qui a manqué son horaire planifié (par exemple si le contrôleur était indisponible) ; passé ce délai, l'exécution est ignorée.
 - Temps et fuseau : Kubernetes 1.27 ou plus supporte `spec.timeZone` (IANA, ex: `Europe/Paris`). Sinon, fuseau du contrôleur.
 
 Pour réviser la syntaxe cron et les pièges, voyez l'article Linux mentionné plus haut.
@@ -177,7 +179,7 @@ kubectl get cronjob -o json | jq '.items[] | {name: .metadata.name, schedule: .s
 
 État et événements :
 - `kubectl describe cronjob <name>`
-- `kubectl get jobs --selector=job-name=<prefix>` et `kubectl describe job/<name>`
+- `kubectl get jobs | grep <nom-du-cronjob>` et `kubectl describe job/<name>` (Kubernetes n'ajoute pas de label reliant un Job à son CronJob ; les Jobs sont nommés `<nom-du-cronjob>-<timestamp>` et rattachés par `ownerReferences`)
 - `kubectl get events -A | grep -i cronjob`
 
 Pods et logs :
@@ -191,7 +193,7 @@ Champs utiles :
 Problèmes fréquents :
 - Image introuvable, Secret ou ConfigMap manquant : événements "Failed to pull image" ou "not found".
 - Job qui n'en finit pas : ajuster `activeDeadlineSeconds` et `concurrencyPolicy`.
-- Trop d'objets accumulés : baisser `successfulJobsHistoryLimit` / `failedJobsHistoryLimit` et mettre un TTLController (pour les Jobs si activé via `ttlSecondsAfterFinished`).
+- Trop d'objets accumulés : baisser `successfulJobsHistoryLimit` / `failedJobsHistoryLimit` et définir `jobTemplate.spec.ttlSecondsAfterFinished` pour que les Jobs terminés soient supprimés automatiquement (le contrôleur TTL-after-finished est stable et actif par défaut depuis Kubernetes 1.23).
 
 ---
 

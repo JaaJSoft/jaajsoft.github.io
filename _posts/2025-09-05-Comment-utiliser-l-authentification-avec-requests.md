@@ -88,7 +88,7 @@ headers = {"Authorization": f"Basic {token}"}
 requests.get("https://api.example.com/", headers=headers)
 ```
 
-> Note : n'envoyez jamais des identifiants en clair en HTTP ; utilisez HTTPS.
+> Note : n'envoyez jamais d'identifiants en clair en HTTP ; utilisez HTTPS.
 
 ---
 
@@ -153,7 +153,7 @@ params = {"api_key": "ma_cle_api"}
 requests.get("https://api.example.com/data", params=params)
 ```
 
-Privilégiez le header quand c'est possible (logguer la clé dans l'URL n'est pas une très bonne idée).
+Privilégiez le header quand c'est possible (logger la clé dans l'URL n'est pas une très bonne idée).
 
 ---
 
@@ -175,6 +175,8 @@ auth = OAuth1(
 resp = requests.get("https://api.twitter.com/1.1/account/verify_credentials.json", auth=auth)
 print(resp.status_code)
 ```
+
+Cet exemple est purement illustratif : l'API de Twitter/X est devenue payante en 2023 et cet endpoint n'est plus accessible librement. Il montre simplement comment brancher une authentification OAuth1 sur une requête.
 
 Ce type d'authentification est moins courant aujourd'hui, généralement remplacé par OAuth2.
 
@@ -315,7 +317,7 @@ import requests
 resp = requests.get("https://api.example.com/secure")
 ```
 
-Sur Windows, assurez des permissions restreintes au fichier `_netrc`.
+Sur Windows, restreignez les permissions du fichier `_netrc` pour qu'il ne soit lisible que par votre compte.
 
 ---
 

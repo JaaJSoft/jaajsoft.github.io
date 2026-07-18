@@ -42,7 +42,7 @@ Objectifs de l'article :
 
 ### D'où vient la différence de vitesse ?
 
-- **Ignore intelligent** : `rg` respecte `.gitignore` et ignore `.git`, `node_modules`, fichiers binaires — sans configuration
+- **Ignore intelligent** : `rg` respecte `.gitignore` et ignore `.git`, `node_modules`, fichiers binaires, sans configuration
 - **Multithreading natif** : utilise tous les cœurs CPU disponibles
 - **Moteur regex optimisé** : le moteur Rust est compilé en automate fini, évitant le backtracking catastrophique
 
@@ -182,7 +182,7 @@ src/utils.py
 
 ```bash
 rg -l pattern                       # Uniquement les noms de fichiers
-rg -L pattern                       # Fichiers SANS correspondance
+rg --files-without-match pattern    # Fichiers SANS correspondance
 rg -c pattern                       # Nombre de lignes matchant par fichier
 rg --count-matches pattern          # Nombre total d'occurrences par fichier
 rg -o pattern                       # Uniquement la partie qui matche
@@ -194,7 +194,7 @@ rg --no-filename pattern            # Masquer les noms de fichiers
 
 ## 15 cas pratiques
 
-### 1) Trouver tous les TODOs et FIXMEs d'un projet
+### Trouver tous les TODOs et FIXMEs d'un projet
 
 ```bash
 rg 'TODO|FIXME|HACK|XXX' -C 1
@@ -202,7 +202,7 @@ rg 'TODO|FIXME|HACK|XXX' -C 1
 
 Ajoutez `-t py` ou `-t js` pour cibler un langage spécifique.
 
-### 2) Chercher une définition de fonction ou de classe
+### Chercher une définition de fonction ou de classe
 
 ```bash
 # Définition Python
@@ -215,11 +215,11 @@ rg 'class UserService'
 rg 'interface UserProps \{'
 ```
 
-### 3) Détecter des secrets en dur dans le code
+### Détecter des secrets en dur dans le code
 
 ```bash
 # Mots de passe en dur
-rg -i 'password\s*=\s*["\047][^"\047]{3,}'
+rg -i 'password\s*=\s*["\x27][^"\x27]{3,}'
 
 # Clés API / tokens suspects
 rg -S 'api_key|apiKey|API_KEY|secret_key|access_token' -t py -t js -t ts
@@ -227,7 +227,7 @@ rg -S 'api_key|apiKey|API_KEY|secret_key|access_token' -t py -t js -t ts
 
 Utile en revue de code ou avant un commit, pour éviter de pousser des credentials.
 
-### 4) Chercher dans des logs ou la sortie d'une commande
+### Chercher dans des logs ou la sortie d'une commande
 
 ```bash
 # Filtrer les erreurs dans un fichier de log
@@ -242,7 +242,7 @@ kubectl get pods -A | rg 'CrashLoop|Error'
 
 `rg` lit stdin quand il ne reçoit pas de fichier en argument, ce qui le rend utilisable partout où vous utiliseriez `grep` dans un pipe.
 
-### 5) Chercher des imports et dépendances
+### Chercher des imports et dépendances
 
 ```bash
 # Qui importe ce module Python ?
@@ -255,7 +255,7 @@ rg "require\(['\"]express"
 rg '"github\.com/.*"' -t go
 ```
 
-### 6) Compter les occurrences dans un projet
+### Compter les occurrences dans un projet
 
 ```bash
 # Nombre de lignes contenant "error" par fichier
@@ -268,7 +268,7 @@ rg error --count-matches
 rg error --count-matches | awk -F: '{sum+=$NF} END {print sum}'
 ```
 
-### 7) Filtrer par glob / exclure des fichiers
+### Filtrer par glob / exclure des fichiers
 
 ```bash
 # Uniquement les fichiers .env
@@ -281,7 +281,7 @@ rg pattern -g '!*.min.js' -g '!*.min.css'
 rg pattern -g '*.{yaml,yml,json,toml}'
 ```
 
-### 8) Prévisualiser un remplacement
+### Prévisualiser un remplacement
 
 ```bash
 # Voir le résultat d'un remplacement (sans modifier les fichiers)
@@ -296,19 +296,19 @@ rg -l 'old_function' | xargs sed -i 's/old_function/new_function/g'
 
 > `rg -r` ne modifie jamais les fichiers, il affiche juste la sortie transformée. Utilisez `sed` ou votre éditeur pour appliquer.
 
-### 9) Recherche multi-ligne
+### Recherche multi-ligne
 
 ```bash
-# Activer le mode multiline avec -U
-rg -U 'try:.*?except' -t py
+# Activer le mode multiline avec -U (et --multiline-dotall pour que . franchisse les retours à la ligne)
+rg -U --multiline-dotall 'try:.*?except' -t py
 
 # Trouver des fonctions vides en JavaScript
 rg -U 'function \w+\([^)]*\)\s*\{\s*\}' -t js
 ```
 
-Le flag `-U` permet au `.` de matcher les retours à la ligne.
+Le flag `-U` active le mode multi-lignes, mais par défaut `.` ne franchit toujours PAS les retours à la ligne. Ajoutez `--multiline-dotall` (ou le préfixe `(?s)` dans le motif) pour que `.` matche aussi les sauts de ligne.
 
-### 10) Regex avancées avec PCRE2
+### Regex avancées avec PCRE2
 
 ```bash
 # Activer le moteur PCRE2 (lookahead, lookbehind, backreferences)
@@ -323,7 +323,7 @@ rg -P '\b(\w+)\s+\1\b'
 
 > `-P` nécessite que `ripgrep` soit compilé avec le support PCRE2 (c'est le cas sur la plupart des distributions).
 
-### 11) Exclure des répertoires
+### Exclure des répertoires
 
 ```bash
 # Exclure les dossiers de test
@@ -333,9 +333,9 @@ rg pattern -g '!**/test/**' -g '!**/tests/**' -g '!**/__tests__/**'
 rg pattern -g '!vendor' -g '!build' -g '!dist'
 ```
 
-Note : `node_modules` et `.git` sont déjà exclus par défaut via `.gitignore`.
+Note : `.git/` est toujours ignoré par `rg` lui-même (indépendamment de tout `.gitignore`). `node_modules`, en revanche, n'est ignoré que s'il figure dans un `.gitignore` (ce qui est le cas dans la quasi-totalité des projets JavaScript).
 
-### 12) Chercher dans les fichiers cachés et ignorés
+### Chercher dans les fichiers cachés et ignorés
 
 ```bash
 # Inclure les fichiers cachés (.dotfiles)
@@ -350,7 +350,7 @@ rg pattern --hidden --no-ignore
 
 Utile pour chercher dans `.env`, `.github/`, ou d'autres fichiers cachés.
 
-### 13) Sortie JSON pour les scripts
+### Sortie JSON pour les scripts
 
 ```bash
 # Sortie JSON structurée
@@ -362,7 +362,7 @@ rg TODO --json | jq 'select(.type == "match") | .data.path.text'
 
 La sortie `--json` donne un objet par ligne, avec le chemin, le numéro de ligne, et le contenu. Idéal pour intégrer `rg` dans des pipelines de CI ou des scripts d'analyse.
 
-### 14) Statistiques rapides sur le code
+### Statistiques rapides sur le code
 
 ```bash
 # Nombre de fichiers Python dans le projet
@@ -375,7 +375,7 @@ rg '^def \w+' -t py -c | awk -F: '{sum+=$NF} END {print sum}'
 rg 'class \w+' -t java -c | awk -F: '{sum+=$NF} END {print sum}'
 ```
 
-### 15) Utiliser un fichier d'exclusion personnalisé
+### Utiliser un fichier d'exclusion personnalisé
 
 ```bash
 # Respecter .gitignore (par défaut)
@@ -454,7 +454,13 @@ coverage/
 
 ### Fichier de config
 
-Créez `~/.config/ripgrep/config` (ou `~/.ripgreprc` avec `export RIPGREP_CONFIG_PATH=~/.ripgreprc`) :
+Contrairement à beaucoup d'outils, `ripgrep` ne lit **aucun** fichier de configuration à un emplacement prédéfini. Vous devez créer un fichier (le nom et l'emplacement sont libres, par exemple `~/.ripgreprc`) puis pointer dessus via la variable d'environnement `RIPGREP_CONFIG_PATH`. Ajoutez à votre `~/.bashrc` ou `~/.zshrc` :
+
+```bash
+export RIPGREP_CONFIG_PATH="$HOME/.ripgreprc"
+```
+
+Puis créez le fichier référencé :
 
 ```bash
 # ~/.ripgreprc
@@ -539,16 +545,7 @@ nnoremap <leader>g :grep <C-R><C-W><CR>
 
 ### Avec VS Code
 
-VS Code utilise déjà ripgrep en interne pour sa recherche. Pour personnaliser :
-```json
-{
-  "search.useRipgrep": true,
-  "search.ripgrep.args": [
-    "--hidden",
-    "--glob=!.git"
-  ]
-}
-```
+VS Code utilise déjà ripgrep en interne pour sa fonction de recherche : il n'y a rien à activer, et les anciens réglages `search.useRipgrep` / `search.ripgrep.args` n'existent plus. Vous ajustez le comportement via les paramètres standard de recherche, par exemple `search.exclude` (dossiers à ignorer), `search.useIgnoreFiles` et `search.useGlobalIgnoreFiles` (respect des `.gitignore`).
 
 ### Avec git
 
@@ -557,7 +554,7 @@ VS Code utilise déjà ripgrep en interne pour sa recherche. Pour personnaliser 
 rg pattern $(git diff --name-only)
 
 # Chercher un pattern dans les fichiers d'un commit
-git show --name-only HEAD | tail -n +7 | xargs rg pattern
+git show --name-only --format= HEAD | xargs rg pattern
 
 # Pour chercher dans l'historique git (contenu supprimé), utilisez git log :
 git log -S "old_function" --source --all --oneline

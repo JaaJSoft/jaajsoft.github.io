@@ -147,7 +147,7 @@ try (Stream<String> lignes = Files.lines(Path.of("fichier.txt"))) {
 // Stream de caractères (IntStream)
 IntStream caracteres = "Hello".chars();
 
-// Stream de lignes
+// Stream de lignes (String.lines() est disponible depuis Java 11)
 Stream<String> lignes = "ligne1\nligne2\nligne3".lines();
 ```
 
@@ -595,7 +595,7 @@ Map<String, Double> prixMoyenParCategorie = produits.stream()
         Collectors.averagingDouble(Produit::prix)
     ));
 System.out.println(prixMoyenParCategorie);
-// {Électronique=364.99, Livres=39.99}
+// {Livres=39.99666666666667, Électronique=364.99}
 ```
 
 ### Transformer en Map
@@ -663,13 +663,15 @@ long count = IntStream.rangeClosed(1, 10_000_000)
 ### Pièges des Streams parallèles
 
 ```java
-// ❌ Mauvais : effets de bord partagés
+// À éviter : effets de bord partagés
 List<String> resultats = new ArrayList<>();
 noms.parallelStream()
     .filter(n -> n.length() > 3)
-    .forEach(resultats::add); // ConcurrentModificationException possible !
+    .forEach(resultats::add); // ArrayList n'est pas thread-safe : résultats corrompus ou ArrayIndexOutOfBoundsException possibles
+```
 
-// ✅ Correct : utiliser collect
+```java
+// Correct : utiliser collect
 List<String> resultats = noms.parallelStream()
     .filter(n -> n.length() > 3)
     .collect(Collectors.toList());
@@ -695,12 +697,12 @@ Si vous avez besoin de réutiliser un pipeline, créez un nouveau Stream à chaq
 ```java
 List<String> noms = new ArrayList<>(List.of("Alice", "Bob", "Charlie"));
 
-// ❌ Modification de la source pendant le stream
+// À éviter : modification de la source pendant le stream
 noms.stream()
     .filter(n -> n.length() > 3)
     .forEach(n -> noms.remove(n)); // ConcurrentModificationException
 
-// ✅ Collecter d'abord, puis modifier
+// Correct : collecter d'abord, puis modifier
 List<String> aSupprimer = noms.stream()
     .filter(n -> n.length() > 3)
     .toList();
@@ -712,13 +714,13 @@ noms.removeAll(aSupprimer);
 `sorted()` doit conserver **tous les éléments** en mémoire avant de produire un résultat. Sur un Stream très volumineux ou infini, cela peut causer un `OutOfMemoryError` :
 
 ```java
-// ❌ Dangereux : sorted sur un Stream infini
+// À éviter : sorted sur un Stream infini
 Stream.generate(Math::random)
     .sorted()  // Attend tous les éléments... qui ne finissent jamais
     .limit(10)
     .forEach(System.out::println);
 
-// ✅ Limiter d'abord
+// Correct : limiter d'abord
 Stream.generate(Math::random)
     .limit(10)
     .sorted()
@@ -730,14 +732,16 @@ Stream.generate(Math::random)
 ```java
 List<String> noms = List.of("Alice", "Bob", "Amy");
 
-// ❌ Clé en doublon → IllegalStateException
+// À éviter : clé en doublon -> IllegalStateException
 Map<Character, String> parInitiale = noms.stream()
     .collect(Collectors.toMap(
         n -> n.charAt(0),  // Alice et Amy ont la même initiale 'A'
         n -> n
     ));
+```
 
-// ✅ Gérer les conflits avec un merge function
+```java
+// Correct : gérer les conflits avec un merge function
 Map<Character, String> parInitiale = noms.stream()
     .collect(Collectors.toMap(
         n -> n.charAt(0),
@@ -791,7 +795,7 @@ L'API Stream transforme la manière d'écrire du code Java en remplaçant les bo
 - Les Streams parallèles ne sont utiles que pour de grands volumes avec des opérations coûteuses
 - Un Stream ne s'utilise qu'une seule fois
 
-L'API Stream est la base de nombreuses fonctionnalités du Java moderne : `Collectors.groupingBy()`, `Optional.stream()`, ou encore les Virtual Threads avec des patterns de concurrence. Maîtrisez-la pour tirer le meilleur du Java moderne.
+L'API Stream est la base de nombreuses fonctionnalités du Java moderne : `Collectors.groupingBy()`, `Optional.stream()`, ou encore les Streams de fichiers et de lignes. Maîtrisez-la pour tirer le meilleur du Java moderne.
 
 ---
 

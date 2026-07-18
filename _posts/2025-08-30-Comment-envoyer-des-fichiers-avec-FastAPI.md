@@ -20,6 +20,18 @@ Pré-requis (recommandé) :
 - Côté serveur : [Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - Côté client : [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 
+## Installation
+
+FastAPI a besoin de la librairie `python-multipart` pour lire les données de
+formulaire et les fichiers envoyés en `multipart/form-data` (c'est ce qu'utilisent
+`File()` et `UploadFile`). Sans elle, FastAPI lève une erreur au démarrage dès
+qu'un endpoint déclare un paramètre `File()` ou `Form()`. Installez-la en même
+temps que FastAPI et uvicorn :
+
+```bash
+pip install fastapi uvicorn python-multipart
+```
+
 ## Pourquoi "multipart/form-data" ?
 
 L'envoi de fichiers via HTTP se fait classiquement avec le type de contenu `multipart/form-data`. C'est exactement ce que sait traiter FastAPI lorsqu'on déclare des paramètres de type `File(...)` et `UploadFile`.
@@ -110,9 +122,10 @@ Avec `requests` en Python :
 import requests
 
 url = "http://127.0.0.1:8000/upload-with-meta"
-files = {"file": ("report.pdf", open("report.pdf", "rb"), "application/pdf")}
 data = {"user_id": 123, "description": "rapport trimestriel"}
-resp = requests.post(url, files=files, data=data)
+with open("report.pdf", "rb") as f:
+    files = {"file": ("report.pdf", f, "application/pdf")}
+    resp = requests.post(url, files=files, data=data)
 print(resp.json())
 ```
 
@@ -141,13 +154,18 @@ curl -F "files=@a.png" -F "files=@b.png" http://127.0.0.1:8000/uploadfiles
 
 ```python
 import requests
+from contextlib import ExitStack
 
 url = "http://127.0.0.1:8000/uploadfiles"
-files = [
-    ("files", ("a.png", open("a.png", "rb"), "image/png")),
-    ("files", ("b.png", open("b.png", "rb"), "image/png")),
-]
-resp = requests.post(url, files=files)
+paths = [("a.png", "image/png"), ("b.png", "image/png")]
+
+with ExitStack() as stack:
+    files = [
+        ("files", (name, stack.enter_context(open(name, "rb")), content_type))
+        for name, content_type in paths
+    ]
+    resp = requests.post(url, files=files)
+
 print(resp.json())
 ```
 
@@ -165,7 +183,10 @@ app = FastAPI()
 @app.post("/uploadfile/save")
 async def save_file(file: UploadFile = File(...)):
     os.makedirs("uploads", exist_ok=True)
-    dest_path = os.path.join("uploads", file.filename)
+    # On assainit le nom fourni par le client pour éviter un "path traversal" :
+    # un nom du type "../../etc/passwd" pourrait sinon écrire hors du dossier uploads.
+    safe_name = os.path.basename(file.filename)
+    dest_path = os.path.join("uploads", safe_name)
     with open(dest_path, "wb") as out:
         shutil.copyfileobj(file.file, out)  # copie en streaming
     return {"saved_as": dest_path}
@@ -175,7 +196,7 @@ async def save_file(file: UploadFile = File(...)):
 
 ## Valider le type et la taille
 
-Exemple simple de validation du type MIME et d'une limite de taille (lecture en mémoire — pour de gros fichiers, préférez vérifier pendant la copie et interrompre au-delà d'un seuil) :
+Exemple simple de validation du type MIME et d'une limite de taille (lecture en mémoire : pour de gros fichiers, préférez vérifier pendant la copie et interrompre au-delà d'un seuil) :
 
 ```python
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -206,6 +227,7 @@ async def upload_validate(file: UploadFile = File(...)):
 
 ```python
 import requests
+from contextlib import ExitStack
 
 base = "http://127.0.0.1:8000"
 
@@ -215,11 +237,13 @@ with open("monimage.png", "rb") as f:
     print(resp.json())
 
 # 2) Plusieurs fichiers
-files = [
-    ("files", ("a.png", open("a.png", "rb"), "image/png")),
-    ("files", ("b.png", open("b.png", "rb"), "image/png")),
-]
-resp = requests.post(f"{base}/uploadfiles", files=files)
+paths = [("a.png", "image/png"), ("b.png", "image/png")]
+with ExitStack() as stack:
+    files = [
+        ("files", (name, stack.enter_context(open(name, "rb")), content_type))
+        for name, content_type in paths
+    ]
+    resp = requests.post(f"{base}/uploadfiles", files=files)
 print(resp.json())
 
 # 3) Fichier + métadonnées
@@ -269,7 +293,8 @@ async def upload_files(files: List[UploadFile] = File(...)):
 @app.post("/uploadfile/save")
 async def save_file(file: UploadFile = File(...)):
     os.makedirs("uploads", exist_ok=True)
-    dest_path = os.path.join("uploads", file.filename)
+    safe_name = os.path.basename(file.filename)  # évite le path traversal
+    dest_path = os.path.join("uploads", safe_name)
     with open(dest_path, "wb") as out:
         shutil.copyfileobj(file.file, out)
     return {"saved_as": dest_path}

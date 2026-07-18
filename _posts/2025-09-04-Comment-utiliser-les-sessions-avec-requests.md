@@ -136,7 +136,7 @@ Notes :
 
 ---
 
-## Timeouts et proxies
+## Timeouts, proxies et SSL
 
 Toujours mettre un timeout pour éviter de bloquer indéfiniment.
 
@@ -152,6 +152,25 @@ with requests.Session() as s:
     r = s.get("https://example.com/slow", timeout=(3.05, 10))
     r.raise_for_status()
 ```
+
+### Vérification SSL (verify et cert)
+
+Par défaut, requests vérifie le certificat SSL des serveurs HTTPS (`verify=True`). Vous pouvez ajuster ce comportement au niveau de la session :
+
+```python
+with requests.Session() as s:
+    # Utiliser un bundle CA personnalisé (ex: autorité interne d'entreprise)
+    s.verify = "/chemin/vers/ca-bundle.pem"
+
+    # Certificat client (mTLS) : un seul fichier (clé + certificat)
+    # ou un tuple (certificat, clé)
+    s.cert = ("/chemin/client.crt", "/chemin/client.key")
+
+    r = s.get("https://api.interne.example.com/me", timeout=10)
+    r.raise_for_status()
+```
+
+`verify` accepte soit `True` (défaut), soit le chemin d'un bundle CA ou d'un dossier de certificats de confiance. En dernier recours, vous pouvez désactiver la vérification avec `s.verify = False`, mais uniquement en développement : cela accepte n'importe quel certificat et expose vos échanges à des attaques de type man-in-the-middle. `cert` permet de présenter un certificat client quand le serveur exige une authentification mutuelle (mTLS).
 
 ---
 
@@ -225,6 +244,8 @@ with ApiClient("https://api.example.com", token="...") as api:
     orders = api.get("orders").json()
     print(me, len(orders))
 ```
+
+> Note : la syntaxe `token: str | None` pour les annotations de type optionnelles nécessite Python 3.10 ou plus récent. Sur une version antérieure, utilisez `from typing import Optional` puis `token: Optional[str] = None`.
 
 ---
 

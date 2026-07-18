@@ -85,6 +85,8 @@ Toutes les requêtes SQL s'afficheront dans la console :
 (0.001) SELECT "blog_article"."id", "blog_article"."title", ... FROM "blog_article"; args=()
 ```
 
+> À noter : le logger `django.db.backends` n'émet les requêtes SQL que lorsque `DEBUG = True`. Avec `DEBUG = False`, ce logger reste silencieux même si le niveau est réglé sur `DEBUG`.
+
 ### Django Debug Toolbar
 
 L'outil le plus complet pour visualiser les requêtes, temps d'exécution, requêtes dupliquées.
@@ -117,18 +119,14 @@ INTERNAL_IPS = [
 ```python
 # urls.py
 from django.urls import path, include
-from django.conf import settings
+from debug_toolbar.toolbar import debug_toolbar_urls
 
 urlpatterns = [
     # ... vos URLs
-]
-
-if settings.DEBUG:
-    import debug_toolbar
-    urlpatterns = [
-        path('__debug__/', include(debug_toolbar.urls)),
-    ] + urlpatterns
+] + debug_toolbar_urls()
 ```
+
+> `debug_toolbar_urls()` (méthode recommandée depuis Django Debug Toolbar 4.x) vérifie déjà `DEBUG` en interne et renvoie une liste vide en production. Plus besoin du bloc `if settings.DEBUG` ni de l'ancien `include('debug_toolbar.urls')`.
 
 Une fois installé, un panneau latéral apparaît dans votre navigateur avec :
 - Le nombre total de requêtes
@@ -370,22 +368,26 @@ Résultat dans la console :
 [SQL] GET /articles/ : 101 queries (99 duplicates)
 ```
 
-### nplusone (détection automatique)
+### django-zeal (détection automatique)
 
-Ce package détecte les N+1 et génère des warnings.
+On voit souvent `nplusone` recommandé pour ça, mais ce package n'est plus maintenu (dernière version en 2018) et n'est pas compatible avec Django 4/5. On lui préfère aujourd'hui `django-zeal`, qui détecte automatiquement les N+1 pendant les requêtes web et les tests.
 
 ```bash
-pip install nplusone
+pip install django-zeal
 ```
 
 ```python
 # settings.py
-INSTALLED_APPS = [
-    'nplusone.ext.django',
-]
+if DEBUG:
+    INSTALLED_APPS.append("zeal")
+    MIDDLEWARE.append("zeal.middleware.zeal_middleware")
 
-NPLUSONE_RAISE = True  # lève une exception si N+1 détecté (dev uniquement)
+# Par défaut, zeal lève une exception dès qu'un N+1 est détecté.
+# Passez ZEAL_RAISE = False pour n'émettre que des warnings.
+ZEAL_RAISE = True
 ```
+
+À réserver au développement et aux tests : `django-zeal` ajoute un léger surcoût (de l'ordre de 3 à 5 %) et n'a pas sa place en production.
 
 ---
 
@@ -412,10 +414,20 @@ class ArticleViewTest(TestCase):
         self.assertLessEqual(len(context.captured_queries), 3)
 ```
 
+Plus idiomatique encore, `TestCase` fournit `assertNumQueries`, qui échoue si le nombre de requêtes exécutées dans le bloc diffère du nombre attendu :
+
+```python
+class ArticleViewTest(TestCase):
+    def test_article_list_queries(self):
+        # Créez des données de test
+        with self.assertNumQueries(2):
+            self.client.get('/articles/')
+```
+
 ### Pièges courants
 
 - **Ne pas appliquer `select_related()` après avoir itéré** : ça ne change rien, le queryset est déjà évalué.
-- **Filtrer après `prefetch_related()`** : si vous faites `.filter()` après, le prefetch est ignoré. Utilisez `Prefetch()` pour filtrer.
+- **Filtrer une relation préchargée dans la boucle** : appeler `article.comments.filter(published=True)` à l'intérieur de la boucle déclenche une nouvelle requête par objet (le cache du prefetch est ignoré), ce qui recrée un N+1. Pour filtrer une relation préchargée, utilisez `Prefetch()` avec un `queryset` filtré. En revanche, appeler `.filter()` sur le queryset principal (`Article.objects.prefetch_related('comments').filter(...)`) est sans danger : le prefetch est conservé et s'applique au résultat filtré.
 - **Utiliser `select_related()` sur un ManyToMany** : ça ne marche pas, utilisez `prefetch_related()`.
 - **Oublier les relations imbriquées** : pensez à `select_related('author__country')`.
 
@@ -429,10 +441,14 @@ from django.db import connection
 print(len(connection.queries))
 ```
 
-Logging SQL :
+Logging SQL (config complète : sans `version`, `handlers` et `DEBUG = True`, rien n'est loggué) :
 ```python
 # settings.py
-LOGGING = {'loggers': {'django.db.backends': {'level': 'DEBUG'}}}
+LOGGING = {
+    'version': 1,
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'loggers': {'django.db.backends': {'level': 'DEBUG', 'handlers': ['console']}},
+}
 ```
 
 ForeignKey / OneToOne -> `select_related()` :

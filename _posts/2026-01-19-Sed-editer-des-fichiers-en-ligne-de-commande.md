@@ -64,7 +64,7 @@ echo "texte" | sed 'commande'           # Depuis stdin
 
 ## Les commandes essentielles
 
-### 1) Substitution : `s/pattern/replacement/flags`
+### Substitution : `s/pattern/replacement/flags`
 
 La commande la plus utilisée. Remplace `pattern` par `replacement`.
 
@@ -85,7 +85,7 @@ sed 's/foo/bar/g' file.txt
 sed 's/foo/bar/gi' file.txt
 ```
 
-### 2) Suppression : `d`
+### Suppression : `d`
 
 ```bash
 # Supprimer la ligne 3
@@ -101,7 +101,7 @@ sed '/error/d' file.txt
 sed '/^$/d' file.txt
 ```
 
-### 3) Insertion et ajout : `i` et `a`
+### Insertion et ajout : `i` et `a`
 
 ```bash
 # Insérer avant la ligne 3
@@ -114,7 +114,7 @@ sed '3a\Nouvelle ligne' file.txt
 sed '/pattern/a\Ligne ajoutée' file.txt
 ```
 
-### 4) Remplacement de ligne : `c`
+### Remplacement de ligne : `c`
 
 ```bash
 # Remplacer la ligne 2
@@ -124,7 +124,7 @@ sed '2c\Nouveau contenu' file.txt
 sed '/old/c\Nouveau contenu' file.txt
 ```
 
-### 5) Affichage sélectif : `p` avec `-n`
+### Affichage sélectif : `p` avec `-n`
 
 Par défaut, `sed` affiche toutes les lignes. `-n` supprime l'affichage automatique.
 
@@ -183,14 +183,14 @@ sed -E 's|([0-9]{2})/([0-9]{2})/([0-9]{4})|\3-\2-\1|g' file.txt
 
 ## 15 cas pratiques
 
-### 1) Rechercher et remplacer (comme find & replace)
+### Rechercher et remplacer (comme find & replace)
 
 ```bash
 # Remplacer "http://" par "https://" dans tous les fichiers .txt
 find . -name "*.txt" -exec sed -i 's|http://|https://|g' {} +
 ```
 
-### 2) Commenter/décommenter des lignes
+### Commenter/décommenter des lignes
 
 ```bash
 # Commenter les lignes contenant "debug"
@@ -200,13 +200,13 @@ sed -i '/debug/s/^/#/' config.txt
 sed -i 's/^#\(debug\)/\1/' config.txt
 ```
 
-### 3) Supprimer les lignes vides
+### Supprimer les lignes vides
 
 ```bash
 sed -i '/^$/d' file.txt
 ```
 
-### 4) Supprimer les espaces/tabs en début et fin de ligne
+### Supprimer les espaces/tabs en début et fin de ligne
 
 ```bash
 # Début de ligne
@@ -219,7 +219,7 @@ sed 's/[ \t]*$//' file.txt
 sed 's/^[ \t]*//; s/[ \t]*$//' file.txt
 ```
 
-### 5) Remplacer uniquement sur certaines lignes
+### Remplacer uniquement sur certaines lignes
 
 ```bash
 # Remplacer "foo" par "bar" uniquement lignes 10 à 20
@@ -229,7 +229,7 @@ sed '10,20s/foo/bar/g' file.txt
 sed '/section/s/old/new/g' file.txt
 ```
 
-### 6) Numéroter les lignes
+### Numéroter les lignes
 
 ```bash
 sed = file.txt | sed 'N; s/\n/\t/'
@@ -237,14 +237,14 @@ sed = file.txt | sed 'N; s/\n/\t/'
 nl file.txt
 ```
 
-### 7) Afficher les lignes entre deux motifs
+### Afficher les lignes entre deux motifs
 
 ```bash
 # Afficher lignes entre START et END (inclus)
 sed -n '/START/,/END/p' file.txt
 ```
 
-### 8) Supprimer les commentaires
+### Supprimer les commentaires
 
 ```bash
 # Supprimer les lignes commençant par #
@@ -254,14 +254,19 @@ sed '/^#/d' file.txt
 sed 's/#.*$//' file.txt
 ```
 
-### 9) Remplacer une ligne spécifique par le contenu d'un fichier
+### Insérer ou remplacer une ligne par le contenu d'un fichier
+
+Attention : la commande `r` **insère le fichier APRÈS la ligne, sans effacer cette ligne**.
 
 ```bash
-# Remplacer ligne 5 par le contenu de insert.txt
+# Insérer le contenu de insert.txt APRÈS la ligne 5 (la ligne 5 est conservée)
 sed -i '5r insert.txt' file.txt
+
+# Vraiment REMPLACER la ligne 5 par le contenu de insert.txt (lecture puis suppression)
+sed -i -e '5{r insert.txt' -e 'd}' file.txt
 ```
 
-### 10) Extraire des informations avec regex
+### Extraire des informations avec regex
 
 ```bash
 # Extraire les adresses email
@@ -271,7 +276,7 @@ sed -nE 's/.*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}).*/\1/p' file.txt
 sed -nE 's|.*(https?://[^[:space:]]+).*|\1|p' file.txt
 ```
 
-### 11) Convertir minuscules/majuscules
+### Convertir minuscules/majuscules
 
 ```bash
 # Tout en majuscules
@@ -286,7 +291,7 @@ sed 's/\b\(.\)/\U\1/g' file.txt
 
 > Note : `\U`, `\L` sont des extensions GNU sed. Pour BSD/macOS, utilisez `tr` à la place.
 
-### 12) Remplacer les retours à la ligne
+### Remplacer les retours à la ligne
 
 ```bash
 # Joindre toutes les lignes en une seule
@@ -296,13 +301,13 @@ sed ':a;N;$!ba;s/\n/ /g' file.txt
 tr '\n' ' ' < file.txt
 ```
 
-### 13) Doubler l'espacement (ligne vide après chaque ligne)
+### Doubler l'espacement (ligne vide après chaque ligne)
 
 ```bash
 sed G file.txt
 ```
 
-### 14) Supprimer les doublons de lignes consécutives
+### Supprimer les doublons de lignes consécutives
 
 ```bash
 # Comme uniq, mais avec sed
@@ -312,7 +317,7 @@ sed '$!N; /^\(.*\)\n\1$/!P; D' file.txt
 sort file.txt | uniq
 ```
 
-### 15) Rechercher et remplacer avec délimiteur personnalisé
+### Rechercher et remplacer avec délimiteur personnalisé
 
 Utile pour les chemins avec `/`.
 
@@ -387,7 +392,7 @@ sed -f script.sed file.txt
 |----------------------|----------------------|---------------------------|
 | `-i` sans backup     | `-i`                 | `-i ''`                   |
 | Extended regex       | `-E` ou `-r`         | `-E`                      |
-| `\+` (BRE)           | Supporté             | Supporté                  |
+| `\+` (BRE)           | Supporté             | Non supporté              |
 | `\U`, `\L` (casse)   | Supporté             | Non supporté              |
 | `-z` (NULL)          | Supporté             | Non supporté              |
 
@@ -397,7 +402,7 @@ sed -f script.sed file.txt
 
 ## Bonnes pratiques
 
-### ✅ À faire
+### À faire
 
 - **Testez d'abord sans `-i`** : vérifiez le résultat avant de modifier le fichier
 - **Créez une sauvegarde** : `sed -i.bak` pour garder l'original
@@ -405,7 +410,7 @@ sed -f script.sed file.txt
 - **Délimiteur alternatif** : `s|/path|new|g` pour les chemins
 - **Échappez les caractères spéciaux** : `\.` `\*` `\$` etc.
 
-### ❌ À éviter
+### À éviter
 
 - Modifier directement sans test (risque de perte de données)
 - Regex trop complexes : préférez `awk`, `perl` ou un script Python
@@ -430,7 +435,7 @@ sed -f script.sed file.txt
 ## Ressources
 
 ### Regex testers en ligne
-- [regex101.com](https://regex101.com/) (mode PCRE/ECMAScript)
+- [regex101.com](https://regex101.com/) : pratique pour prototyper, mais attention, ses moteurs (PCRE/ECMAScript) diffèrent des regex POSIX BRE/ERE de `sed`. Certaines syntaxes (`\d`, ``, lookarounds) n'existent pas en BRE/ERE. Validez toujours vos motifs directement avec `sed`.
 - [regexr.com](https://regexr.com/)
 
 ### Documentation

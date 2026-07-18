@@ -182,7 +182,7 @@ argument de notre fonction
 ```python
 @app.route('/test/<id_test>')
 def test_endpoint(id_test):
-    return 'test ' + id_test
+    return f'test {id_test}'
 ```
 
 Ce qui retourne :
@@ -198,7 +198,7 @@ un type en ajoutant un type dans les `<>` de la route :
 ``` python
 @app.route('/test/<int:id_test>')
 def test_endpoint(id_test):
-    return 'test ' + id_test
+    return f'test {id_test}'
 ```
 
 Il existe différents convertisseurs intégrés dans flask :
@@ -213,10 +213,10 @@ Il est également possible de créer ses propres convertisseurs si nécessaire.
 
 ## Méthodes HTTP
 
-Pour le moment notre API répond à tous les types de requêtes HTTP ce qui peut
-poser des problèmes, pour spécifier pour quelles méthodes l'*endpoint* doit être
-disponible, on ajoute dans l'annotation `@app.route` un nouveau
-paramètre `methods`
+Par défaut, une route déclarée avec `@app.route` ne répond qu'aux requêtes GET
+(Flask ajoute aussi automatiquement HEAD et OPTIONS). Pour choisir précisément
+les méthodes acceptées par l'*endpoint*, on ajoute dans l'annotation `@app.route`
+un paramètre `methods`
 
 ```python
 @app.route('/test', methods=["GET"])
@@ -228,7 +228,7 @@ def test_endpoint_get():
 curl -X GET http://127.0.0.1:5000/test
 test_endpoint_get
 ```
-Le GET avec l'aide curl renvoie bien la bonne valeur, mais si on tente avec un POST ça ne fonctionne pas ! Car _Flask_ ne sait pas vers quoi rediriger notre requête HTTP.
+Le GET avec l'aide de curl renvoie bien la bonne valeur, mais si on tente avec un POST ça ne fonctionne pas ! _Flask_ renvoie alors une erreur `405 Method Not Allowed`, car la route n'autorise pas cette méthode.
 
 ```bash
 curl -X POST http://127.0.0.1:5000/test
@@ -247,12 +247,17 @@ def test_endpoint_post():
     # Traiter la requête
     return data
 ```
-Le module _request_ converti automatiquement les données de la requête en dictionnaire python.
+L'objet _request_ convertit automatiquement les données de la requête en dictionnaire python.
 Dans l'autre sens si notre API retourne un dictionnaire, flask se charge de le convertir pour nous en json :
 ```bash
 curl -X POST http://127.0.0.1:5000/test -d "param1=jeej"
 {"param1":"jeej"}
 ```
+
+> Attention, `request.form` ne contient que les données envoyées sous forme de
+formulaire (`application/x-www-form-urlencoded` ou `multipart/form-data`). Si le
+client envoie du JSON, il faut utiliser `request.get_json()` pour récupérer les
+données.
 
 ### Exemple d'un POST avec un traitement simpliste
 
@@ -275,7 +280,7 @@ curl -X POST http://127.0.0.1:5000/exemple -d "param1=jeej"
 
 Voilà, vous êtes maintenant capable de créer une api web simple, mais
 performante. D'autres tutoriels sur flask seront prochainement disponibles : par exemple pour
-interroger une base de données et avoir des données dynamiques ou docker son application flask.
+interroger une base de données et avoir des données dynamiques ou dockeriser son application flask.
 
 ## Le code complet de ce tutoriel
 
@@ -291,7 +296,7 @@ def super_endpoint():
 
 @app.route('/test/<id_test>')
 def test_endpoint(id_test):
-    return 'test ' + id_test
+    return f'test {id_test}'
 
 @app.route('/test', methods=["GET"])
 def test_endpoint_get():
@@ -322,4 +327,4 @@ def test2_endpoint_post():
 - [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 - [Comment créer une CLI en Python]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
 - [Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
-- [La doc de flask](https://flask.palletsprojects.com/en/1.1.x/)
+- [La doc de flask](https://flask.palletsprojects.com/)

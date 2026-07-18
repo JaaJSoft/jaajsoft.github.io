@@ -48,9 +48,9 @@ crontab -l
 Voir les logs (Ubuntu/Debian) :
 
 ```bash
-# via journald
+# via journald (recommandé)
 journalctl -u cron -f
-# ou dans syslog
+# ou dans syslog, s'il existe encore (absent des Ubuntu récents, 24.04+, qui n'utilisent plus rsyslog par défaut)
 sudo grep CRON /var/log/syslog
 ```
 
@@ -130,11 +130,11 @@ chmod +x /path/script.sh
 */5 * * * * flock -n /tmp/monjob.lock -c "/path/script_long.sh" >> /var/log/monjob.log 2>&1
 ```
 
-Variables d'environnement : cron a un environnement minimal. Exportez ce dont vous avez besoin, ou sourcez votre venv :
+Variables d'environnement : cron a un environnement minimal (et exécute vos commandes avec `/bin/sh`, où `source` n'existe pas). Plutôt que d'activer un venv, appelez directement son interpréteur Python en chemin absolu :
 
 ```
 # Exemple venv Python
-*/10 * * * * source /home/user/.venv/bin/activate && python /home/user/app/job.py >> /var/log/app/job.log 2>&1
+*/10 * * * * /home/user/.venv/bin/python /home/user/app/job.py >> /var/log/app/job.log 2>&1
 ```
 
 Fuseau horaire : cron utilise le fuseau du système. Vérifiez :
@@ -165,7 +165,7 @@ Dump d'une base PostgreSQL tous les jours à 3h15 :
 15 3 * * * PGUSER=app PGPASSWORD=secret pg_dump -h 127.0.0.1 -d appdb -F c -f /backups/appdb-$(date +\%F).dump
 ```
 
-Relancer un service au boot après 30 secondes :
+Relancer un service au boot après 30 secondes (à placer dans la crontab de `root` via `sudo crontab -e`, car `systemctl restart` requiert les privilèges root) :
 
 ```
 @reboot sleep 30 && systemctl restart mon-service
@@ -182,7 +182,7 @@ Ping santé toutes les 5 minutes :
 ## Cron système vs crontab utilisateur
 
 - Crontab utilisateur : `crontab -e` (pas de champ utilisateur)
-- Crontab système : `/etc/crontab` et `/etc/cron.d/*.conf` (nécessite `root`, contient un champ utilisateur)
+- Crontab système : `/etc/crontab` et `/etc/cron.d/` (nécessite `root`, contient un champ utilisateur ; les fichiers y sont nommés sans extension, ceux comportant un point comme `.conf` sont ignorés)
 - Dossiers périodiques (pilotés par `/etc/crontab` via `run-parts`) : `/etc/cron.hourly`, `/etc/cron.daily`, `/etc/cron.weekly`, `/etc/cron.monthly`
 - Machines qui ne tournent pas en continu (laptops) : `anacron` garantit l'exécution "à retardement" des tâches quotidiennes, hebdomadaires ou mensuelles.
 

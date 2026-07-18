@@ -79,9 +79,38 @@ Sortie :
 ```json
 {
   "users": [
-    {"id": 1, "name": "Alice", "active": true,  "tags": ["admin", "ops"], "score": 42.5, "created_at": "2025-09-01T12:00:00Z"},
-    {"id": 2, "name": "Bob",   "active": false, "tags": ["dev"],          "score": 12.1, "created_at": "2025-08-29T10:30:00Z"},
-    {"id": 3, "name": "Chloé", "active": true,  "tags": ["dev", "ops"],  "score": 31.7, "created_at": "2025-09-05T08:45:00Z"}
+    {
+      "id": 1,
+      "name": "Alice",
+      "active": true,
+      "tags": [
+        "admin",
+        "ops"
+      ],
+      "score": 42.5,
+      "created_at": "2025-09-01T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Bob",
+      "active": false,
+      "tags": [
+        "dev"
+      ],
+      "score": 12.1,
+      "created_at": "2025-08-29T10:30:00Z"
+    },
+    {
+      "id": 3,
+      "name": "Chloé",
+      "active": true,
+      "tags": [
+        "dev",
+        "ops"
+      ],
+      "score": 31.7,
+      "created_at": "2025-09-05T08:45:00Z"
+    }
   ]
 }
 ```
@@ -186,9 +215,38 @@ Sortie :
 - Tri par score (ascendant) :
 ```json
 [
-  {"id": 2, "name": "Bob",   "active": false, "tags": ["dev"],          "score": 12.1, "created_at": "2025-08-29T10:30:00Z"},
-  {"id": 3, "name": "Chloé", "active": true,  "tags": ["dev", "ops"],  "score": 31.7, "created_at": "2025-09-05T08:45:00Z"},
-  {"id": 1, "name": "Alice", "active": true,  "tags": ["admin", "ops"], "score": 42.5, "created_at": "2025-09-01T12:00:00Z"}
+  {
+    "id": 2,
+    "name": "Bob",
+    "active": false,
+    "tags": [
+      "dev"
+    ],
+    "score": 12.1,
+    "created_at": "2025-08-29T10:30:00Z"
+  },
+  {
+    "id": 3,
+    "name": "Chloé",
+    "active": true,
+    "tags": [
+      "dev",
+      "ops"
+    ],
+    "score": 31.7,
+    "created_at": "2025-09-05T08:45:00Z"
+  },
+  {
+    "id": 1,
+    "name": "Alice",
+    "active": true,
+    "tags": [
+      "admin",
+      "ops"
+    ],
+    "score": 42.5,
+    "created_at": "2025-09-01T12:00:00Z"
+  }
 ]
 ```
 - Noms triés par date (récents d'abord) :
@@ -217,14 +275,29 @@ Sortie :
 ```text
 86.3
 ```
-- min_by(.users[].score)? (à éviter) :
+- min / max :
 ```text
-null
-```
-- min / max corrects :
-```text
-{"id": 2, "name": "Bob",   "active": false, "tags": ["dev"],          "score": 12.1, "created_at": "2025-08-29T10:30:00Z"}
-{"id": 1, "name": "Alice", "active": true,  "tags": ["admin", "ops"], "score": 42.5, "created_at": "2025-09-01T12:00:00Z"}
+{
+  "id": 2,
+  "name": "Bob",
+  "active": false,
+  "tags": [
+    "dev"
+  ],
+  "score": 12.1,
+  "created_at": "2025-08-29T10:30:00Z"
+}
+{
+  "id": 1,
+  "name": "Alice",
+  "active": true,
+  "tags": [
+    "admin",
+    "ops"
+  ],
+  "score": 42.5,
+  "created_at": "2025-09-01T12:00:00Z"
+}
 ```
 - Moyenne (~) :
 ```text
@@ -243,14 +316,21 @@ jq '.users | unique_by(.active) | map(.name)' data.json        # un par statut
 Sortie :
 - Tags uniques :
 ```json
-["admin", "dev", "ops"]
+[
+  "admin",
+  "dev",
+  "ops"
+]
 ```
 - Un nom par statut (actif/inactif) :
 ```json
-["Alice", "Bob"]
+[
+  "Bob",
+  "Alice"
+]
 ```
 
-> Note : `unique`/`unique_by` dédupliquent. Ici, on garde un seul utilisateur par statut actif/inactif.
+> Note : `unique`/`unique_by` dédupliquent. Ici, on garde un seul utilisateur par statut actif/inactif. `unique_by` trie d'abord par la clé (`false` avant `true`), d'où l'ordre Bob (inactif) puis Alice (actif).
 
 ### Groupement et comptage (group_by + length)
 
@@ -260,7 +340,16 @@ jq '.users | group_by(.active) | map({active: .[0].active, count: length})' data
 
 Sortie :
 ```json
-[{"active": false, "count": 1}, {"active": true, "count": 2}]
+[
+  {
+    "active": false,
+    "count": 1
+  },
+  {
+    "active": true,
+    "count": 2
+  }
+]
 ```
 
 > Note : `group_by` regroupe par clé (il trie par la clé avant de grouper).
@@ -276,17 +365,47 @@ Sortie :
 - Projection simple :
 ```json
 [
-  {"id":1, "name":"Alice", "score":42.5},
-  {"id":2, "name":"Bob",   "score":12.1},
-  {"id":3, "name":"Chloé", "score":31.7}
+  {
+    "id": 1,
+    "name": "Alice",
+    "score": 42.5
+  },
+  {
+    "id": 2,
+    "name": "Bob",
+    "score": 12.1
+  },
+  {
+    "id": 3,
+    "name": "Chloé",
+    "score": 31.7
+  }
 ]
 ```
 - Projection imbriquée :
 ```json
 [
-  {"label":"Alice", "meta":{"id":1, "active":true}},
-  {"label":"Bob",   "meta":{"id":2, "active":false}},
-  {"label":"Chloé", "meta":{"id":3, "active":true}}
+  {
+    "label": "Alice",
+    "meta": {
+      "id": 1,
+      "active": true
+    }
+  },
+  {
+    "label": "Bob",
+    "meta": {
+      "id": 2,
+      "active": false
+    }
+  },
+  {
+    "label": "Chloé",
+    "meta": {
+      "id": 3,
+      "active": true
+    }
+  }
 ]
 ```
 
@@ -306,9 +425,38 @@ Sortie :
 ```json
 {
   "users": [
-    {"id": 1, "name": "Alice", "active": true,  "tags": ["admin", "ops"], "score": 46.75, "created_at": "2025-09-01T12:00:00Z"},
-    {"id": 2, "name": "Bob",   "active": false, "tags": ["dev"],          "score": 13.31, "created_at": "2025-08-29T10:30:00Z"},
-    {"id": 3, "name": "Chloé", "active": true,  "tags": ["dev", "ops"],  "score": 34.87, "created_at": "2025-09-05T08:45:00Z"}
+    {
+      "id": 1,
+      "name": "Alice",
+      "active": true,
+      "tags": [
+        "admin",
+        "ops"
+      ],
+      "score": 46.75,
+      "created_at": "2025-09-01T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Bob",
+      "active": false,
+      "tags": [
+        "dev"
+      ],
+      "score": 13.31,
+      "created_at": "2025-08-29T10:30:00Z"
+    },
+    {
+      "id": 3,
+      "name": "Chloé",
+      "active": true,
+      "tags": [
+        "dev",
+        "ops"
+      ],
+      "score": 34.87,
+      "created_at": "2025-09-05T08:45:00Z"
+    }
   ]
 }
 ```
@@ -316,9 +464,38 @@ Sortie :
 ```json
 {
   "users": [
-    {"id": 1, "name": "Alice", "active": true,  "tags": ["admin", "ops"], "score": 42.5, "created_at": "2025-09-01T12:00:00Z"},
-    {"id": 2, "name": "Bob",   "active": true,  "tags": ["dev"],          "score": 12.1, "created_at": "2025-08-29T10:30:00Z"},
-    {"id": 3, "name": "Chloé", "active": true,  "tags": ["dev", "ops"],  "score": 31.7, "created_at": "2025-09-05T08:45:00Z"}
+    {
+      "id": 1,
+      "name": "Alice",
+      "active": true,
+      "tags": [
+        "admin",
+        "ops"
+      ],
+      "score": 42.5,
+      "created_at": "2025-09-01T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Bob",
+      "active": true,
+      "tags": [
+        "dev"
+      ],
+      "score": 12.1,
+      "created_at": "2025-08-29T10:30:00Z"
+    },
+    {
+      "id": 3,
+      "name": "Chloé",
+      "active": true,
+      "tags": [
+        "dev",
+        "ops"
+      ],
+      "score": 31.7,
+      "created_at": "2025-09-05T08:45:00Z"
+    }
   ]
 }
 ```
@@ -331,7 +508,7 @@ Explication : L'opérateur `|=` met à jour le champ ciblé. Utilisez `if/then/
 # Concat simple (deux fichiers contenant des tableaux JSON)
 jq -s 'add' a.json b.json
 # Accumuler tous les inputs (flux)
-cat a.json b.json | jq -s 'flatten'     # aplatit un niveau
+cat a.json b.json | jq -s 'flatten'     # aplatit tous les niveaux (flatten(1) n'en aplatirait qu'un)
 ```
 
 En entrée :
@@ -341,11 +518,21 @@ En entrée :
 Sortie :
 - Concat (`-s add`) :
 ```json
-[1, 2, 3, 4]
+[
+  1,
+  2,
+  3,
+  4
+]
 ```
 - flatten :
 ```json
-[1, 2, 3, 4]
+[
+  1,
+  2,
+  3,
+  4
+]
 ```
 
 > Note : `-s` (slurp) lit tous les fichiers/entrées et crée un tableau d'entrées avant d'appliquer le filtre.
@@ -361,17 +548,38 @@ Sortie :
 - Sélection de clés :
 ```json
 [
-  {"id":1, "name":"Alice"},
-  {"id":2, "name":"Bob"},
-  {"id":3, "name":"Chloé"}
+  {
+    "id": 1,
+    "name": "Alice"
+  },
+  {
+    "id": 2,
+    "name": "Bob"
+  },
+  {
+    "id": 3,
+    "name": "Chloé"
+  }
 ]
 ```
 - Avec concaténation des tags :
 ```json
 [
-  {"id":1, "name":"Alice", "tags":"admin,ops"},
-  {"id":2, "name":"Bob",   "tags":"dev"},
-  {"id":3, "name":"Chloé", "tags":"dev,ops"}
+  {
+    "id": 1,
+    "name": "Alice",
+    "tags": "admin,ops"
+  },
+  {
+    "id": 2,
+    "name": "Bob",
+    "tags": "dev"
+  },
+  {
+    "id": 3,
+    "name": "Chloé",
+    "tags": "dev,ops"
+  }
 ]
 ```
 
@@ -395,8 +603,12 @@ Sortie :
 - Slurp (`-s`) -> tableau :
 ```json
 [
-  {"id": 1},
-  {"id": 2}
+  {
+    "id": 1
+  },
+  {
+    "id": 2
+  }
 ]
 ```
 
@@ -419,8 +631,28 @@ Sortie :
 - Variable JSON (seuil=30) :
 ```json
 [
-  {"id": 1, "name": "Alice", "active": true,  "tags": ["admin", "ops"], "score": 42.5, "created_at": "2025-09-01T12:00:00Z"},
-  {"id": 3, "name": "Chloé", "active": true,  "tags": ["dev", "ops"],  "score": 31.7, "created_at": "2025-09-05T08:45:00Z"}
+  {
+    "id": 1,
+    "name": "Alice",
+    "active": true,
+    "tags": [
+      "admin",
+      "ops"
+    ],
+    "score": 42.5,
+    "created_at": "2025-09-01T12:00:00Z"
+  },
+  {
+    "id": 3,
+    "name": "Chloé",
+    "active": true,
+    "tags": [
+      "dev",
+      "ops"
+    ],
+    "score": 31.7,
+    "created_at": "2025-09-05T08:45:00Z"
+  }
 ]
 ```
 

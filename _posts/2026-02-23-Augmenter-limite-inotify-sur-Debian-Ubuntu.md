@@ -43,6 +43,8 @@ cat /proc/sys/fs/inotify/max_user_watches
 # Par défaut : 8192 ou 524288 (selon distribution)
 ```
 
+> Note : depuis le noyau Linux 5.11, cette valeur par défaut n'est plus figée. Le noyau la dimensionne dynamiquement pour ne pas dépasser environ 1 % de la mémoire adressable, dans une plage de 8192 à 1048576 (comportement calqué sur `epoll`). Sur les noyaux plus anciens, la valeur historique de 8192 est souvent trop basse.
+
 Problème courant : dépassement lors du watch de gros projets (node_modules, monorepos).
 
 ### max_user_instances
@@ -84,13 +86,17 @@ fs.inotify.max_user_instances = 128
 fs.inotify.max_user_watches = 524288
 ```
 
-### Vérifier combien de watchers vous utilisez
+### Vérifier combien d'instances inotify sont ouvertes
 
 ```bash
 find /proc/*/fd -lname 'anon_inode:inotify' 2>/dev/null | wc -l
 ```
 
-Affiche le nombre total d'instances inotify actives sur le système.
+Attention à ne pas confondre les deux notions. Cette commande compte les **instances** inotify (un descripteur de fichier `anon_inode:inotify` par appel à `inotify_init`), pas les **watches**. Une seule instance peut poser des milliers de watches ; c'est `max_user_watches` qui limite le nombre total de watches, `max_user_instances` le nombre d'instances. Pour compter les watches réellement posés, additionnez les lignes `inotify wd:` des fichiers `/proc/*/fdinfo/*` :
+
+```bash
+find /proc/*/fdinfo -type f 2>/dev/null | xargs grep -c '^inotify' 2>/dev/null | awk -F: '{sum+=$NF} END {print sum}'
+```
 
 ### Identifier les processus consommateurs
 
@@ -98,7 +104,7 @@ Affiche le nombre total d'instances inotify actives sur le système.
 for pid in $(ps -ef | awk '{print $2}'); do
     count=$(find /proc/$pid/fd -lname 'anon_inode:inotify' 2>/dev/null | wc -l)
     if [ $count -gt 0 ]; then
-        echo "$count watchers: $(ps -p $pid -o comm=)"
+        echo "$count instances inotify: $(ps -p $pid -o comm=)"
     fi
 done | sort -rn
 ```
@@ -160,14 +166,14 @@ fs.inotify.max_user_watches = 524288
 
 ## Impact mémoire des limites
 
-Chaque watcher consomme environ **1 Ko de RAM** (noyau Linux).
+Chaque watch **effectivement posé** consomme de l'ordre de 1 Ko de mémoire noyau (non paginable). Rien n'est préalloué : relever la limite n'immobilise aucune RAM tant que les watches ne sont pas réellement créés.
 
-Calcul pour 524 288 watchers :
+Le calcul suivant donne donc le **plafond théorique**, atteint uniquement si les 524 288 watches sont tous utilisés simultanément :
 ```
-524288 watchers × 1 Ko = 512 Mo RAM
+524288 watches × 1 Ko = 512 Mo (maximum théorique)
 ```
 
-Sur une machine de développement moderne (16 Go RAM ou plus), c'est négligeable.
+En pratique, un poste de développement en utilise une petite fraction. Sur une machine moderne (16 Go de RAM ou plus), même le pire cas reste raisonnable.
 
 > Conseil : ne dépassez pas 4 millions de watchers sauf cas extrême (risque de ralentissements).
 
@@ -258,7 +264,7 @@ sudo sysctl -p /etc/sysctl.d/60-inotify.conf
 for pid in $(ps -ef | awk '{print $2}'); do
     count=$(find /proc/$pid/fd -lname 'anon_inode:inotify' 2>/dev/null | wc -l)
     if [ $count -gt 0 ]; then
-        echo "$count watchers: $(ps -p $pid -o comm=)"
+        echo "$count instances inotify: $(ps -p $pid -o comm=)"
     fi
 done | sort -rn
 ```
@@ -267,7 +273,7 @@ done | sort -rn
 - inotify surveille les modifications du système de fichiers
 - Les limites par défaut sont souvent insuffisantes pour le développement moderne
 - Utilisez `/etc/sysctl.d/60-inotify.conf` pour des modifications permanentes
-- Chaque watcher consomme environ 1 Ko RAM (négligeable sur machines modernes)
+- Chaque watch réellement posé consomme environ 1 Ko de RAM noyau, sans préallocation (la limite est un plafond, pas une réservation)
 
 ---
 

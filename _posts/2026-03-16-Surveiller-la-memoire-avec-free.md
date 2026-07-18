@@ -81,7 +81,7 @@ Linux utilise la RAM libre comme cache de pages pour accélérer les lectures/é
 ```bash
 # Ces deux commandes montrent la différence
 free -h          # Mémoire "free" souvent faible
-cat /proc/meminfo | grep -i available  # Mémoire réellement disponible
+grep -i available /proc/meminfo  # Mémoire réellement disponible
 ```
 
 > **Conseil** : si quelqu'un dit « le serveur n'a plus de RAM », vérifiez la colonne `available`. Si elle est au-dessus de 10-15 % du total, il n'y a probablement pas de problème mémoire.
@@ -185,7 +185,7 @@ sudo sync && echo 3 | sudo tee /proc/sys/vm/drop_caches
 # 3 = page cache + dentries + inodes
 ```
 
-> **Attention** : vider le cache ne libère pas réellement de la mémoire pour les applications — le cache **est** de la mémoire disponible. Cette opération est surtout utile pour des benchmarks (mesurer les performances sans cache) ou pour diagnostiquer un problème de cache spécifique. En production, laissez le noyau gérer le cache.
+> **Attention** : vider le cache ne libère pas réellement de la mémoire pour les applications : le cache **est** de la mémoire disponible. Cette opération est surtout utile pour des benchmarks (mesurer les performances sans cache) ou pour diagnostiquer un problème de cache spécifique. En production, laissez le noyau gérer le cache.
 
 ### Vérifier si le système utilise le swap activement
 
@@ -244,7 +244,7 @@ Quelques champs utiles que `free` n'affiche pas directement :
 | `SReclaimable`    | Partie du Slab qui peut être récupérée                                                      |
 | `Committed_AS`    | Mémoire totale engagée (promise aux applications, potentiellement plus que la RAM physique) |
 | `SwapCached`      | Swap lu en cache dans la RAM (pour des accès plus rapides si besoin)                        |
-| `HugePages_Total` | Nombre de pages de taille supérieure (Huge Pages, utilisées par les bases de données)       |
+| `HugePages_Total` | Nombre de HugePages, des pages mémoire de grande taille (2 Mo par défaut sur x86-64), utilisées par certaines bases de données |
 
 ```bash
 # Voir uniquement les champs qui vous intéressent
@@ -293,5 +293,5 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
 - [man free](https://man7.org/linux/man-pages/man1/free.1.html)
 - [man proc - /proc/meminfo](https://man7.org/linux/man-pages/man5/proc_meminfo.5.html)
-- [Linux Ate My RAM](https://www.linuxatemyram.com/) — explication pédagogique du cache mémoire
+- [Linux Ate My RAM](https://www.linuxatemyram.com/) : explication pédagogique du cache mémoire
 - [vmstat - man page](https://man7.org/linux/man-pages/man8/vmstat.8.html)

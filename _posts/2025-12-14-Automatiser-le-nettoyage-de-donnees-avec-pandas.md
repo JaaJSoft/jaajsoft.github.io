@@ -25,6 +25,7 @@ Dans ce guide, vous allez apprendre à :
 Pré-requis :
 - Python 3.8+
 - pandas (installation : `pip install pandas`)
+- scikit-learn pour la section sur la normalisation (installation : `pip install scikit-learn`)
 - Notions de base de pandas (DataFrame, Series)
 
 ---
@@ -99,13 +100,16 @@ print(df.isnull().mean() * 100)  # en %
 Sortie :
 
 ```
-id                1
-nom               2
-age               1
-ville             1
-salaire           1
-date_embauche     1
+id               1
+nom              1
+age              1
+ville            1
+salaire          1
+date_embauche    1
+dtype: int64
 ```
+
+À ce stade, seules les vraies valeurs `None` sont comptées comme manquantes : la chaîne vide `""` et le marqueur `"N/A"` sont encore des chaînes de caractères. Ils ne deviendront des `NaN` qu'après l'étape de remplacement ci-dessous.
 
 ### Remplacer les marqueurs de valeurs manquantes
 
@@ -115,6 +119,18 @@ Certaines sources utilisent des chaînes comme "N/A", "", "NULL", "-". Il faut l
 # Remplacer les marqueurs courants par NaN
 df = df.replace(["N/A", "", "NULL", "-", "invalid"], np.nan)
 print(df.isnull().sum())
+```
+
+Cette fois, les compteurs augmentent car `""`, `"N/A"` et `"invalid"` sont devenus des `NaN` :
+
+```
+id               1
+nom              2
+age              2
+ville            1
+salaire          1
+date_embauche    2
+dtype: int64
 ```
 
 ### Supprimer les lignes ou colonnes avec NaN
@@ -136,7 +152,13 @@ df_clean = df.dropna(axis=1, thresh=seuil)
 
 ### Imputer (remplacer) les valeurs manquantes
 
+Un point important : l'imputation par la médiane ou l'interpolation ne fonctionne que sur des colonnes réellement numériques. Or, dans notre jeu de données, `age` et `salaire` contiennent encore des chaînes de caractères (par exemple `"35"` ou `"70000"`). Il faut donc d'abord convertir ces colonnes en numérique (voir la section sur les types plus bas) avant d'imputer :
+
 ```python
+# Convertir d'abord les colonnes en numérique (les valeurs invalides deviennent NaN)
+df["age"] = pd.to_numeric(df["age"], errors="coerce")
+df["salaire"] = pd.to_numeric(df["salaire"], errors="coerce")
+
 # Remplir avec une valeur fixe
 df["ville"] = df["ville"].fillna("Inconnu")
 
@@ -144,10 +166,10 @@ df["ville"] = df["ville"].fillna("Inconnu")
 df["age"] = df["age"].fillna(df["age"].median())
 
 # Forward fill (propager la dernière valeur valide)
-df["salaire"] = df["salaire"].fillna(method="ffill")
+df["salaire"] = df["salaire"].ffill()
 
 # Backward fill
-df["date_embauche"] = df["date_embauche"].fillna(method="bfill")
+df["date_embauche"] = df["date_embauche"].bfill()
 
 # Interpolation linéaire (séries temporelles)
 df["salaire"] = df["salaire"].interpolate()
@@ -265,8 +287,8 @@ df["ville"] = df["ville"].astype("category")
 # Convertir en datetime
 df["date_embauche"] = pd.to_datetime(df["date_embauche"], errors="coerce", format="%Y-%m-%d")
 
-# Format mixte (essayer plusieurs formats)
-df["date_embauche"] = pd.to_datetime(df["date_embauche"], errors="coerce", infer_datetime_format=True)
+# Format mixte (plusieurs formats dans la même colonne)
+df["date_embauche"] = pd.to_datetime(df["date_embauche"], errors="coerce", format="mixed")
 ```
 
 ### Valider les conversions
@@ -398,29 +420,30 @@ def clean_employee_data(df):
         if col in df.columns:
             df[col] = df[col].str.strip().str.capitalize()
 
-    # 3) Normaliser les villes
-    ville_map = {"Paris": "Paris", "Lyon": "Lyon", "Nantes": "Nantes", "Marseille": "Marseille"}
+    # 3) Normaliser les villes (corriger les alias/variantes que capitalize() ne gère pas)
+    ville_map = {"Marseilles": "Marseille", "Pari": "Paris", "St-Etienne": "Saint-Etienne"}
     df["ville"] = df["ville"].replace(ville_map)
 
     # 4) Convertir les types
     df["id"] = pd.to_numeric(df["id"], errors="coerce")
     df["age"] = pd.to_numeric(df["age"], errors="coerce")
     df["salaire"] = pd.to_numeric(df["salaire"], errors="coerce")
-    df["date_embauche"] = pd.to_datetime(df["date_embauche"], errors="coerce", infer_datetime_format=True)
+    df["date_embauche"] = pd.to_datetime(df["date_embauche"], errors="coerce", format="mixed")
 
     # 5) Supprimer doublons (sur id)
     df = df.drop_duplicates(subset=["id"], keep="first")
 
-    # 6) Filtrer valeurs aberrantes
+    # 6) Imputer les valeurs manquantes AVANT de filtrer
+    # (sinon le filtre des bornes élimine les NaN et l'imputation ne s'applique jamais)
+    df["age"] = df["age"].fillna(df["age"].median())
+    df["salaire"] = df["salaire"].fillna(df["salaire"].median())
+    df["ville"] = df["ville"].fillna("Inconnu")
+
+    # 7) Filtrer valeurs aberrantes (sur des valeurs désormais imputées)
     df = df[
         (df["age"] >= 18) & (df["age"] <= 70) &
         (df["salaire"] >= 20000) & (df["salaire"] <= 300000)
     ]
-
-    # 7) Imputer valeurs manquantes
-    df["age"] = df["age"].fillna(df["age"].median())
-    df["salaire"] = df["salaire"].fillna(df["salaire"].median())
-    df["ville"] = df["ville"].fillna("Inconnu")
 
     # 8) Supprimer lignes avec ID ou nom manquant
     df = df.dropna(subset=["id", "nom"])
@@ -533,7 +556,7 @@ df_invalid = df[(df["age"] < 25) & (df["salaire"] > 100000)]
 
 ### Pièges
 
-- `fillna(method="ffill")` peut propager des erreurs si mal utilisé.
+- `ffill()` (forward fill) peut propager des erreurs si mal utilisé.
 - `dropna()` peut supprimer trop de lignes : préférez `dropna(subset=[...])`.
 - `errors="coerce"` masque les erreurs de conversion : vérifiez les NaN créés.
 - Les outliers ne sont pas toujours des erreurs : à valider avec le métier.

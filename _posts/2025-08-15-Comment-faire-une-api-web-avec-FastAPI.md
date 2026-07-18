@@ -101,7 +101,7 @@ Il existe 5 principales requêtes HTTP :
 ## Qu'est-ce qu'une API web ?
 
 > Une API Web est une interface de programmation composée d'un ou de plusieurs
-> points endpoints exposés publiquement via le Web, le plus souvent au moyen d'un
+> endpoints exposés publiquement via le Web, le plus souvent au moyen d'un
 > système basé sur serveur web HTTP.
 
 Source Wikipédia.
@@ -130,7 +130,7 @@ Pour lancer votre premier *Endpoint* :
 uvicorn app:app --reload
 ```
 
-Si unicorn n'est pas trouvé vous pouvez essayer de lancer :
+Si uvicorn n'est pas trouvé vous pouvez essayer de lancer :
 ```
 python -m uvicorn app:app --reload
 ```
@@ -138,20 +138,20 @@ python -m uvicorn app:app --reload
 Si vous allez sur `http://127.0.0.1:8000/` avec votre navigateur web, vous
 devriez avoir :
 ```
-Hello World
+"Hello World"
 ```
 
 Ou alors avec `curl`
 
 ```bash
 curl http://127.0.0.1:8000/
-Hello World
+"Hello World"
 ```
 
-Note : FastAPI fournit automatiquement une documentation interactive:
+Note : FastAPI fournit automatiquement une documentation interactive :
 
-- Swagger UI: http://127.0.0.1:8000/docs
-- ReDoc: http://127.0.0.1:8000/redoc
+- Swagger UI : http://127.0.0.1:8000/docs
+- ReDoc : http://127.0.0.1:8000/redoc
 
 Super, nous avons notre premier "hello world", mais comment faire pour avoir
 plusieurs routes possibles ?
@@ -171,7 +171,7 @@ def test_endpoint():
 
 ```bash
 curl http://127.0.0.1:8000/test
-test_endpoint
+"test_endpoint"
 ```
 
 ### Passer des paramètres
@@ -191,7 +191,7 @@ Ce qui retourne :
 
 ```bash
 curl http://127.0.0.1:8000/test/1
-test 1
+"test 1"
 ```
 
 En tapant en `int`, FastAPI validera et convertira automatiquement :
@@ -223,7 +223,7 @@ curl "http://127.0.0.1:8000/items?q=abc&limit=5"
 {"q":"abc","limit":5}
 ```
 
-> Voir aussi : [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %}) — pour filtrer/formater des réponses JSON en CLI (avec curl).
+> Voir aussi : [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %}) : pour filtrer/formater des réponses JSON en CLI (avec curl).
 
 ## Méthodes HTTP
 
@@ -338,6 +338,7 @@ def test2_endpoint_post(data: Data):
 ## Voir aussi
 - [Comment dockeriser une API FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
 - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
+- [Ajouter un cache à notre application FastAPI avec redis]({% post_url 2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
 - [Limiter le rate d'une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
 - [Comment faire une api avec flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
 - [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})

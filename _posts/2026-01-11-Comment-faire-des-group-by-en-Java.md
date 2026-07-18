@@ -186,9 +186,9 @@ statsParVille.forEach((ville, stats) -> {
 
 Sortie :
 ```
-Paris : count=3, sum=40.60, avg=13.53, min=3.60, max=25.00
-Lyon : count=2, sum=31.00, avg=15.50, min=6.00, max=25.00
 Nantes : count=1, sum=12.50, avg=12.50, min=12.50, max=12.50
+Lyon : count=2, sum=31.00, avg=15.50, min=6.00, max=25.00
+Paris : count=3, sum=40.60, avg=13.53, min=3.60, max=25.00
 ```
 
 ### Trouver le maximum ou minimum par groupe

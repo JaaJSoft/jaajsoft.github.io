@@ -64,12 +64,12 @@ tmpfs           3.9G     0  3.9G   0% /dev/shm
 /dev/sdb1       500G  420G   55G  89% /data
 ```
 
-Le flag `-h` (human-readable) affiche les tailles en Ko, Mo, Go au lieu de blocs bruts. Sans cette option, les valeurs sont en blocs de 1 Ko, ce qui est peu lisible.
+Le flag `-h` (human-readable) affiche des tailles lisibles au lieu de blocs bruts. Attention à l'unité : `-h` utilise les puissances de 2 (1 K = 1024 octets, ce sont donc des Kio/Mio/Gio), tandis que `-H` utilise les puissances de 10 (1 K = 1000 octets). Sans aucune de ces options, les valeurs sont en blocs de 1 Ko, ce qui est peu lisible.
 
 ### Options courantes
 
 ```bash
-df -h                     # Tailles lisibles (Go, Mo, Ko)
+df -h                     # Tailles lisibles, puissances de 2 (1 Go = 1024 Mo)
 df -H                     # Tailles en puissances de 10 (1 Go = 1 000 000 000 octets)
 df -T                     # Affiche le type de système de fichiers (ext4, xfs, tmpfs…)
 df -i                     # Affiche l'utilisation des inodes au lieu de l'espace
@@ -225,7 +225,7 @@ sudo truncate -s 0 /chemin/vers/le/fichier.log
 
 ext4 réserve par défaut 5 % de l'espace pour `root`. Cet espace n'est pas comptabilisé dans `Avail` de `df` pour les utilisateurs normaux, mais `du` ne le voit pas non plus.
 
-Pour vérifier ou modifier ce réserve :
+Pour vérifier ou modifier cette réserve :
 
 ```bash
 # Voir le pourcentage réservé
@@ -258,7 +258,7 @@ du -sh /* 2>/dev/null | sort -rh | head -10
 du -sh /var/* | sort -rh | head -10
 ```
 
-On descend ainsi de niveau en niveau jusqu'à trouver le coupable (souvent un log qui a explosé, un cache non purgé, ou des backups oubliées).
+On descend ainsi de niveau en niveau jusqu'à trouver le coupable (souvent un log qui a explosé, un cache non purgé, ou des backups oubliés).
 
 ### Trouver les fichiers les plus volumineux
 
@@ -266,7 +266,7 @@ On descend ainsi de niveau en niveau jusqu'à trouver le coupable (souvent un lo
 # Top 20 des fichiers les plus gros sur tout le disque
 sudo find / -type f -exec du -h {} + 2>/dev/null | sort -rh | head -20
 
-# Plus rapide : utiliser du avec sort (évite le overhead de find + exec)
+# Plus rapide : utiliser du avec sort (évite l'overhead de find + exec)
 sudo du -ah / 2>/dev/null | sort -rh | head -20
 ```
 
@@ -337,7 +337,7 @@ df -h / | tail -1 | awk '{print "Après:", $4, "disponibles"}'
 
 | Option | Description |
 |--------|-------------|
-| `-h` | Tailles lisibles (Ko, Mo, Go) |
+| `-h` | Tailles lisibles, puissances de 2 (1 Ko = 1024 octets) |
 | `-H` | Tailles en puissances de 10 |
 | `-T` | Affiche le type de FS |
 | `-i` | Affiche les inodes |
@@ -364,7 +364,7 @@ L'option `-x` de `du` est particulièrement utile quand on scanne `/` et qu'on n
 
 ## FAQ
 
-**`df -h` montre le disque plein, mais `du -sh /` donne moins — pourquoi ?**
+**`df -h` montre le disque plein, mais `du -sh /` donne moins : pourquoi ?**
 Des fichiers supprimés sont probablement encore ouverts par un processus. Utilisez `lsof +L1` pour les trouver. Voir la section « Pourquoi df et du peuvent donner des chiffres différents ».
 
 **Comment libérer de l'espace rapidement en urgence ?**
@@ -372,6 +372,15 @@ Par ordre d'impact : nettoyez les logs (`journalctl --vacuum-size=500M`), purgez
 
 **Peut-on utiliser `du` sur un répertoire distant (NFS, SSHFS) ?**
 Oui, mais c'est lent car `du` doit traverser le réseau pour chaque fichier. Préférez lancer `du` directement sur la machine distante via SSH : `ssh serveur 'du -sh /data/*'`.
+
+---
+
+## Alternatives modernes
+
+`df` et `du` restent la référence, mais deux outils rendent l'exploration plus agréable :
+
+- `ncdu` (NCurses Disk Usage) : un navigateur interactif en terminal qui scanne un répertoire et vous laisse parcourir l'arborescence, trier et supprimer directement les gros dossiers (`sudo apt install ncdu` puis `ncdu /`).
+- `duf` (Disk Usage/Free) : un remplaçant de `df` à l'affichage coloré et regroupé par catégories (locaux, réseau, spéciaux), plus lisible d'un coup d'oeil (`sudo apt install duf` puis `duf`).
 
 ---
 

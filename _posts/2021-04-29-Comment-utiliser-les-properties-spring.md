@@ -9,14 +9,14 @@ author: Rémi Lecouillard
 ---
 
 Dans ce tutoriel, vous allez apprendre à définir des properties spring et à les utiliser dans votre projet Java. <!--more-->
-Ce tutoriel suppose que vous avez déjà un projet avec Spring boot fonctionnel et des bases de programmation en Java.
+Ce tutoriel suppose que vous avez déjà un projet avec Spring Boot fonctionnel et des bases de programmation en Java.
 
 ## Qu'est-ce que les _applications properties_ Spring ?
 
 Plus communément appelées _properties_, elles sont des valeurs accessibles dans toute
 votre application.
 
-Spring les utilise pour de nombreux paramètres, la plupart possèdent des valeurs par défaut, mais que vous pouvez aussi redéfinir par vous-même. Vous pouvez retrouver la liste complète de ces paramètres [ici](https://docs.spring.io/spring-boot/docs/current/reference/html/appendix-application-properties.html).
+Spring les utilise pour de nombreux paramètres, la plupart possèdent des valeurs par défaut, mais que vous pouvez aussi redéfinir par vous-même. Vous pouvez retrouver la liste complète de ces paramètres [ici](https://docs.spring.io/spring-boot/appendix/application-properties/index.html).
 
 Vous pouvez également créer vos propres _properties_ pour vos besoins spécifiques.
 
@@ -32,9 +32,9 @@ Ces fichiers sont recherchés dans les dossiers suivants :
 
 * La racine du classpath
 * Le package /config du classpath
-* Le repertoire courant
-* Le sous repertoire /config du repertoire courant
-* Les sous repertoires directes du sous repertoire /config
+* Le répertoire courant
+* Le sous-répertoire /config du répertoire courant
+* Les sous-répertoires directs du sous-répertoire /config
 
 Si vous utilisez le _Standard Directory Layout_, que ce soit avec Maven ou Gradle,
 les fichiers sont généralement mis dans `src/main/resources`. Puisqu'on peut y accéder depuis le _classpath_.
@@ -56,7 +56,7 @@ public class PropertiesWithJavaConfig {
 
 Il est impératif de l'utiliser avec l'annotation `@Configuration`.
 
-Comme vous avez pu le remarquer la même annotation est défini deux fois. On peut
+Comme vous avez pu le remarquer la même annotation est définie deux fois. On peut
 définir l'annotation autant de fois qu'on le souhaite pour définir autant de fichiers.
 Une autre façon de définir plusieurs fichiers est la suivante :
 
@@ -85,7 +85,7 @@ public class PropertiesWithJavaConfig {
 }
 ```
 
-Dans ce cas, si la *property* `db.provider` a été préalablement défini par mongodb par
+Dans ce cas, si la *property* `db.provider` a été préalablement définie à mongodb par
 exemple, le fichier `persistence-mongodb.properties` sera chargé. Si elle n'est pas
 définie, ce sera la valeur après le ':' qui sera utilisée. À savoir qu'utiliser le
 ':' est optionnel, mais si la _property_ n'est jamais déclarée une exception sera levée.
@@ -149,10 +149,10 @@ keycloakUrl = env.getProperty("keycloak.url");
 
 Dans le cas de _properties_ groupées ensemble, on peut utiliser l'annotation @ConfigurationProperties pour les mapper avec un objet Java.
 
-Prenons l'exemple de _properties_ pour configurer la connection à une base de données :
+Prenons l'exemple de _properties_ pour configurer la connexion à une base de données :
 
 ```properties
-database.url=jdbc:postgresql:/localhost:5432/instance
+database.url=jdbc:postgresql://localhost:5432/instance
 database.username=foo
 database.password=bar
 ```
@@ -160,6 +160,7 @@ database.password=bar
 Il suffit ensuite d'utiliser l'annotation sur une classe pour les *mapper*.
 
 ```java
+@Component
 @ConfigurationProperties(prefix = "database")
 public class Database {
     String url;
@@ -170,6 +171,13 @@ public class Database {
 }
 ```
 
+Pour que Spring construise ce bean et l'alimente avec les *properties*, la classe
+doit être enregistrée. Le plus simple est de l'annoter avec `@Component` comme
+ci-dessus. Vous pouvez aussi vous en passer en activant le scan des classes de
+configuration avec `@ConfigurationPropertiesScan` sur votre classe principale, ou
+en déclarant la classe explicitement via `@EnableConfigurationProperties(Database.class)`
+sur une classe de configuration.
+
 ## Conclusion
 
 Comme nous l'avons vu Spring offre un panel de possibilités assez large pour déclarer et utiliser très facilement les _properties_ selon les besoins de votre application.
@@ -177,5 +185,5 @@ Comme nous l'avons vu Spring offre un panel de possibilités assez large pour d�
 ## Voir aussi
 
 - [Ajouter du cache à une application Spring Boot]({% post_url 2025-11-08-Comment-ajouter-du-cache-a-une-application-Spring-Boot %})
-- [La doc de spring sur la configuration externe](https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-external-config-files)
+- [La doc de spring sur la configuration externe](https://docs.spring.io/spring-boot/reference/features/external-config.html)
 - [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})

@@ -8,7 +8,7 @@ tags:
 author: Pierre Chopinet
 ---
 
-Arrivé avec Python 3.10 (octobre 2021), le pattern matching va bien plus loin qu'un simple `switch / case` comme on en trouve dans d'autres langages. Il permet non seulement de comparer des valeurs, mais aussi de **déstructurer** des objets, des listes ou des dictionnaires en une seule expression.
+Arrivé avec Python 3.10 (octobre 2021), le pattern matching va bien plus loin qu'un simple `switch / case` comme on en trouve dans d'autres langages. Il permet non seulement de comparer des valeurs, mais aussi de **déstructurer** des objets, des listes ou des dictionnaires en une seule instruction.
 <!--more-->
 
 Si vous avez déjà croisé le pattern matching en [Java]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %}), en Rust ou en OCaml, c'est la même idée : remplacer des chaînes `if/elif/else` verbeuses par une syntaxe déclarative qui exprime à la fois la condition et l'extraction des données dans la même ligne.
@@ -307,6 +307,8 @@ print(classer(3.14))  # nombre flottant
 
 `int(n)` est un pattern de type : il matche si la valeur est un `int`, et capture la valeur dans `n`. Le guard `if n < 0` ajoute une contrainte supplémentaire.
 
+> Attention : `bool` étant une sous-classe d'`int`, `classer(True)` matche `case int(n)` (avec `n` valant `True`, soit `1`) et renvoie donc `"entier positif"`. Si vous devez distinguer les booléens des entiers, placez un `case bool()` avant le `case int()`.
+
 ---
 
 ## Le piège du capture vs comparaison
@@ -504,7 +506,7 @@ Un simple `if / elif` reste préférable quand :
 Le pattern matching est l'un des ajouts les plus puissants de Python 3.10. Il transforme du code défensif (`isinstance`, `.get()`, variables temporaires) en code déclaratif qui exprime la structure attendue des données.
 
 **Points clés :**
-- `match / case` combine comparaison et déstructuration en une seule expression.
+- `match / case` combine comparaison et déstructuration en une seule instruction.
 - Les patterns existent pour les littéraux, les séquences, les dictionnaires et les classes.
 - Un nom simple dans un `case` est toujours une capture, jamais une comparaison.
 - Les dataclasses et les Enums se marient particulièrement bien avec `match / case`.
@@ -523,6 +525,6 @@ Le pattern matching est l'un des ajouts les plus puissants de Python 3.10. Il tr
 
 - [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
 - [Python : Comment utiliser les décorateurs]({% post_url 2026-05-14-Python-les-decorateurs %})
-- [Python : f-strings, formatage de chaînes]({% post_url 2026-02-09-Python-f-strings-formatage-chaines %})
+- [Python : Comment utiliser les f-strings]({% post_url 2026-02-09-Python-f-strings-formatage-chaines %})
 - [Python : Comment tester son code avec pytest]({% post_url 2026-04-06-Comment-tester-son-code-python-avec-pytest %})
 - [Sealed classes en Java]({% post_url 2026-01-14-Sealed-classes-en-Java %})

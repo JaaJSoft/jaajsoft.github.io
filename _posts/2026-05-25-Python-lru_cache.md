@@ -38,7 +38,7 @@ def fibonacci(n):
     return fibonacci(n - 1) + fibonacci(n - 2)
 ```
 
-Le problème de cette implémentation, c'est qu'elle recalcule plusieurs fois les mêmes valeurs. Pour `fibonacci(30)`, la fonction est appelée plus de 2,7 millions de fois alors que seules 31 valeurs distinctes existent. Le temps d'exécution explose vite : `fibonacci(35)` prend déjà plusieurs secondes.
+Le problème de cette implémentation, c'est qu'elle recalcule plusieurs fois les mêmes valeurs. Pour `fibonacci(30)`, la fonction est appelée près de 2,7 millions de fois alors que seules 31 valeurs distinctes existent. Le temps d'exécution explose vite : `fibonacci(35)` prend déjà plusieurs secondes.
 
 En ajoutant un cache, on stocke chaque résultat dès la première fois, et les appels suivants retournent instantanément la valeur :
 
@@ -177,9 +177,9 @@ def fibonacci(n):
     return fibonacci(n - 1) + fibonacci(n - 2)
 ```
 
-Il est légèrement plus rapide que `@lru_cache(maxsize=None)` car il n'a pas de logique d'éviction LRU à maintenir. À utiliser quand on sait que le nombre d'entrées distinctes restera raisonnable (par exemple : récursivité avec un domaine borné).
+C'est en réalité un alias exact : `functools.cache` fait simplement `return lru_cache(maxsize=None)(user_function)`, il n'y a donc aucune différence de performance entre les deux. En revanche, comme il n'y a pas de limite de taille, un cache sans éviction est plus rapide qu'un `@lru_cache` avec un `maxsize` borné (qui doit maintenir l'ordre d'utilisation). À utiliser quand on sait que le nombre d'entrées distinctes restera raisonnable (par exemple : récursivité avec un domaine borné).
 
-> ⚠️ Avec `@cache`, rien n'évite que le cache grossisse indéfiniment. Si vos arguments sont très variés, préférez `@lru_cache` avec un `maxsize` explicite.
+> Attention : avec `@cache`, rien n'évite que le cache grossisse indéfiniment. Si vos arguments sont très variés, préférez `@lru_cache` avec un `maxsize` explicite.
 
 ## @cached_property : pour les propriétés calculées
 
@@ -261,7 +261,7 @@ Le décorateur `@lru_cache` ne fonctionne pas correctement avec les fonctions as
 
 ```python
 @lru_cache
-async def fetch(url):  # ❌ piège
+async def fetch(url):  # piège
     ...
 ```
 
@@ -273,7 +273,7 @@ Pour mettre en cache une fonction `async`, utilisez une bibliothèque dédiée c
 
 - Le cache est perdu à chaque redémarrage de l'application
 - Plusieurs processus (par exemple plusieurs workers Gunicorn) ne partagent pas leur cache
-- Les accès concurrents sont protégés par un verrou interne (`@lru_cache` est thread-safe)
+- Les accès concurrents sont protégés par un verrou interne : la mise à jour du cache est thread-safe. En revanche, ce verrou n'est pas tenu pendant l'exécution de la fonction : si deux threads demandent en même temps une clé absente du cache, la fonction sera bel et bien exécutée deux fois (il n'y a pas de déduplication des appels en vol).
 
 Si vous avez besoin d'un cache partagé entre processus ou persistant, regardez du côté de Redis, de `cachetools`, ou d'une couche de cache applicative (voir les articles sur le cache Flask, Django et FastAPI plus bas).
 
@@ -311,7 +311,7 @@ def fetch_user(user_id):
 
 Si plusieurs parties du code demandent le même utilisateur, on évite les allers-retours réseau.
 
-> ⚠️ Si les données peuvent changer en cours d'exécution, le cache renverra une version périmée. Dans ce cas, prévoyez un mécanisme d'invalidation ou utilisez un cache avec TTL (par exemple `cachetools.TTLCache`).
+> Attention : si les données peuvent changer en cours d'exécution, le cache renverra une version périmée. Dans ce cas, prévoyez un mécanisme d'invalidation ou utilisez un cache avec TTL (par exemple `cachetools.TTLCache`).
 
 ### Factory ou parsing
 
@@ -328,9 +328,11 @@ def compile_regex(pattern):
 
 Compiler une regex est rapide mais pas gratuit. Mettre la fonction de compilation en cache évite de recompiler les mêmes patterns à chaque utilisation.
 
+Cela dit, le module `re` maintient déjà en interne un cache des derniers patterns compilés (512 entrées par défaut, via `re._MAXCACHE`) : appeler directement `re.compile(pattern)` de façon répétée n'est donc pas si coûteux. Un `@lru_cache` reste utile si vous voulez un cache plus grand, sans éviction, ou garanti pour vos patterns fréquents.
+
 ## Bonnes pratiques
 
-### ✅ À faire
+### À faire
 
 - Utiliser `@cache` ou `@lru_cache(maxsize=None)` quand le domaine d'entrées est borné (récursivité avec petites valeurs)
 - Spécifier un `maxsize` explicite si les entrées peuvent être très variées
@@ -338,7 +340,7 @@ Compiler une regex est rapide mais pas gratuit. Mettre la fonction de compilatio
 - Préférer `@cached_property` pour les attributs calculés sur une instance
 - Convertir les arguments mutables en types hashables (`tuple`, `frozenset`) si nécessaire
 
-### ❌ À éviter
+### À éviter
 
 - Mettre `@lru_cache` sur une méthode d'instance dans un code qui crée beaucoup d'objets (risque de fuite mémoire)
 - Utiliser `@cache` sur une fonction dont les arguments sont très variés (cache illimité, mémoire qui grossit)

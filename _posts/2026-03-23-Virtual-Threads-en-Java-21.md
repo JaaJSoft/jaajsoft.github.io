@@ -315,12 +315,12 @@ Les Virtual Threads sont compatibles avec l'écosystème Java existant :
 Quand un Virtual Thread exécute du code dans un bloc `synchronized`, il est **pinned** (épinglé) à son carrier thread. Le carrier ne peut plus servir d'autres Virtual Threads pendant ce temps.
 
 ```java
-// ❌ Problème : le synchronized pin le Virtual Thread au carrier
+// À éviter : le synchronized épingle le Virtual Thread au carrier
 synchronized (lock) {
     Thread.sleep(Duration.ofSeconds(1));  // Le carrier est bloqué pendant 1 seconde
 }
 
-// ✅ Solution : utiliser un ReentrantLock
+// Correct : utiliser un ReentrantLock
 private final ReentrantLock lock = new ReentrantLock();
 
 lock.lock();
@@ -340,15 +340,17 @@ Pour détecter le pinning, lancez la JVM avec :
 
 > Le pinning n'est pas un bug, c'est une limitation technique. Il ne cause des problèmes que si le code dans le `synchronized` fait des opérations bloquantes longues.
 
+> Note : depuis JDK 24 (JEP 491, 2025), `synchronized` ne provoque plus de pinning dans la plupart des cas. Le moniteur est désormais associé au Virtual Thread lui-même, qui peut donc être démonté de son carrier même à l'intérieur d'un bloc `synchronized`. Cette section reste valable pour Java 21 LTS, où le remplacement de `synchronized` par `ReentrantLock` demeure la solution recommandée pour éviter le pinning.
+
 ### Thread-locals et mémoire
 
 Les `ThreadLocal` fonctionnent avec les Virtual Threads, mais attention : avec des millions de Virtual Threads, chaque `ThreadLocal` consomme de la mémoire multipliée par le nombre de threads.
 
 ```java
-// ❌ Problème : un ThreadLocal par Virtual Thread = explosion mémoire
+// À éviter : un ThreadLocal par Virtual Thread = explosion mémoire
 private static final ThreadLocal<byte[]> BUFFER = ThreadLocal.withInitial(() -> new byte[1024 * 1024]);
 
-// ✅ Solution : utiliser des Scoped Values (preview en Java 21, JEP 446)
+// Correct : utiliser des Scoped Values (preview en Java 21, JEP 446)
 private static final ScopedValue<RequestContext> CONTEXT = ScopedValue.newInstance();
 
 ScopedValue.where(CONTEXT, new RequestContext(userId))
@@ -365,12 +367,12 @@ Les `ScopedValue` sont immuables, liées à un scope, et automatiquement nettoy�
 Les Virtual Threads brillent pour les tâches I/O-bound (réseau, base de données, fichiers). Pour du calcul intensif (CPU-bound), ils n'apportent aucun avantage car le thread ne se bloque jamais :
 
 ```java
-// ❌ Inutile : calcul CPU-bound, le Virtual Thread ne yield jamais
+// À éviter : calcul CPU-bound, le Virtual Thread ne yield jamais
 try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
     executor.submit(() -> computeFibonacci(1_000_000));  // Monopolise un carrier
 }
 
-// ✅ Mieux : utiliser un pool de platform threads dimensionné au nombre de cores
+// Correct : utiliser un pool de platform threads dimensionné au nombre de cores
 ExecutorService cpuExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 cpuExecutor.submit(() -> computeFibonacci(1_000_000));
 ```
@@ -378,10 +380,10 @@ cpuExecutor.submit(() -> computeFibonacci(1_000_000));
 ### Ne pas pooler les Virtual Threads
 
 ```java
-// ❌ Anti-pattern : pooler des Virtual Threads n'a aucun sens
+// À éviter : pooler des Virtual Threads n'a aucun sens
 ExecutorService pool = Executors.newFixedThreadPool(100, Thread.ofVirtual().factory());
 
-// ✅ Correct : laisser chaque tâche avoir son propre Virtual Thread
+// Correct : laisser chaque tâche avoir son propre Virtual Thread
 ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 ```
 

@@ -15,9 +15,9 @@ Dans ce tutoriel, nous allons apprendre comment _dockeriser_ son api _flask_
 avec _docker_ et _gunicorn_.
 <!--more-->
 
-L'objectif de ce tutoriel est d'apprendre comment :
+L'objectif de ce tutoriel est d'apprendre à :
 
-- Apprendre les bases de _docker_
+- Comprendre les bases de _docker_
 - _Dockeriser_ son api _flask_
 
 ## Flask
@@ -75,15 +75,22 @@ gunicorn -w 4 "app:app" -b 0.0.0.0:8000 -t 0
 
 - Le premier `app` correspond au nom du fichier d'entrée de votre application
   flask
-- Le deuxieme `app` correspond à la variable définie dans le fichier
+- Le deuxième `app` correspond à la variable définie dans le fichier
   précédent (`app = Flask(__name__)`)
+- L'option `-w 4` lance 4 _workers_ pour traiter les requêtes en parallèle
+
+Attention à l'option `-t 0` : elle désactive complètement le timeout des
+_workers_ de _gunicorn_. C'est parfois utile derrière un reverse proxy qui gère
+lui-même les délais, mais en production cela peut laisser un _worker_ bloqué
+indéfiniment sur une requête. Si vous n'en avez pas besoin, retirez cette option
+pour conserver le timeout par défaut (30 secondes).
 
 Enregistrez cette commande dans un script _bash_ nommé `run.sh` à la racine de
 votre projet.
 
-Pour la suite du tutoriel, il est aussi nécessaire d'avoir un fichier `requirement.txt` à la racine de son projet avec les dépendances nécessaires au bon fonctionnement de son application _flask_. Au minimum, on a besoin de :
+Pour la suite du tutoriel, il est aussi nécessaire d'avoir un fichier `requirements.txt` à la racine de son projet avec les dépendances nécessaires au bon fonctionnement de son application _flask_. Au minimum, on a besoin de :
 ```
-flask~=2.1.2
+flask~=3.1.3
 gunicorn
 ```
 Maintenant tout doit être bon du côté de _python_, on attaque _docker_ !
@@ -114,11 +121,12 @@ la suite), à partir de la racine du système de fichier virtuel du conteneur :
 WORKDIR /app
 ```
 
-On installe ensuite _python 3_ et les différentes dépendances nécessaires pour
-_flask_ :
+L'image `python:3.12-alpine` embarque déjà _Python 3_ et _pip_. On installe donc
+uniquement les paquets de compilation nécessaires à certaines dépendances de
+_flask_ (extensions écrites en C) :
 
 ```dockerfile
-RUN apk add --update --no-cache python3 py3-pip gcc musl-dev python3-dev libffi-dev openssl-dev
+RUN apk add --update --no-cache gcc musl-dev libffi-dev openssl-dev
 ```
 
 On copie le code de notre application _python_ vers le dossier de travail défini
@@ -128,10 +136,10 @@ précédemment :
 COPY . .
 ```
 
-Par défaut cette commande va copier l'ensemble de votre repertoire local dans le
+Par défaut cette commande va copier l'ensemble de votre répertoire local dans le
 dossier de travail du conteneur ! Or certains fichiers ne sont pas forcément
-nécessaires dans notre _docker_ et même pour certains fichiers sont dangereux
-d'avoir dans le conteneur, comme des fichiers de _CI_ avec des _tokens_ de
+nécessaires dans notre _docker_, et certains sont même dangereux à embarquer
+dans le conteneur, comme des fichiers de _CI_ contenant des _tokens_ de
 déploiement.
 
 Pour régler ce petit problème, il est possible comme avec _git_ de créer un
@@ -153,13 +161,13 @@ Enfin, j'installe les dépendances définies précédemment :
 RUN pip3 install -r requirements.txt
 ```
 
-Je rends executable notre script pour lancer _gunicorn_ et notre application :
+Je rends exécutable notre script pour lancer _gunicorn_ et notre application :
 
 ```dockerfile
 RUN chmod +x run.sh
 ```
 
-Cette commande définie quel port va être exposé par notre _docker_, ici on met
+Cette commande définit quel port va être exposé par notre _docker_, ici on met
 donc le port sur lequel _gunicorn_ est lancé, le 8000.
 
 ```dockerfile
@@ -182,10 +190,10 @@ FROM python:3.12-alpine
 
 WORKDIR /app
 
-RUN apk add --update --no-cache python3 py3-pip gcc musl-dev python3-dev libffi-dev openssl-dev
+RUN apk add --update --no-cache gcc musl-dev libffi-dev openssl-dev
 
 COPY . .
-RUN pip3 install -r requirements.txt --break-system-packages
+RUN pip3 install -r requirements.txt
 
 RUN chmod +x run.sh
 

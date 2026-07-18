@@ -122,6 +122,8 @@ CACHES = {
 }
 ```
 
+> Depuis Django 4.0, un backend Redis natif est fourni : `django.core.cache.backends.redis.RedisCache` (basé sur `redis-py`), sans dépendance supplémentaire. `django-redis` reste utile pour des fonctionnalités avancées comme `delete_pattern`, les compresseurs ou les clients Redis personnalisés.
+
 En partant du choix du backend, voyons l'approche la plus simple à mettre en place côté vues.
 
 ---
@@ -134,7 +136,8 @@ Idéal pour des pages identiques pour tous (ex: page d'accueil publique).
 # views.py
 from django.views.generic import TemplateView
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page, cache_control, vary_on_headers
+from django.views.decorators.cache import cache_page, cache_control
+from django.views.decorators.vary import vary_on_headers
 
 @method_decorator(cache_page(60 * 15), name="dispatch")  # 15 min
 @method_decorator(cache_control(public=True), name="dispatch")
@@ -253,7 +256,7 @@ Opérations utiles :
 cache.set("foo", {"x": 1}, timeout=60)
 val = cache.get("foo")                       # -> {"x": 1}
 cache.add("foo", 2, timeout=60)              # n'écrase pas si existe déjà
-cache.incr("counter", delta=1)               # Redis/Memcached
+cache.incr("counter", delta=1)               # lève ValueError si "counter" n'existe pas
 cache.decr("counter", delta=2)
 cache.delete("foo")
 cache.delete_many(["k1", "k2"])
@@ -336,11 +339,13 @@ Pour des vues per-view conditionnelles, variez sur cookies ou headers avec prude
 ```python
 from django.views.decorators.vary import vary_on_cookie
 
-@vary_on_cookie
 @cache_page(300)
+@vary_on_cookie
 def public_but_personalized(request):
     ...
 ```
+
+> L'ordre des décorateurs compte : `cache_page` doit être au-dessus (le plus externe) pour prendre en compte l'en-tête `Vary: Cookie` posé par `vary_on_cookie` et inclure le cookie dans la clé de cache. Dans l'ordre inverse, la clé ignore le cookie et vous risquez de servir la page d'un utilisateur à un autre.
 
 > Attention : `vary_on_cookie` multiplie les variantes dans le cache (risque d'explosion du nombre de clés). Préférez les fragments ciblés.
 

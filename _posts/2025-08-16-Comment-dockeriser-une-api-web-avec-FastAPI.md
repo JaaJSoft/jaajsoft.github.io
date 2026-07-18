@@ -25,7 +25,7 @@ Objectifs :
 - Ajouter une healthcheck HTTP vers l'endpoint `/info/status`
 - Démarrer l'API avec `uvicorn`
 
-Pré-requis : savoir créer une API FastAPI minimale. Si ce n'est pas encore fait, suivez d'abord ce guide:
+Pré-requis : savoir créer une API FastAPI minimale. Si ce n'est pas encore fait, suivez d'abord ce guide :
 
 [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 
@@ -78,7 +78,7 @@ Copiez-collez ce Dockerfile à la racine du projet. Il construit d'abord des whe
 
 ```dockerfile
 # ============================================================================
-# Étape 1 : Builder — construire les wheels (.whl) des dépendances Python
+# Étape 1 : Builder : construire les wheels (.whl) des dépendances Python
 # Objectif : isoler la compilation pour accélérer les builds suivants et obtenir
 # une image finale plus légère et plus propre.
 # ----------------------------------------------------------------------------
@@ -104,7 +104,7 @@ COPY requirements.txt .
 RUN pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt
 
 # ============================================================================
-# Étape 2 : Image finale (runtime) — minimale et prête à exécuter
+# Étape 2 : Image finale (runtime) : minimale et prête à exécuter
 # ----------------------------------------------------------------------------
 FROM python:3.13.5-alpine3.22
 
@@ -130,17 +130,18 @@ COPY . .
 # On expose le port d'écoute de l'API dans le conteneur
 EXPOSE 8000
 
-# Healthcheck : vérifie périodiquement que l'API renvoie {"status":"ok"}
-# Si curl n'est pas installé, remplacez par :
-#   wget -qO- http://localhost:8000/info/status | grep -q '"status":"ok"'
+# Healthcheck : vérifie périodiquement que l'API répond sur /info/status.
+# L'image Alpine fournit déjà wget (via busybox), donc pas besoin d'installer curl.
+# Variante avec curl (si vous l'avez installé plus haut) :
+#   CMD curl -fs http://127.0.0.1:8000/info/status | grep -q '"status":"ok"' || exit 1
 HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \
-  CMD response=$(curl -s http://localhost:8000/info/status) && echo "$response" | grep -q '"status":"ok"' || exit 1
+  CMD wget -qO- http://127.0.0.1:8000/info/status || exit 1
 
 # Commande de lancement : Uvicorn sert l'application FastAPI (objet `app`)
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-> Note importante : la healthcheck utilise `curl`. Si votre image de base ne contient pas `curl`, vous pouvez soit l'ajouter dans l'étape finale (`RUN apk add --no-cache curl`), soit remplacer la commande par `wget -qO- http://localhost:8000/info/status | grep -q '"status":"ok"'`.
+> Note importante : la healthcheck utilise `wget`, fourni par _busybox_ dans l'image Alpine, donc aucune dépendance supplémentaire n'est nécessaire. Si vous préférez `curl`, décommentez son installation (`RUN apk add --no-cache curl`) et utilisez la variante curl indiquée en commentaire dans le Dockerfile.
 
 ## (Optionnel) .dockerignore
 

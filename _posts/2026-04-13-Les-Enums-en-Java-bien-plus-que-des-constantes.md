@@ -7,7 +7,7 @@ tags:
   - enum
 ---
 
-Les enums en Java sont bien plus puissantes que de simples constantes. Contrairement aux enums d'autres langages, celles de Java sont de véritables classes : elles peuvent contenir des champs, des méthodes, implémenter des interfaces, et même porter de la logique métier.
+Les enums en Java sont bien plus puissants que de simples constantes. Contrairement aux enums d'autres langages, ceux de Java sont de véritables classes : ils peuvent contenir des champs, des méthodes, implémenter des interfaces, et même porter de la logique métier.
 <!--more-->
 
 Dans cet article :
@@ -17,7 +17,7 @@ Dans cet article :
 - Les collections spécialisées `EnumSet` et `EnumMap`
 - Cas d'usage pratiques et bonnes pratiques
 
-Pré-requis : Java 8+ pour les bases, Java 21+ pour les exemples avec pattern matching.
+Pré-requis : Java 8+ pour les bases, Java 14+ pour les exemples avec switch expression.
 
 ---
 
@@ -300,25 +300,9 @@ EnumSet<Permission> range = EnumSet.range(Permission.READ, Permission.EXECUTE);
 
 ### Exemple : gestion de rôles
 
-```java
-public enum Role {
-    VIEWER, EDITOR, MODERATOR, ADMIN;
+On pourrait être tenté d'associer un `EnumSet` de permissions à chaque constante depuis un bloc `static`, en écrivant `VIEWER.permissions = EnumSet.of(...)`. Mais cela ne compile pas : un champ d'instance `final` ne peut être affecté que dans le constructeur (ou un initialiseur d'instance), jamais depuis un bloc `static`. Le compilateur rejette le code avec l'erreur `cannot assign a value to final variable permissions`.
 
-    private final EnumSet<Permission> permissions;
-
-    static {
-        VIEWER.permissions = EnumSet.of(Permission.READ);
-        EDITOR.permissions = EnumSet.of(Permission.READ, Permission.WRITE);
-        MODERATOR.permissions = EnumSet.of(Permission.READ, Permission.WRITE, Permission.DELETE);
-        ADMIN.permissions = EnumSet.allOf(Permission.class);
-    }
-
-    // On ne peut pas utiliser un bloc static pour initialiser des champs d'instance
-    // dans un enum de cette façon. Voici la version correcte :
-}
-```
-
-Une approche plus idiomatique :
+La bonne approche consiste à passer les permissions au constructeur de l'enum :
 
 ```java
 public enum Role {
@@ -377,9 +361,9 @@ schedule.forEach((day, task) ->
 
 ---
 
-## Enum et pattern matching (Java 21+)
+## Enum et switch expressions
 
-Depuis Java 21, les enums s'intègrent avec le pattern matching amélioré et les guarded patterns :
+Les switch expressions, finalisées en Java 14, se combinent naturellement avec les enums : le compilateur vérifie l'exhaustivité et aucun `default` n'est nécessaire, même lorsque l'enum porte des données :
 
 ```java
 public enum HttpStatus {
@@ -409,7 +393,7 @@ public static String categorize(HttpStatus status) {
 
 ## Cas d'usage : machine à états
 
-Les enums sont idéales pour modéliser des machines à états avec des transitions contrôlées :
+Les enums sont parfaits pour modéliser des machines à états avec des transitions contrôlées :
 
 ```java
 public enum OrderState {
@@ -493,11 +477,12 @@ Currency.fromSymbol("€").ifPresent(c ->
 
 Currency.fromSymbol("?"); // Optional.empty()
 ```
+
 ---
 
 ## Bonnes pratiques
 
-### A faire
+### À faire
 
 - **Utiliser des enums** plutôt que des constantes `int` ou `String` pour les ensembles finis
 - **Préférer `EnumSet` et `EnumMap`** aux `HashSet` et `HashMap` quand la clé est un enum
@@ -505,7 +490,7 @@ Currency.fromSymbol("?"); // Optional.empty()
 - **Ajouter des champs** quand les constantes portent des métadonnées (label, code, symbole)
 - **Créer un cache statique** (`Map`) pour les lookups personnalisés (par code, label, etc.)
 
-### A ne pas faire
+### À éviter
 
 - **Éviter `ordinal()`** pour de la logique métier : l'ajout d'une constante décale les valeurs
 - **Ne pas abuser des méthodes abstraites** : si la logique est identique pour presque toutes les constantes, préférez une méthode avec `switch`
@@ -515,13 +500,13 @@ Currency.fromSymbol("?"); // Optional.empty()
 
 ## Conclusion
 
-Les enums en Java vont bien au-delà de simples constantes nommées. Avec des champs, des constructeurs, des méthodes et la possibilité d'implémenter des interfaces, elles constituent un outil puissant pour modéliser des types finis avec du comportement associé.
+Les enums en Java vont bien au-delà de simples constantes nommées. Avec des champs, des constructeurs, des méthodes et la possibilité d'implémenter des interfaces, ils constituent un outil puissant pour modéliser des types finis avec du comportement associé.
 
 **Points clés :**
 - **Type safety** : le compilateur vérifie les valeurs à la compilation
 - **Données enrichies** : champs, constructeurs et méthodes par constante
 - **Collections optimisées** : `EnumSet` et `EnumMap` pour les performances
-- **Pattern matching** : intégration native avec le `switch` exhaustif
+- **Switch expressions** : intégration native avec le `switch` exhaustif
 - **Machine à états** : chaque constante peut définir ses propres transitions
 
 Disponibles depuis Java 5, les enums restent un pilier fondamental du langage et gagnent en puissance avec chaque nouvelle version de Java.

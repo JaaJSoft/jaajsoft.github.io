@@ -29,18 +29,18 @@ Installez les dépendances nécessaires :
 
 ```bash
 pip install fastapi uvicorn fastapi-cache2
-# Pour la partie Redis:
+# Pour la partie Redis :
 pip install redis
 ```
 
-Sous Windows (PowerShell), vous pouvez faire:
+Sous Windows (PowerShell), vous pouvez faire :
 
 ```powershell
 python -m pip install fastapi uvicorn fastapi-cache2
 python -m pip install redis
 ```
 
-## Rappel: pourquoi mettre du cache ?
+## Rappel : pourquoi mettre du cache ?
 
 - Réduire la charge CPU/IO lorsque les mêmes requêtes reviennent souvent.
 - Accélérer les réponses (moins d'appels vers des services externes ou bases de
@@ -49,12 +49,12 @@ python -m pip install redis
 
 `fastapi-cache2` propose un décorateur `@cache()` qui mémorise le résultat d'une
 route
-pendant une durée donnée. Vous pouvez choisir le backend: mémoire (
-InMemoryBackend) ou Redis.
+pendant une durée donnée. Vous pouvez choisir le backend : mémoire
+(InMemoryBackend) ou Redis.
 
 ---
 
-## Partie 1 — Cache en mémoire
+## Cache en mémoire
 
 Avantages : simple, aucune dépendance externe.
 Limites : non partagé entre plusieurs processus/conteneurs et vidé à chaque redémarrage.
@@ -64,7 +64,7 @@ Limites : non partagé entre plusieurs processus/conteneurs et vidé à chaque 
 ```python
 # app_memory.py
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi_cache import FastAPICache
@@ -91,7 +91,7 @@ async def slow_endpoint(q: int = 1):
     await asyncio.sleep(2)
     return {
         "q": q,
-        "ts": datetime.utcnow().isoformat(timespec="seconds")
+        "ts": datetime.now(timezone.utc).isoformat(timespec="seconds")
     }
 
 # (Optionnel) vider le cache par namespace
@@ -128,7 +128,7 @@ Notes importantes :
 
 ---
 
-## Partie 2 — Cache Redis
+## Cache Redis
 
 Avantages : partagé entre plusieurs workers/instances, persistance (selon
 config), observabilité (on voit les clés).
@@ -157,7 +157,7 @@ docker compose up -d
 ```python
 # app_redis.py
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi_cache import FastAPICache
@@ -178,7 +178,7 @@ async def lifespan(app: FastAPI):
     yield
     # Fermeture propre de la connexion Redis
     assert redis_client is not None
-    await redis_client.close()
+    await redis_client.aclose()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -192,7 +192,7 @@ async def slow_endpoint(q: int = 1):
     await asyncio.sleep(2)
     return {
         "q": q,
-        "ts": datetime.utcnow().isoformat(timespec="seconds")
+        "ts": datetime.now(timezone.utc).isoformat(timespec="seconds")
     }
 
 @app.delete("/cache/clear")
@@ -219,23 +219,43 @@ curl "http://127.0.0.1:8000/slow?q=1"   # lente à nouveau (cache vidé)
 ### key_builder personnalisé (optionnel)
 
 Dans certains cas, on veut pouvoir customiser notre clé de cache.
-FastAPI propose un key_builder qui permet de faire cela.
+`fastapi-cache2` propose un key_builder qui permet de faire cela.
+
+Attention à la signature : dans `fastapi-cache2` (0.2.x), `default_key_builder`
+attend `request`, `response`, `args` et `kwargs` en arguments nommés uniquement
+(paramètres keyword-only, placés après `*`). Votre builder personnalisé doit
+donc reprendre la même convention et transmettre ces valeurs par mot-clé.
 
 Exemple ci-dessous :
 
 ```python
-from fastapi import Request
+from fastapi import Request, Response
 from fastapi_cache import JsonCoder
 from fastapi_cache.key_builder import default_key_builder
 
-async def user_lang_key_builder(func, namespace: str, request: Request, response=None, *args, **kwargs) -> str:
+def user_lang_key_builder(
+    func,
+    namespace: str = "",
+    *,
+    request: Request = None,
+    response: Response = None,
+    args: tuple = (),
+    kwargs: dict = None,
+) -> str:
     # Repart d'un builder par défaut et y ajoute l'Accept-Language et un user-id (fictif)
-    base = default_key_builder(func, namespace, request, response, *args, **kwargs)
-    lang = request.headers.get("accept-language", "*")
-    user = request.headers.get("x-user-id", "anon")
+    base = default_key_builder(
+        func,
+        namespace,
+        request=request,
+        response=response,
+        args=args,
+        kwargs=kwargs or {},
+    )
+    lang = request.headers.get("accept-language", "*") if request else "*"
+    user = request.headers.get("x-user-id", "anon") if request else "anon"
     return f"{base}:u={user}:lang={lang}"
 
-# À l'usage:
+# À l'usage :
 # @cache(expire=60, namespace="v1", key_builder=user_lang_key_builder, coder=JsonCoder)
 ```
 
@@ -244,20 +264,20 @@ async def user_lang_key_builder(func, namespace: str, request: Request, response
 - Préfixe : définissez un `prefix` explicite (par exemple avec le nom de votre
   app et la version) pour isoler vos clés.
 - Namespace : utile pour invalider sélectivement des sous-ensembles de clés.
-- Sécurité : éviter d'exposer un endpoint de purge sans protection; ajoutez
+- Sécurité : éviter d'exposer un endpoint de purge sans protection ; ajoutez
   auth/rôle.
 - TTL (time to live) : choisissez une durée adaptée à la fraîcheur des données et
   au coût de recalcul.
-- Multi-workers: avec Uvicorn/Gunicorn en multi-processus, utilisez Redis (
-  l'in-memory n'est pas partagé entre workers).
+- Multi-workers : avec Uvicorn/Gunicorn en multi-processus, utilisez Redis
+  (l'in-memory n'est pas partagé entre workers).
 
 ---
 
 ## Pour aller plus loin
 
 - Documentation fastapi-cache2
-  - GitHub: [fastapi-cache/fastapi-cache](https://github.com/fastapi-cache/fastapi-cache)
-  - PyPI: [fastapi-cache2](https://pypi.org/project/fastapi-cache2/)
+  - GitHub : [long2ice/fastapi-cache](https://github.com/long2ice/fastapi-cache)
+  - PyPI : [fastapi-cache2](https://pypi.org/project/fastapi-cache2/)
 
 - Autres articles FastAPI sur ce blog
   - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})

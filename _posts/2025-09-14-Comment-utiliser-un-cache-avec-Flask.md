@@ -18,7 +18,6 @@ Dans ce tutoriel, on va voir comment ajouter un cache à une application Flask p
 
 Dans cet article :
 
-- Comprendre les différents types de cache
 - Mettre en place Flask-Caching en mémoire pour démarrer rapidement
 - Mettre en place un backend Redis pour la production
 - Cacher des vues, des fonctions coûteuses et gérer l'invalidation
@@ -115,6 +114,8 @@ Points clés :
 Dans certains cas, on veut construire des clés de cache spécifiques au contexte (utilisateur, paramètres) pour servir la bonne donnée à la bonne personne.
 
 Pour des pages personnalisées, évitez d'utiliser le même cache pour tout le monde. On peut ajouter un préfixe par utilisateur (id, rôle, etc.).
+
+L'exemple ci-dessous s'appuie sur [Flask-Login](https://flask-login.readthedocs.io/) pour accéder à `current_user`. Il faut donc l'avoir installé (`pip install flask-login`) et configuré dans votre application pour que cet exemple fonctionne.
 
 ```python
 from flask_login import current_user
@@ -221,7 +222,7 @@ Choisissez des TTL (timeouts) par type de données :
 - Listes paginées : 30 à 120 s
 - Détails utilisateurs : 60 à 300 s
 
-Sérialisation : Flask-Caching gère la sérialisation des fonctions. Cependant, si vous utilisez le cache en mode bas niveau, essayez de stocker du JSON :
+Sérialisation : Flask-Caching gère la sérialisation des résultats de fonctions. Cependant, si vous utilisez le cache en mode bas niveau, essayez de stocker du JSON :
 
 ```python
 import json

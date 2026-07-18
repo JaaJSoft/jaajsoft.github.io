@@ -59,10 +59,16 @@ MIDDLEWARE = [
     # ...
 ]
 
-# Compression/Cache des statiques
-STATICFILES_STORAGE = (
-    "whitenoise.storage.CompressedManifestStaticFilesStorage"
-)
+# Compression/Cache des statiques (Django 4.2+)
+# STATICFILES_STORAGE a été remplacé par STORAGES (et supprimé en Django 5.1)
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Base de données (simple: sqlite par défaut, Postgres via variables d'env)
 if os.getenv("DATABASE_URL"):
@@ -83,6 +89,7 @@ else:
 Points clés :
 
 - `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS` doivent venir de l'environnement.
+- Attention : la valeur par défaut `"*"` pour `ALLOWED_HOSTS` est pratique pour démarrer, mais elle est à proscrire en production car elle désactive la protection contre les attaques par en-tête `Host`. En production, renseignez explicitement vos domaines (ex: `ALLOWED_HOSTS=monapp.fr,www.monapp.fr`).
 - `STATIC_ROOT` + WhiteNoise permettent de servir facilement les fichiers statiques sans Nginx. Pour un trafic élevé ou du contenu média, un Nginx ou un stockage externe (S3, GCS) reste conseillé.
 - `DATABASE_URL` vous permet d'activer Postgres ou MySQL en un seul env var (ex: `postgres://user:pass@db:5432/app`).
 
@@ -235,7 +242,9 @@ services:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # Depuis Postgres 18, le volume officiel est /var/lib/postgresql
+      # (avant la 18, on montait /var/lib/postgresql/data)
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U app -d app"]
       interval: 5s

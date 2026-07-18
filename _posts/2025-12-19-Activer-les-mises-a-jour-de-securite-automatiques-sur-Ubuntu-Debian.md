@@ -60,7 +60,7 @@ dpkg -l | grep unattended-upgrades
 systemctl status unattended-upgrades
 ```
 
-Si le paquet n'est pas installé, vous verrez un message vide ou une erreur.
+Si le paquet n'est pas installé, vous verrez une sortie vide ou une erreur.
 
 ---
 
@@ -150,8 +150,8 @@ Sur Debian :
 ```conf
 Unattended-Upgrade::Origins-Pattern {
     "origin=Debian,codename=${distro_codename},label=Debian";
-    "origin=Debian,codename=${distro_codename},label=Debian-Security"; // Sécurité
-    "origin=Debian,codename=${distro_codename}-security,label=Debian-Security"; // Ancien format
+    "origin=Debian,codename=${distro_codename},label=Debian-Security"; // Sécurité (ancien format, Debian 10 et antérieurs)
+    "origin=Debian,codename=${distro_codename}-security,label=Debian-Security"; // Sécurité (format actuel, Debian 11+)
 //  "origin=Debian,codename=${distro_codename}-updates"; // Mises à jour recommandées
 };
 ```
@@ -185,7 +185,7 @@ Unattended-Upgrade::Package-Blacklist {
 };
 ```
 
-> Note : les wildcards (`*`) sont supportés.
+> Note : ces motifs sont des expressions régulières Python, pas des jokers shell. Ainsi `linux-image-*` signifie « `linux-image-` suivi de zéro ou plusieurs tirets » (le `*` porte sur le caractère précédent) ; pour matcher n'importe quel suffixe, écrivez plutôt `linux-image-.*` ou `linux-image`.
 
 ### Redémarrage automatique (avec précaution)
 
@@ -290,6 +290,12 @@ Sortie attendue :
 unattended-upgrades.service - Unattended Upgrades Shutdown
    Loaded: loaded (/lib/systemd/system/unattended-upgrades.service; enabled)
    Active: active (running)
+```
+
+> Note : ne vous fiez pas au nom du service. `unattended-upgrades.service` (« Unattended Upgrades Shutdown ») ne sert qu'à terminer une mise à jour en cours au moment de l'extinction : il reste « active » sans rien faire au quotidien. La planification réelle est assurée par deux timers systemd : `apt-daily.timer` (mise à jour de la liste des paquets et téléchargement) et `apt-daily-upgrade.timer` (application des mises à jour). Vérifiez-les avec :
+
+```bash
+systemctl list-timers apt-daily.timer apt-daily-upgrade.timer
 ```
 
 ### Via cron (anciennes versions)

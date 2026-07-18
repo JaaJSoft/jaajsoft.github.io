@@ -24,7 +24,7 @@ Dans cet article :
 - Monitoring avec Actuator et Micrometer
 - Pièges courants et bonnes pratiques
 
-Pré-requis : Java 17 ou plus récent et Spring Boot 3.x. Les exemples utilisent Spring Boot 3.3.
+Pré-requis : Java 17 ou plus récent et Spring Boot 3.x. Les exemples ont été testés sur la ligne Spring Boot 3.5 (la dernière de la branche 3.x) ; ils restent valables sur Spring Boot 4.1, la version stable la plus récente.
 
 ---
 
@@ -56,12 +56,13 @@ Le code métier reste identique : seul le backend change via la configuration.
 ### Dépendances Maven
 
 ```xml
+<!-- Les versions des starters Spring Boot sont gérées par le parent BOM
+     (spring-boot-starter-parent) : inutile de les préciser ici. -->
 <dependencies>
   <!-- API cache Spring -->
   <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-cache</artifactId>
-    <version>3.3.5</version>
   </dependency>
 
   <!-- Choisissez un moteur -->
@@ -69,7 +70,6 @@ Le code métier reste identique : seul le backend change via la configuration.
   <dependency>
     <groupId>com.github.ben-manes.caffeine</groupId>
     <artifactId>caffeine</artifactId>
-    <version>3.1.8</version>
   </dependency>
 
   <!-- Ou Redis (partagé, scalable) -->
@@ -77,7 +77,6 @@ Le code métier reste identique : seul le backend change via la configuration.
   <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-data-redis</artifactId>
-    <version>3.3.5</version>
   </dependency>
   -->
 </dependencies>
@@ -86,10 +85,12 @@ Le code métier reste identique : seul le backend change via la configuration.
 Gradle (Kotlin DSL) :
 
 ```kotlin
+// Avec le plugin Spring Boot / io.spring.dependency-management, les versions
+// sont gérées par le BOM : on ne les précise pas.
 dependencies {
-  implementation("org.springframework.boot:spring-boot-starter-cache:3.3.5")
-  implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
-  // implementation("org.springframework.boot:spring-boot-starter-data-redis:3.3.5")
+  implementation("org.springframework.boot:spring-boot-starter-cache")
+  implementation("com.github.ben-manes.caffeine:caffeine")
+  // implementation("org.springframework.boot:spring-boot-starter-data-redis")
 }
 ```
 
@@ -99,11 +100,16 @@ Dans votre classe d'application (ou une classe de config) :
 
 ```java
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @EnableCaching
 @SpringBootApplication
-public class Application { }
+public class Application {
+  public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+  }
+}
 ```
 
 ### Première méthode cachée
@@ -131,7 +137,7 @@ public class PriceService {
 ## Choisir un moteur de cache
 
 - Caffeine : en mémoire, ultra-rapide, TTL/size/expire-after-write/access, très simple en mono-process.
-- Redis : partagé (cluster/containers), persistant en mémoire, TTL par entrée, idéal multi-réplicas.
+- Redis : partagé (cluster/containers), en mémoire avec persistance optionnelle (RDB/AOF), TTL par entrée, idéal multi-réplicas.
 - Ehcache, Hazelcast, Infinispan : alternatives JVM, parfois distribuées, selon vos contraintes.
 
 Commencez simple : Caffeine local en dev/POC, puis passez à Redis en prod multi-instances.

@@ -68,6 +68,8 @@ MIDDLEWARE = [
 
 > Ordre important : placez `GZipMiddleware` le plus tôt possible, mais après `SecurityMiddleware` (pour que les headers de sécurité soient traités en premier). Si vous utilisez WhiteNoise, placez `GZipMiddleware` après `WhiteNoiseMiddleware`.
 
+> Sécurité (BREACH) : la documentation Django met en garde contre l'attaque BREACH, qui peut exploiter la compression HTTP pour deviner des secrets présents dans une réponse (jetons CSRF, etc.). Pour l'atténuer, Django masque les jetons CSRF dans le HTML, et depuis Django 4.2 `GZipMiddleware` ajoute jusqu'à 100 octets aléatoires à chaque réponse compressée. Évitez malgré tout de renvoyer, dans une même réponse compressée, un secret et des données contrôlées par l'utilisateur.
+
 ### Exemple avec WhiteNoise (fichiers statiques)
 
 Si vous utilisez WhiteNoise pour servir vos fichiers statiques (recommandé en production sans Nginx), placez-le avant `GZipMiddleware` :
@@ -90,8 +92,10 @@ MIDDLEWARE = [
 ### Avec curl
 
 ```bash
-curl -I -H "Accept-Encoding: gzip" https://votre-site.com/
+curl -s -o /dev/null -D - -H "Accept-Encoding: gzip" https://votre-site.com/
 ```
+
+Évitez `curl -I` ici : l'option `-I` envoie une requête `HEAD`, sans corps de réponse, et de nombreux serveurs ne compressent pas (ni n'annoncent la compression) dans ce cas. La commande ci-dessus fait un vrai `GET`, jette le corps (`-o /dev/null`) et n'affiche que les en-têtes (`-D -`).
 
 Cherchez l'en-tête `Content-Encoding: gzip` dans la réponse :
 
@@ -138,36 +142,36 @@ print(f"Taille décompressée: {len(response.text)} octets")
 
 Par défaut, Django compresse toutes les réponses de plus de **200 octets**. Ce seuil est défini dans le code du middleware et n'est pas configurable via `settings.py`.
 
-Si vous voulez modifier ce seuil, vous devez créer un middleware personnalisé :
+Si vous voulez modifier ce seuil, vous devez surcharger `process_response`. Attention : `GZipMiddleware` ne possède **pas** d'attribut `min_length`. Le seuil de 200 octets est écrit en dur dans `process_response`, donc définir un simple attribut `min_length` sur une sous-classe n'aurait **aucun effet**. Il faut réellement réécrire la méthode :
 
 ```python
 # myapp/middleware.py
 from django.middleware.gzip import GZipMiddleware
 
 class CustomGZipMiddleware(GZipMiddleware):
-    min_length = 1024  # Compresser uniquement si > 1 Ko
+    min_length = 1024  # notre propre seuil (1 Ko)
+
+    def process_response(self, request, response):
+        # On applique notre seuil AVANT de déléguer au comportement standard.
+        if not response.streaming and len(response.content) < self.min_length:
+            return response
+        return super().process_response(request, response)
 ```
 
 Puis remplacez `django.middleware.gzip.GZipMiddleware` par `myapp.middleware.CustomGZipMiddleware` dans `MIDDLEWARE`.
 
-### Types de contenu compressés
+### Sur quelles réponses la compression s'applique-t-elle ?
 
-Django compresse automatiquement les types de contenu textuels courants :
-- `text/html`
-- `text/plain`
-- `text/css`
-- `application/json`
-- `application/javascript`
-- `text/xml`
-- `application/xml`
+Contrairement à une idée répandue, `GZipMiddleware` ne se base **pas** sur le `Content-Type` de la réponse et ne tient aucune liste de types "compressibles". Il compresse toute réponse dès lors que :
 
-Types non compressés (déjà binaires ou compressés) :
-- Images : `image/jpeg`, `image/png`, `image/webp`, `image/gif`
-- Vidéos : `video/mp4`, `video/webm`
-- Archives : `application/zip`, `application/gzip`
-- Polices : `font/woff2` (déjà compressé)
+- le client annonce qu'il accepte gzip (en-tête `Accept-Encoding: gzip`) ;
+- la réponse fait plus de 200 octets (hors réponses en streaming) ;
+- la réponse n'est pas déjà encodée (pas d'en-tête `Content-Encoding`) ;
+- la compression réduit effectivement la taille (sinon la réponse originale est renvoyée).
 
-Le middleware détecte automatiquement le type de contenu et évite de compresser les fichiers déjà compressés.
+Autrement dit, si vous renvoyez une image ou un binaire directement depuis une vue Django sans `Content-Encoding`, le middleware tentera quand même de la compresser (souvent inutile pour un contenu déjà compressé).
+
+La liste de types que l'on voit souvent (`text/html`, `application/json`, images exclues, etc.) correspond en réalité à la directive `gzip_types` de **Nginx**, et non au comportement du middleware Django. En pratique, images et fichiers statiques sont généralement servis autrement (WhiteNoise, CDN, reverse proxy), où ce filtrage par type s'applique réellement.
 
 ---
 
@@ -186,8 +190,11 @@ MIDDLEWARE = [
     # ...
 ]
 
-# Compression + cache des statiques (recommandé)
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# Compression + cache des statiques (recommandé, Django 4.2+)
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 ```
 
 Avec cette config :
@@ -265,13 +272,13 @@ pip install django-brotli
 # settings.py
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "django_brotli.middleware.BrotliMiddleware",  # Avant GZipMiddleware
-    "django.middleware.gzip.GZipMiddleware",      # Fallback si Brotli non supporté
+    "django.middleware.gzip.GZipMiddleware",       # Fallback gzip
+    "django_brotli.middleware.BrotliMiddleware",   # Brotli en priorité
     # ...
 ]
 ```
 
-Le middleware Brotli détecte si le client supporte `br` (via `Accept-Encoding`) et compresse avec Brotli, sinon repasse à GZip.
+> L'ordre est ici capital. Sur la phase de réponse, Django traite les middlewares **de bas en haut**. En plaçant `BrotliMiddleware` **en dessous** de `GZipMiddleware`, Brotli s'exécute en premier : si le client supporte `br` (via `Accept-Encoding`), la réponse est compressée en Brotli et reçoit un en-tête `Content-Encoding: br` ; `GZipMiddleware` s'exécute ensuite, voit ce `Content-Encoding` et ne recompresse pas. Pour un client qui ne supporte pas Brotli, `BrotliMiddleware` ne fait rien et `GZipMiddleware` prend le relais avec gzip. Dans l'ordre inverse (Brotli au-dessus de GZip), gzip s'appliquerait en premier et Brotli ne s'exécuterait jamais.
 
 ### Côté Nginx
 
@@ -357,8 +364,8 @@ MIDDLEWARE = [
 Vérifier avec curl :
 
 ```bash
-curl -I -H "Accept-Encoding: gzip" https://votre-site.com/
-# Chercher : Content-Encoding: gzip
+curl -s -o /dev/null -D - -H "Accept-Encoding: gzip" https://votre-site.com/
+# Chercher : Content-Encoding: gzip (un vrai GET, pas -I/HEAD)
 ```
 
 WhiteNoise + pré-compression :
@@ -371,7 +378,9 @@ MIDDLEWARE = [
     # ...
 ]
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES = {
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 ```
 
 Nginx (alternative) :

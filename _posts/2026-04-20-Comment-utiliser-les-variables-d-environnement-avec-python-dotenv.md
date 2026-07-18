@@ -39,7 +39,7 @@ Dans cet article, vous allez apprendre à :
 Imaginons une application qui se connecte à une base de données :
 
 ```python
-# ❌ À ne pas faire : les identifiants en dur dans le code
+# À ne pas faire : les identifiants en dur dans le code
 import psycopg2
 
 conn = psycopg2.connect(
@@ -171,7 +171,7 @@ Pour forcer le remplacement des variables existantes, utilisez le paramètre
 load_dotenv(override=True)
 ```
 
-> ⚠️ Utilisez `override=True` avec précaution. En production, cela pourrait
+> Attention : utilisez `override=True` avec précaution. En production, cela pourrait
 > écraser des variables d'environnement définies volontairement par
 > l'infrastructure.
 
@@ -349,7 +349,7 @@ db_host = os.getenv("DB_HOST")
 
 ## Bonnes pratiques
 
-### ✅ À faire
+### À faire
 
 - Toujours ajouter `.env` au `.gitignore`
 - Fournir un `.env.example` avec des valeurs vides ou d'exemple
@@ -357,7 +357,7 @@ db_host = os.getenv("DB_HOST")
 - Centraliser la configuration dans un module dédié (`config.py`)
 - Valider les variables critiques au démarrage de l'application
 
-### ❌ À éviter
+### À éviter
 
 - Commiter le fichier `.env` dans le dépôt Git
 - Utiliser `override=True` en production

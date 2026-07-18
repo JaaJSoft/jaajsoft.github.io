@@ -53,8 +53,8 @@ exemple) utilise un compteur, qui sert à dénombrer le nombre de sections, de
 figures, de tables ou d'équations. Lorsque vous écrivez `\section{...}`, le
 compteur de sections est incrémenté : on fait habituellement cela en
 utilisant `\stepcounter{moncompteur}`. Ainsi, si l'on souhaite créer une
-nouvelle commande `\encadre`qui créer un cadre de texte, commençant par quelque
-chose que "Encadré n°3", on aura tout intérêt à définir un compteur `cntEncadre`
+nouvelle commande `\encadre` qui crée un cadre de texte, commençant par quelque
+chose comme "Encadré n°3", on aura tout intérêt à définir un compteur `encadre`
 qui sera incrémenté automatiquement par `\encadre`, et qu'on affichera après
 le "Encadré n°". C'est ce que fait le code suivant :
 
@@ -63,7 +63,7 @@ le "Encadré n°". C'est ce que fait le code suivant :
 \newcounter{encadre}
 \newcommand{\encadre}[1]{\stepcounter{encadre}%
 	\medskip%
-	\noindent\hspace{-\fboxsep}\fbox\{%
+	\noindent\hspace{-\fboxsep}\fbox{%
 		\parbox{\linewidth}{%
 			\textbf{Encadré n°\theencadre~:} #1
 		}%
@@ -149,8 +149,7 @@ donne le résultat :
 ![image 4](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image4.jpg)
 
 *Remarque* : nous écrivons toujours "encadré" avant d'appeler `\ref`, mais il
-est toujours possible et conseillé, d'envelopper cet appel dans une commande *
-sémantique*, comme :
+est toujours possible et conseillé, d'envelopper cet appel dans une commande *sémantique*, comme :
 {% raw %}
 ```latex
 \newcommand{\refEncadre}[1]{%
@@ -159,9 +158,12 @@ sémantique*, comme :
 ```
 {% endraw %}
 
+Notez que la commande `\textcolor` utilisée ici nécessite le *package* `xcolor` :
+il faut donc inclure `\usepackage{xcolor}` dans le préambule.
+
 ## Utilisation de `hyperref` pour créer des liens
 
-Le *package* `hyperref`permet de transformer les `\ref` (ainsi que ses petits
+Le *package* `hyperref` permet de transformer les `\ref` (ainsi que ses petits
 frères comme le `\eqref` défini par `amsmath`) en liens. Cette fonctionnalité du
 format pdf permet de naviguer rapidement dans le document jusqu'à l'endroit
 auquel on fait référence (la fameuse ancre dont nous parlions précédemment).
@@ -206,7 +208,7 @@ les options de `hyperref` ou en définissant des macros sémantiques qui
 appellent (par exemple) `\hyperref[#1]{#2}` après un formatage adéquat du texte,
 on peut définir à un endroit :
 
-![image 8](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image7.jpg)
+![image 7](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image7.jpg)
 
 et y faire référence de manière très claire à un autre endroit :
 
@@ -220,10 +222,10 @@ utiliser `hyperref` est de tester constamment de nouvelles manières de faire.
 Adaptez ce qui précède à vos nouveaux documents : ce qui a marché pour des
 encadrés, marchera pour des définitions, ce qui a marché pour des définitions
 peut servir à transformer une variable mathématique en lien vers l'endroit où elle a
-été fixé par exemple !
+été fixée par exemple !
 
 Et si cela ne marche pas, il faut n'y voir qu'une occasion de mieux comprendre
-`hyperrref`.
+`hyperref`.
 
 ## Voir aussi
 

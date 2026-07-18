@@ -70,7 +70,7 @@ moyenne :
 
 ## Implémentation pas à pas
 
-### 1) Créer le router de statut (fichier dédié)
+### Créer le router de statut (fichier dédié)
 
 Créez `app/routers/status.py` :
 
@@ -85,7 +85,25 @@ def info_status():
     return {"status": "ok"}
 ```
 
-### 2) Créer l'application et inclure le router
+### Créer le router d'exemple
+
+Créez `app/routers/exemple.py` :
+
+```python
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/exemple", tags=["exemple"])  # préfixe commun à ce router
+
+@router.get("/")
+def list_exemples():
+    return {"exemples": ["a", "b", "c"]}
+
+@router.get("/{item_id}")
+def get_exemple(item_id: int):
+    return {"id": item_id, "nom": f"exemple {item_id}"}
+```
+
+### Créer l'application et inclure le router
 
 Créez `app/main.py` :
 
@@ -114,7 +132,7 @@ def create_app() -> FastAPI:
 app = create_app()
 ```
 
-### 3) Marquer les dossiers comme packages Python
+### Marquer les dossiers comme packages Python
 
 Créez des fichiers vides `app/__init__.py` et `app/routers/__init__.py` pour
 permettre les imports relatifs (si ce n'est pas déjà le cas dans votre

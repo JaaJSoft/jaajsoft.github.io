@@ -115,6 +115,8 @@ Formater et convertir les types explicitement :
 jq -r '.[] | [(.id|tostring), .name, (.active|tostring), (.score // 0)] | @csv' users.json
 ```
 
+> Note : `@csv` met entre guillemets toute valeur de type chaîne. En appliquant `tostring` à `.id` et `.active`, vous les transformez en chaînes : la sortie devient `"1","Alice","true",42.5` (avec `1` et `true` entre guillemets) au lieu de `1,"Alice",true,42.5`. N'utilisez `tostring` que si ce quoting est voulu.
+
 ---
 
 ## Filtrer, trier, sélectionner des colonnes

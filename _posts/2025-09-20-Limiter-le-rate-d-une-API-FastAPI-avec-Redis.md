@@ -30,14 +30,19 @@ Voir [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Co
 Installez les dépendances nécessaires :
 
 ```bash
-pip install fastapi uvicorn fastapi-limiter redis
+pip install fastapi uvicorn "fastapi-limiter==0.1.6" redis
 ```
 
-Sous Windows (PowerShell), vous pouvez faire:
+Sous Windows (PowerShell), vous pouvez faire :
 
 ```powershell
-python -m pip install fastapi uvicorn fastapi-limiter redis
+python -m pip install fastapi uvicorn "fastapi-limiter==0.1.6" redis
 ```
+
+> Note : ce tutoriel épingle `fastapi-limiter` en version `0.1.6`. La version
+> `0.2.0` a introduit des changements d'API (refonte interne du limiteur) qui
+> rendent certains exemples ci-dessous incompatibles. Épingler la version
+> garantit que le code fonctionne tel quel.
 
 ## Démarrer un Redis local (docker-compose)
 
@@ -53,7 +58,7 @@ services:
     command: [ "redis-server", "--appendonly", "yes" ]
 ```
 
-Lancez:
+Lancez :
 
 ```bash
 docker compose up -d
@@ -69,10 +74,10 @@ Ensuite, on ajoute une dépendance `RateLimiter` sur les routes à protéger.
 
 ### Mise en place du limiter
 
-On initialise le rater limiter dans la méthode lifespan utilisé par FastAPI :
+On initialise le rate limiter dans le gestionnaire de contexte lifespan utilisé par FastAPI :
 
 ```python
-# app_rate_limit_min.py
+# app.py
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from fastapi_limiter import FastAPILimiter
@@ -86,13 +91,13 @@ async def lifespan(app: FastAPI):
     global redis_client
     # Connexion Redis (adapter l'URL si besoin: auth, DB, TLS, etc.)
     redis_client = redis.from_url(
-        "redis://localhost:6379", encoding="utf-8"
+        "redis://localhost:6379", encoding="utf-8", decode_responses=True
     )
     await FastAPILimiter.init(redis_client, prefix="fastapi-limiter")
     yield
     # Fermeture propre
     assert redis_client is not None
-    await redis_client.close()
+    await redis_client.aclose()
 
 app = FastAPI(lifespan=lifespan)
 ```
@@ -133,8 +138,15 @@ Souvent, on veut limiter par clé API ou par utilisateur authentifié plutôt qu
 par IP.
 Pour cela, on peut fournir une fonction `identifier` au `RateLimiter`.
 
+`fastapi-limiter` appelle l'`identifier` avec `await` : il doit donc s'agir
+d'une fonction asynchrone (`async def`), et non d'un `lambda` synchrone.
+
 ```python
 from fastapi import Request
+
+# Limite par clé API (X-API-Key) si présente, sinon par IP
+async def api_key_identifier(request: Request) -> str:
+    return request.headers.get("X-API-Key") or request.client.host
 
 # Limite 100 requêtes par 24h et par clé API (X-API-Key), sinon par IP
 @app.get(
@@ -144,7 +156,7 @@ from fastapi import Request
             RateLimiter(
                 times=100,
                 hours=24,
-                identifier=lambda request: request.headers.get("X-API-Key") or request.client.host,
+                identifier=api_key_identifier,
             )
         )
     ],
@@ -158,6 +170,11 @@ ou
 `request.user.id` selon votre middleware d'authentification).
 
 ```python
+async def user_identifier(request: Request) -> str:
+    # Identifiant de l'utilisateur connecté si disponible, sinon IP
+    user = getattr(request, "user", None)
+    return str(getattr(user, "id", None) or request.client.host)
+
 @app.get(
     "/me",
     dependencies=[
@@ -165,7 +182,7 @@ ou
             RateLimiter(
                 times=60,
                 minutes=1,
-                identifier=lambda req: getattr(getattr(req, "user", None), "id", None) or req.client.host,
+                identifier=user_identifier,
             )
         )
     ],
@@ -211,13 +228,15 @@ ajoutant un autre `Depends(RateLimiter(...))` directement sur l'endpoint.
 
 Pour que l'IP réelle du client soit correctement vue, pensez à activer la prise
 en
-compte des en-têtes proxy. Par exemple:
+compte des en-têtes proxy. Par exemple :
 
 ```python
 from starlette.middleware import Middleware
-from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-# Au besoin, passez la liste des proxies de confiance (num_trusted_hops)
+# trusted_hosts : IP ou hôtes des proxies de confiance dont on accepte les en-têtes
+# X-Forwarded-* ("*" fait confiance à tous les proxies, à réserver aux environnements
+# où l'accès direct à l'application est impossible)
 app = FastAPI(lifespan=lifespan, middleware=[Middleware(ProxyHeadersMiddleware, trusted_hosts="*")])
 ```
 
@@ -264,7 +283,7 @@ async def too_many_requests_handler(request: Request, exc: HTTPException):
 
 ## Pour aller plus loin
 
-- GitHub: [long2ice/fastapi-limiter](https://github.com/long2ice/fastapi-limiter)
+- GitHub : [long2ice/fastapi-limiter](https://github.com/long2ice/fastapi-limiter)
 - [Ajouter un cache à notre application FastAPI avec redis]({% post_url 2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
 - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})

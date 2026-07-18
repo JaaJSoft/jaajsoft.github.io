@@ -267,6 +267,8 @@ Python fournit plusieurs décorateurs utiles dans sa bibliothèque standard.
 Transforme une méthode en attribut accessible sans parenthèses :
 
 ```python
+import math
+
 class Cercle:
     def __init__(self, rayon):
         self._rayon = rayon
@@ -283,11 +285,11 @@ class Cercle:
 
     @property
     def aire(self):
-        return 3.14159 * self._rayon ** 2
+        return math.pi * self._rayon ** 2
 
 c = Cercle(5)
 print(c.rayon)  # 5 (pas de parenthèses)
-print(c.aire)   # 78.53975
+print(c.aire)   # 78.53981633974483
 c.rayon = 10    # passe par le setter
 # c.rayon = -1  # ValueError
 ```
@@ -449,8 +451,8 @@ def calculer_total(prix, quantite, remise=0):
     return prix * quantite * (1 - remise)
 
 calculer_total(10, 5, remise=0.1)
-# INFO:Appel de calculer_total((10, 5), {'remise': 0.1})
-# INFO:calculer_total a retourné 45.0
+# INFO:__main__:Appel de calculer_total((10, 5), {'remise': 0.1})
+# INFO:__main__:calculer_total a retourné 45.0
 ```
 
 ---
