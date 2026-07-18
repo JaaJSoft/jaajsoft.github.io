@@ -192,6 +192,7 @@ future      : false  # Ne pas publier les articles avec une date future
 
 exclude:
   - CHANGELOG.md
+  - CLAUDE.md
   - HOW_TO_RELEASE.md
   - Gemfile
   - Gemfile.lock

@@ -32,5 +32,6 @@ Blog technique en français (blog.jaaj.dev), Jekyll + thème TeXt. Les articles 
 - Ne pas réécrire ni supprimer : ajouter un bandeau blockquote en tête de contenu, ex. `> **Note (2026) :** cet article date de X et n'est plus réalisable en l'état... Il est conservé à titre historique.` Corriger le code manifestement cassé, mais ne pas moderniser les API mortes.
 
 ## Notes techniques
+- Ce fichier est listé dans `exclude:` de `_config.yml` : Jekyll ne doit JAMAIS le traiter (les exemples `post_url` ci-dessus casseraient le build). Ne pas le retirer de la liste.
 - Fichiers en UTF-8 ; le `grep -P` de Git Bash échoue sur les classes Unicode, utiliser `perl -CSD` pour chercher/remplacer des caractères spéciaux.
 - Le dossier `docs/` appartient au thème TeXt (démo/documentation upstream) : ne pas y toucher lors des passes sur les articles.
