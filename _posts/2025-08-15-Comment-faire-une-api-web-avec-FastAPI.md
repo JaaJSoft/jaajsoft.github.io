@@ -12,9 +12,9 @@ author: Pierre Chopinet
 
 Dans ce tutoriel, vous allez apprendre à faire une api web en python avec le
 framework FastAPI. <!--more-->
-FastAPI est un framework web moderne pour Python, conçu pour créer des APIs
-performantes rapidement, avec de la validation automatique, des schémas
-OpenAPI/Swagger et une excellente expérience développeur.
+FastAPI est un framework python permettant de réaliser des api web. Il
+s'appuie sur les annotations de type de python pour convertir et valider les
+données reçues, et génère tout seul la documentation de l'api.
 
 L'objectif de ce tutoriel est d'apprendre comment faire :
 
@@ -23,8 +23,9 @@ L'objectif de ce tutoriel est d'apprendre comment faire :
 
 ## Installation
 
-Pour commencer, il vous faut un interpréteur python en version 3, dans mon cas,
-j'utiliserai python 3.10
+Pour commencer, il vous faut un interpréteur python en version 3.10 ou plus
+récente, c'est le minimum demandé par les versions actuelles de FastAPI. Les
+exemples de ce tutoriel ont été testés avec Python 3.13 et FastAPI 0.142.
 
 ### Linux - Ubuntu (& toutes distributions utilisant APT comme gestionnaire de paquets)
 
@@ -49,11 +50,16 @@ Maintenant installons FastAPI et un serveur ASGI (uvicorn) :
 pip3 install fastapi uvicorn
 ```
 
-Si vous avez une erreur vous disant que vous n'avez pas assez de permissions,
-faites :
+Sur les distributions récentes (Ubuntu 24.04 par exemple), pip refuse
+d'installer des paquets dans le python du système et affiche l'erreur
+`externally-managed-environment`. Dans ce cas, créez un environnement virtuel
+dans le dossier de votre projet et installez FastAPI dedans :
 
 ```bash
-pip3 install --user fastapi uvicorn
+sudo apt install python3-venv
+python3 -m venv venv
+source venv/bin/activate
+pip install fastapi uvicorn
 ```
 
 ### Windows
@@ -88,7 +94,7 @@ instructions pour linux afin d'installer FastAPI et uvicorn.
 
 Source Wikipédia.
 
-Il existe 5 principales requêtes HTTP :
+Il existe 5 principales méthodes HTTP :
 
 - GET, permet d'accéder à une ressource.
 - HEAD, permet de récupérer l'entête d'une ressource, pour par exemple connaitre
@@ -131,12 +137,14 @@ uvicorn app:app --reload
 ```
 
 Si uvicorn n'est pas trouvé vous pouvez essayer de lancer :
-```
+
+```bash
 python -m uvicorn app:app --reload
 ```
 
 Si vous allez sur `http://127.0.0.1:8000/` avec votre navigateur web, vous
 devriez avoir :
+
 ```
 "Hello World"
 ```
@@ -148,10 +156,12 @@ curl http://127.0.0.1:8000/
 "Hello World"
 ```
 
-Note : FastAPI fournit automatiquement une documentation interactive :
+Les guillemets sont normaux : FastAPI convertit ce que retourne la fonction en
+JSON, et en JSON une chaîne de caractères s'écrit entre guillemets.
 
-- Swagger UI : http://127.0.0.1:8000/docs
-- ReDoc : http://127.0.0.1:8000/redoc
+FastAPI génère aussi une documentation interactive de l'api, sans rien
+ajouter : elle est accessible sur `http://127.0.0.1:8000/docs` (Swagger UI) et
+sur `http://127.0.0.1:8000/redoc` (ReDoc).
 
 Super, nous avons notre premier "hello world", mais comment faire pour avoir
 plusieurs routes possibles ?
@@ -179,7 +189,7 @@ curl http://127.0.0.1:8000/test
 Dans la vraie vie, il est parfois (même très souvent) nécessaire de passer des
 paramètres à notre _endpoint_.
 Pour passer des paramètres avec le *routing* on utilise les `{}` dans le chemin
-et on tape les variables en paramètres de fonction :
+et on déclare la variable en paramètre de la fonction, avec son type :
 
 ```python
 @app.get('/test/{id_test}')
@@ -194,12 +204,20 @@ curl http://127.0.0.1:8000/test/1
 "test 1"
 ```
 
-En tapant en `int`, FastAPI validera et convertira automatiquement :
+Si on annote le paramètre avec le type `int`, FastAPI le convertit et le valide
+automatiquement :
 
 ```python
 @app.get('/test/{id_test}')
 def test_endpoint(id_test: int):
     return f'test {id_test}'
+```
+
+Un appel avec autre chose qu'un entier est alors refusé avec une erreur 422 :
+
+```bash
+curl http://127.0.0.1:8000/test/abc
+{"detail":[{"type":"int_parsing","loc":["path","id_test"],"msg":"Input should be a valid integer, unable to parse string as an integer","input":"abc"}]}
 ```
 
 Quelques types utiles pris en charge nativement (via annotations Python) :
@@ -209,6 +227,8 @@ Quelques types utiles pris en charge nativement (via annotations Python) :
 - datetime, date, time (`from datetime import datetime` ...)
 
 Il est également possible d'utiliser des paramètres de requête (query params) :
+FastAPI considère comme tels les paramètres de type simple (str, int...) qui
+n'apparaissent pas dans le chemin.
 
 ```python
 from typing import Optional
@@ -223,7 +243,9 @@ curl "http://127.0.0.1:8000/items?q=abc&limit=5"
 {"q":"abc","limit":5}
 ```
 
-> Voir aussi : [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %}) : pour filtrer/formater des réponses JSON en CLI (avec curl).
+Pour filtrer ou mettre en forme ces réponses JSON dans le terminal, on peut
+envoyer la sortie de curl dans jq (voir l'article
+[Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %})).
 
 ## Méthodes HTTP
 
@@ -238,11 +260,17 @@ def test_endpoint_get():
 
 ```bash
 curl -X GET http://127.0.0.1:8000/test
-test_endpoint_get
+"test_endpoint_get"
 ```
 
-Si on tente avec un POST sur cet *endpoint*, FastAPI retourne automatiquement
-`405 Method Not Allowed`.
+Le GET renvoie bien la bonne valeur, mais si on tente avec un POST ça ne
+fonctionne pas ! FastAPI renvoie alors une erreur `405 Method Not Allowed`, car
+aucune route POST n'est déclarée sur ce chemin :
+
+```bash
+curl -X POST http://127.0.0.1:8000/test
+{"detail":"Method Not Allowed"}
+```
 
 ## Traiter une requête POST
 Pour traiter une requête POST et valider les données, on utilise un modèle
@@ -269,7 +297,9 @@ curl -X POST http://127.0.0.1:8000/test \
 {"param1":"jeej"}
 ```
 
-> Remarque : pour envoyer des fichiers via un POST (`multipart/form-data`), voir l'article [Comment envoyer des fichiers avec FastAPI]({% post_url 2025-08-30-Comment-envoyer-des-fichiers-avec-FastAPI %}).
+Pour envoyer des fichiers dans un POST (`multipart/form-data`), il faut s'y
+prendre autrement : c'est le sujet de l'article
+[sur l'upload de fichiers avec FastAPI]({% post_url 2025-08-30-Comment-envoyer-des-fichiers-avec-FastAPI %}).
 
 ### Exemple d'un POST avec un traitement simpliste
 
@@ -292,9 +322,7 @@ curl -X POST http://127.0.0.1:8000/exemple \
 ```
 
 Voilà, vous êtes maintenant capable de créer une api web simple, mais
-performante. D'autres tutoriels sur FastAPI pourront par exemple couvrir la
-connexion à une base de données, la gestion des dépendances ou le déploiement en
-conteneur.
+performante.
 
 ## Le code complet de ce tutoriel
 
@@ -312,6 +340,10 @@ def super_endpoint():
 @app.get('/test/{id_test}')
 def test_endpoint(id_test: int):
     return f'test {id_test}'
+
+@app.get('/items')
+def list_items(q: Optional[str] = None, limit: int = 10):
+    return {"q": q, "limit": limit}
 
 @app.get('/test')
 def test_endpoint_get():
@@ -336,10 +368,9 @@ def test2_endpoint_post(data: Data):
 ```
 
 ## Voir aussi
-- [Comment dockeriser une API FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
+- [Comment dockeriser une application FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
 - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
 - [Ajouter un cache à notre application FastAPI avec redis]({% post_url 2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
-- [Limiter le rate d'une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
-- [Comment faire une api avec flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
-- [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+- [Comment ajouter un rate limiter à notre application FastAPI avec redis]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
+- [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
 - [La doc de FastAPI](https://fastapi.tiangolo.com/)
