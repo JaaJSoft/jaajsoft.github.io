@@ -8,7 +8,7 @@ tags:
   - list
 ---
 
-Dans cet article (partie 2 de la série sur les collections), nous allons nous concentrer sur la famille List du Framework Collections : ses caractéristiques, ses principales implémentations (ArrayList, LinkedList…), leurs performances et les bonnes pratiques d'utilisation au quotidien.
+Deuxième partie de notre série sur les collections Java : après la présentation générale du Framework Collections, nous passons aux listes. Nous allons voir ce que l'interface `List` ajoute à `Collection`, comment choisir entre `ArrayList` et `LinkedList`, et les quelques pièges de l'API (`remove(int)` contre `remove(Object)`, les sous-listes, la suppression pendant un parcours).
 <!--more-->
 
 1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
@@ -16,73 +16,58 @@ Dans cet article (partie 2 de la série sur les collections), nous allons nous c
 3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
 4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
 5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
-6. Utilisations avancées des collections (article à venir)
+6. Utilisations avancées : [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %}) et [Java : Comment faire des group by]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
 
-## Qu'est-ce qu'une List ?
+Les exemples ont été testés avec Java 21.
 
-`List` est une sous-interface de `Collection` qui représente une séquence ordonnée d'éléments :
+## L'interface List
 
-- Les éléments ont un ordre (position/index).
-- Les doublons sont autorisés.
-- L'accès indexé est possible (méthodes `get`, `set`, `add(int, E)`, `remove(int)`, etc.).
-
-La signature :
+Une liste est une séquence ordonnée d'éléments : chaque élément a une position, son index (qui commence à 0), et un même élément peut apparaître plusieurs fois. C'est ce qui la différencie d'un ensemble (`Set`), qui refuse les doublons et ne connaît pas la notion d'index.
 
 ```java
-public interface List<E> extends Collection<E> { /* … */ }
+public interface List<E> extends SequencedCollection<E> { /* ... */ }
 ```
 
-En plus des méthodes héritées de `Collection`, `List` ajoute entre autres :
+Jusqu'à Java 20, `List` héritait directement de `Collection`. Java 21 a intercalé entre les deux l'interface `SequencedCollection`, commune à toutes les collections dont les éléments ont un ordre défini, qui apporte `getFirst()`, `getLast()`, `addFirst()`, `addLast()`, `removeFirst()`, `removeLast()` et `reversed()`.
 
-| Méthode                                     | Description                                                                           |
-|---------------------------------------------|---------------------------------------------------------------------------------------|
-| E get(int index)                            | Retourne l'élément à l'index donné.                                                   |
-| E set(int index, E element)                 | Remplace l'élément à l'index par element et retourne l'ancien.                        |
-| void add(int index, E element)              | Insère element à la position index (décale les éléments suivants).                    |
-| E remove(int index)                         | Supprime et retourne l'élément à la position index.                                   |
-| int indexOf(Object o)                       | Retourne le premier index de o, ou -1 s'il est absent.                                |
-| int lastIndexOf(Object o)                   | Retourne le dernier index de o, ou -1 s'il est absent.                                |
-| ListIterator<E> listIterator()              | Itérateur bidirectionnel sur la liste.                                                |
-| ListIterator<E> listIterator(int index)     | Itérateur bidirectionnel démarrant à index.                                           |
-| List<E> subList(int fromIndex, int toIndex) | Retourne une vue d'une portion [fromIndex, toIndex) de la liste (liée à l'originale). |
-| void replaceAll(UnaryOperator<E> operator)  | Remplace chaque élément par operator.apply(élément).                                  |
-| void sort(Comparator<? super E> c)          | Trie en place selon le comparateur.                                                   |
+En plus des méthodes de `Collection` vues dans la première partie, `List` propose des méthodes qui travaillent avec les positions :
 
-## Principales implémentations
+| Méthode                                       | Description                                                                 |
+|-----------------------------------------------|-----------------------------------------------------------------------------|
+| `E get(int index)`                            | Retourne l'élément à l'index donné                                          |
+| `E set(int index, E element)`                 | Remplace l'élément à l'index donné et retourne l'ancien                     |
+| `void add(int index, E element)`              | Insère l'élément à l'index donné, en décalant les suivants                  |
+| `E remove(int index)`                         | Supprime l'élément à l'index donné et le retourne                           |
+| `int indexOf(Object o)`                       | Retourne l'index de la première occurrence de o, ou -1 s'il est absent      |
+| `int lastIndexOf(Object o)`                   | Retourne l'index de la dernière occurrence de o, ou -1 s'il est absent      |
+| `ListIterator<E> listIterator()`              | Retourne un itérateur capable de parcourir la liste dans les deux sens      |
+| `ListIterator<E> listIterator(int index)`     | Même chose, en démarrant à l'index donné                                    |
+| `List<E> subList(int fromIndex, int toIndex)` | Retourne une vue sur les éléments entre fromIndex (inclus) et toIndex (exclu) |
+| `void replaceAll(UnaryOperator<E> operator)`  | Remplace chaque élément par le résultat de la fonction                      |
+| `void sort(Comparator<? super E> c)`          | Trie la liste selon le comparateur                                          |
 
-### ArrayList
+## ArrayList ou LinkedList ?
 
-- Structure interne : tableau redimensionnable.
-- Accès par index très rapide (en `O(1)`), insertion/suppression en fin rapides, mais insertion/suppression au milieu coûteuses (décalage des éléments).
-- Mémoire compacte, très utilisée par défaut.
+`ArrayList` range ses éléments dans un tableau. L'accès à un élément par son index est donc immédiat, quelle que soit la taille de la liste. Quand le tableau est plein, la liste en alloue un plus grand et y recopie ses éléments : certains ajouts coûtent cher, mais un ajout en fin de liste reste en temps constant en moyenne (on parle de temps constant amorti). Par contre, insérer ou supprimer un élément au début ou au milieu oblige à décaler tous les éléments qui suivent.
 
-Cas d'usage : lecture fréquente par index, ajout en fin, listes majoritairement immuables après construction.
+`LinkedList` est une liste doublement chaînée : chaque élément est rangé dans un nœud qui garde une référence vers le nœud précédent et vers le suivant. Ajouter ou retirer un élément à une extrémité est immédiat, et au milieu aussi, à condition d'y être déjà positionné avec un itérateur. En revanche, pour atteindre l'élément d'index `i`, la liste doit suivre les nœuds un par un depuis le début ou depuis la fin, selon le plus proche.
 
-### LinkedList
+| Opération                                    | `ArrayList` | `LinkedList` |
+|----------------------------------------------|-------------|--------------|
+| `get(i)`, `set(i, e)`                        | O(1)        | O(n)         |
+| `add(e)` (en fin de liste)                   | O(1) amorti | O(1)         |
+| `add(0, e)`, `remove(0)`                     | O(n)        | O(1)         |
+| `add(i, e)`, `remove(i)`                     | O(n)        | O(n)         |
+| `add` ou `remove` à travers un `ListIterator` | O(n)        | O(1)         |
+| `contains(o)`, `indexOf(o)`                  | O(n)        | O(n)         |
 
-- Liste doublement chaînée (chaque élément connaît son précédent et son suivant).
-- Insertion/suppression au début/au milieu rapides si vous disposez déjà d'un `ListIterator` positionné, mais accès par index en `O(n)`.
-- Surcoût mémoire (pointeurs) + moins bonne avec le cache CPU.
+Pour `add(i, e)` et `remove(i)`, les deux listes sont en O(n), mais pas pour la même raison : `ArrayList` doit décaler les éléments, `LinkedList` doit parcourir ses nœuds jusqu'à l'index.
 
-Cas d'usage : scénarios spécialisés où l'on enlève/insère souvent au milieu via un itérateur, ou quand on utilise l'API `Deque` que `LinkedList` implémente aussi (pile/queue simple).
+Dans la grande majorité des cas, `ArrayList` est le bon choix. À complexité égale, elle va plus vite qu'une `LinkedList` (sa documentation le précise), et chaque nœud d'une `LinkedList` occupe bien plus de mémoire qu'une case de tableau. `LinkedList` ne se justifie que si l'on insère et supprime beaucoup en tête de liste ou à travers un itérateur, et même dans ce cas, mieux vaut mesurer avant de changer. Et si c'est une file qu'il vous faut, `ArrayDeque`, que nous verrons dans la partie 4, sera probablement plus rapide qu'une `LinkedList`.
 
-### Autres options utiles
+## Ajouter, lire et modifier des éléments
 
-- `CopyOnWriteArrayList` : thread-safe, excellente en lecture majoritaire (chaque écriture copie la liste). À éviter si beaucoup d'écritures.
-- `Collections.synchronizedList(new ArrayList<>())` : wrapper synchronisé basique.
-- Listes immuables : `List.of(...)` (Java 9+) ou `Collections.unmodifiableList(list)` pour exposer une vue non modifiable.
-
-## Complexités et performances (rappels)
-
-- Accès indexé : `ArrayList` ≈ `O(1)` amorti, `LinkedList` ≈ `O(n)`.
-- Ajout en fin : `ArrayList` ≈ `O(1)` amorti, `LinkedList` ≈ `O(1)` (avec pointeur de fin).
-- Insertion/suppression au milieu par index : `ArrayList` ≈ `O(n)`, `LinkedList` ≈ `O(n)` (traversée) mais `O(1)` si itérateur déjà positionné.
-
-En pratique, `ArrayList` est souvent le meilleur choix par défaut, `LinkedList` gagnant seulement dans des cas niches avec des itérateurs.
-
-## Méthodes clés à connaître
-
-### Ajout, lecture, mise à jour
+On ajoute en fin de liste avec `add`, ou à une position donnée avec `add(index, element)`. `get` lit l'élément à un index et `set` le remplace :
 
 ```java
 List<String> fruits = new ArrayList<>();
@@ -90,64 +75,124 @@ fruits.add("pomme");           // [pomme]
 fruits.add("banane");          // [pomme, banane]
 fruits.add(1, "poire");        // [pomme, poire, banane]
 
-String second = fruits.get(1);  // "poire"
+String second = fruits.get(1); // "poire"
 fruits.set(2, "prune");        // [pomme, poire, prune]
 ```
 
-### Suppression par index ou par valeur
-
-Attention à la surcharge `remove(int)` vs `remove(Object)` :
+`indexOf` et `lastIndexOf` retournent la position de la première et de la dernière occurrence d'un élément, ou -1 s'il est absent. Comme `contains`, elles parcourent la liste en comparant les éléments avec `equals`.
 
 ```java
-fruits.remove(1);               // supprime l'élément à l'index 1
-fruits.remove("pomme");        // supprime la première occurrence de "pomme"
+int i = fruits.indexOf("prune");  // 2
+int j = fruits.indexOf("fraise"); // -1
 ```
 
-### Recherche et sous-liste
+Depuis Java 21, plus besoin d'écrire `fruits.get(fruits.size() - 1)` pour lire le dernier élément :
 
 ```java
-int i = fruits.indexOf("prune");     // -1 si absent
-List<String> debut = fruits.subList(0, 2); // vue [0,2[
+System.out.println(fruits.getFirst()); // pomme
+System.out.println(fruits.getLast());  // prune
+System.out.println(fruits.reversed()); // [prune, poire, pomme]
 ```
 
-`subList` retourne une vue adossée à la liste d'origine : modifier l'une modifie l'autre. Pour obtenir une copie indépendante :
+`reversed()` ne copie pas la liste : elle retourne une vue qui la présente dans l'ordre inverse.
+
+Attention à `remove`, qui existe en deux versions : `remove(int index)` supprime l'élément à une position, `remove(Object o)` supprime la première occurrence d'un élément. Avec une liste de chaînes, aucune ambiguïté, mais avec une `List<Integer>`, passer un entier appelle la version avec l'index, car le compilateur préfère la méthode qui ne demande pas de conversion en `Integer` :
 
 ```java
-List<String> copie = new ArrayList<>(fruits.subList(0, 2));
+List<Integer> nombres = new ArrayList<>(List.of(10, 20, 1, 30));
+nombres.remove(1);                  // supprime l'élément d'index 1, donc 20
+System.out.println(nombres);        // [10, 1, 30]
+
+nombres.remove(Integer.valueOf(1)); // supprime la valeur 1
+System.out.println(nombres);        // [10, 30]
 ```
 
-### Tri, remplacement, filtrage
+## Les sous-listes
+
+`subList(from, to)` retourne la portion de liste comprise entre l'index `from` inclus et l'index `to` exclu. Ce n'est pas une copie mais une vue sur la liste d'origine : ce qu'on modifie à travers la sous-liste est répercuté sur la liste. On peut s'en servir pour supprimer une plage d'éléments en une ligne :
 
 ```java
-fruits.sort(Comparator.naturalOrder());     // tri croissant
-fruits.replaceAll(String::toUpperCase);     // applique la fonction à chaque élément
-fruits.removeIf(s -> s.length() <= 4);      // filtre en place
+List<Integer> valeurs = new ArrayList<>(List.of(1, 2, 3, 4, 5, 6));
+valeurs.subList(1, 4).clear();
+System.out.println(valeurs); // [1, 5, 6]
 ```
 
-## Itérateurs et parcours
-
-- Préférez le `for-each` pour la lecture :
+Dans l'autre sens, ça se passe mal : si la liste d'origine change de taille sans passer par la sous-liste, le comportement de la sous-liste n'est plus défini. Avec une `ArrayList`, le prochain accès à la sous-liste lève une exception :
 
 ```java
+List<Integer> debut = valeurs.subList(0, 2);
+valeurs.add(7);
+System.out.println(debut); // java.util.ConcurrentModificationException
+```
+
+Pour garder une portion de liste indépendante de l'originale, on en fait une copie :
+
+```java
+List<String> copie = new ArrayList<>(fruits.subList(0, 2)); // [pomme, poire]
+```
+
+## Trier et transformer une liste
+
+Trois méthodes modifient la liste en place : `sort` la trie selon un comparateur, `replaceAll` remplace chaque élément par le résultat d'une fonction, et `removeIf` supprime les éléments qui vérifient une condition.
+
+```java
+List<String> panier = new ArrayList<>(List.of("prune", "kiwi", "pomme", "figue", "poire"));
+
+panier.sort(Comparator.naturalOrder());
+System.out.println(panier); // [figue, kiwi, poire, pomme, prune]
+
+panier.replaceAll(String::toUpperCase);
+System.out.println(panier); // [FIGUE, KIWI, POIRE, POMME, PRUNE]
+
+panier.removeIf(s -> s.length() <= 4);
+System.out.println(panier); // [FIGUE, POIRE, POMME, PRUNE]
+```
+
+Pour obtenir une nouvelle liste en laissant l'originale intacte, on passera plutôt par un Stream, comme expliqué dans l'[introduction aux Streams]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %}).
+
+## Parcourir une liste
+
+Pour lire les éléments un par un, la boucle for-each suffit :
+
+```java
+List<String> fruits = new ArrayList<>(List.of("pomme", "kiwi", "poire", "figue"));
+
 for (String f : fruits) {
     System.out.println(f);
 }
 ```
 
-- Pour supprimer en parcourant, utilisez un itérateur (ou `removeIf`) pour éviter `ConcurrentModificationException` :
+Par contre, il ne faut pas supprimer d'élément de la liste dans cette boucle. Elle utilise un itérateur, qui détecte que la liste a été modifiée sans passer par lui et lève une `ConcurrentModificationException` :
 
 ```java
-Iterator<String> it = fruits.iterator();
-while (it.hasNext()) {
-    if (it.next().startsWith("p")) {
-        it.remove(); // OK
+// À éviter :
+for (String f : fruits) {
+    if (f.startsWith("p")) {
+        fruits.remove(f); // ConcurrentModificationException au tour suivant
     }
 }
 ```
 
-## ListIterator : parcours bidirectionnel
+Et l'exception n'est même pas garantie. Si l'élément supprimé est l'avant-dernier de la liste, la boucle s'arrête sans erreur, mais sans avoir vu le dernier élément : avec la liste `[kiwi, pomme, poire]`, la boucle supprime `pomme`, s'arrête, et `poire` reste dans la liste.
 
-`ListIterator` permet de parcourir dans les deux sens et d'insérer/remplacer au vol :
+Pour supprimer pendant un parcours, il faut passer par la méthode `remove()` de l'itérateur, ou plus simplement utiliser `removeIf` :
+
+```java
+// Correct :
+Iterator<String> it = fruits.iterator();
+while (it.hasNext()) {
+    if (it.next().startsWith("p")) {
+        it.remove();
+    }
+}
+
+// Ou en une ligne :
+fruits.removeIf(f -> f.startsWith("p"));
+```
+
+Dans les deux cas, il reste `[kiwi, figue]`.
+
+`ListIterator`, obtenu avec `listIterator()`, va plus loin qu'un `Iterator` classique : il parcourt la liste dans les deux sens (`hasPrevious()` et `previous()`) et peut remplacer (`set`) ou insérer (`add`) des éléments en cours de route. `add` insère le nouvel élément juste avant celui que retournerait le prochain appel à `next()` :
 
 ```java
 List<Integer> nums = new ArrayList<>(List.of(1, 2, 3));
@@ -158,63 +203,58 @@ while (li.hasNext()) {
         li.add(99);   // insère avant l'élément suivant
     }
 }
-// nums => [1, 2, 99, 3]
+System.out.println(nums); // [1, 2, 99, 3]
 ```
 
-## Immutabilité
+Pour parcourir la liste à l'envers, on part de la fin avec `listIterator(nums.size())` et on remonte avec `previous()`.
 
-- Construire directement une liste immuable :
+## Listes non modifiables
+
+`List.of(...)`, disponible depuis Java 9, crée une liste non modifiable : toute tentative d'ajout, de suppression ou de remplacement lève une `UnsupportedOperationException`. Elle refuse aussi les éléments `null`.
 
 ```java
 List<String> roles = List.of("ADMIN", "USER");
+roles.add("GUEST"); // java.lang.UnsupportedOperationException
 ```
 
-- Exposer une vue non modifiable d'une liste interne :
+Pour exposer une liste interne à une classe sans laisser l'appelant la modifier, `Collections.unmodifiableList` retourne une vue en lecture seule :
 
 ```java
 class Service {
     private final List<String> logs = new ArrayList<>();
+
     public List<String> getLogs() {
         return Collections.unmodifiableList(logs);
     }
 }
 ```
 
-## Concurrence
+Comme c'est une vue, l'appelant verra apparaître les éléments que le service ajoutera plus tard dans `logs`. S'il lui faut une copie figée, on retourne plutôt `List.copyOf(logs)` (Java 10+), qui est elle aussi non modifiable.
 
-- Lecture majoritaire, peu d'écritures : `CopyOnWriteArrayList`.
-- Besoin simple de synchronisation : `Collections.synchronizedList(new ArrayList<>())`.
-- Sinon, envisagez une conception sans partage (immutabilité, confinement de thread) ou des structures concurrentes adaptées.
+## Listes et threads
 
-## Bonnes pratiques
+`ArrayList` et `LinkedList` ne sont pas synchronisées : si plusieurs threads modifient la même liste, c'est à vous de gérer la synchronisation. La bibliothèque standard propose deux solutions toutes prêtes.
 
-- Déclarez par l'interface : `List<String> l = new ArrayList<>();`
-- Choisissez l'implémentation selon le pattern d'accès (lecture par index ? insertions fréquentes ?).
-- Évitez `LinkedList` par défaut ; mesurez les perfs avant d'optimiser.
-- Attention à `remove` en boucle for-each : utilisez un itérateur ou `removeIf`.
-- Copiez une `subList` si vous avez besoin d'une liste indépendante.
+`Collections.synchronizedList(new ArrayList<>())` retourne une liste dont toutes les méthodes sont synchronisées. Attention, cela ne couvre pas les parcours : pendant une boucle, un autre thread peut toujours modifier la liste. La documentation demande donc de faire les parcours dans un bloc `synchronized` sur la liste :
 
-## Quand préférer une List, un Set ou une Queue ?
+```java
+List<String> liste = Collections.synchronizedList(new ArrayList<>());
 
-- Utilisez `List` si l'ordre compte et si les doublons sont permis.
-- Utilisez `Set` si vous devez garantir l'unicité des éléments.
-- Utilisez `Queue`/`Deque` pour des modèles FIFO/LIFO et des opérations en tête/queue optimisées.
+synchronized (liste) {
+    for (String s : liste) {
+        System.out.println(s);
+    }
+}
+```
 
-## Conclusion
+`CopyOnWriteArrayList`, du package `java.util.concurrent`, prend le problème à l'envers : chaque modification recopie entièrement le tableau interne, et chaque parcours travaille sur le tableau tel qu'il était au moment où le parcours a commencé. Les lectures ne prennent aucun verrou et un parcours ne lève jamais de `ConcurrentModificationException`. C'est intéressant pour une liste très souvent lue et rarement modifiée, mais à éviter si les écritures sont fréquentes, puisque chacune copie toute la liste.
 
-`List` est probablement la collection la plus utilisée en Java. En comprenant ses implémentations clés, leurs complexités et les pièges courants, vous ferez des choix plus éclairés et écrirez un code plus robuste et performant.
+Dans la partie suivante, nous verrons les [ensembles]({% post_url 2025-09-25-Framework-collections-java-set %}), pour les cas où les doublons n'ont pas leur place.
 
-Pour aller plus loin dans la série :
+## Voir aussi
 
-1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
-2. Les listes (List) en Java (vous êtes ici)
-3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
-4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
-5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
-6. Utilisations avancées des collections (article à venir)
-
-### Pour aller plus loin
-
-- [List - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/List.html)
-- [ArrayList - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/ArrayList.html)
-- [LinkedList - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/LinkedList.html)
+- [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
+- [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %})
+- [Javadoc de List (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/List.html)
+- [Javadoc d'ArrayList (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayList.html)
+- [Javadoc de LinkedList (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/LinkedList.html)

@@ -9,28 +9,26 @@ tags:
 author: Pierre Chopinet
 ---
 
-Regrouper des données par clé (faire un "group by") est une opération courante en programmation : calculer des statistiques par catégorie, compter des occurrences, agréger des montants. En Java, plusieurs approches existent selon vos besoins : boucles avec `Map`, Streams API avec `Collectors.groupingBy()`, ou bibliothèques tierces.
+Compter des ventes par ville, additionner un chiffre d'affaires par produit, trouver la plus grosse commande de chaque client : ce sont des "group by", comme en SQL. En Java, on peut les écrire avec une boucle et une `Map`, ou avec les Streams et `Collectors.groupingBy`, qui couvre la plupart des agrégations en une seule expression.
 <!--more-->
 
 Dans cet article :
-- Groupement simple avec `Map` et boucles
-- Groupement puissant avec Streams et `Collectors.groupingBy()`
-- Agrégations avancées (count, sum, average, max, min)
-- Groupement par plusieurs clés
-- Personnaliser le type de Map résultante
-- Transformer les résultats après groupement
-- Filtrer avant ou après le groupement
-- Cas d'usage : construire un rapport d'agrégation
-- Utilisation avec les records (Java 16+)
-- Pièges et bonnes pratiques
+- Le jeu de données
+- Regrouper avec une boucle et une Map
+- Regrouper avec `Collectors.groupingBy`
+- Plusieurs statistiques par groupe
+- Grouper sur plusieurs clés
+- Choisir le type de Map
+- Transformer les éléments de chaque groupe
+- Filtrer avant ou après le regroupement
+- Construire un rapport par ville
+- Les clés null
 
-Pré-requis : Java 8 ou plus récent. Les exemples avec records nécessitent Java 16+.
+Pré-requis : connaître les bases des [Streams]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %}). Les exemples utilisent des records et `Stream.toList()`, ils demandent donc Java 16 ou plus récent. Ils ont été testés avec Java 21.
 
----
+## Le jeu de données
 
-## Jeu de données d'exemple
-
-Nous utiliserons une liste de ventes :
+Tous les exemples utilisent la même liste de ventes, celle de la [version Python de cet article]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %}) :
 
 ```java
 public record Vente(String ville, String produit, int quantite, double prix) {}
@@ -45,15 +43,9 @@ List<Vente> ventes = List.of(
 );
 ```
 
----
+## Regrouper avec une boucle et une Map
 
-## Approche classique : boucles et Map
-
-Avant l'arrivée des Streams en Java 8, on utilisait des boucles et des `Map` pour regrouper des données. Cette approche reste valide et offre un contrôle total sur le processus.
-
-### Grouper des objets par clé
-
-Voici comment regrouper manuellement des ventes par ville :
+Avant les Streams, on parcourait la liste en rangeant chaque vente dans la liste de sa ville. `computeIfAbsent` crée la liste la première fois qu'une ville est rencontrée, et la retourne dans tous les cas :
 
 ```java
 Map<String, List<Vente>> parVille = new HashMap<>();
@@ -65,13 +57,15 @@ for (Vente v : ventes) {
 parVille.get("Paris").forEach(System.out::println);
 ```
 
-Explication :
-- `computeIfAbsent` crée une nouvelle liste si la clé n'existe pas
-- Chaque vente est ajoutée à la liste correspondante
+On récupère les trois ventes de Paris :
 
-### Compter les occurrences
+```
+Vente[ville=Paris, produit=Livre, quantite=2, prix=12.5]
+Vente[ville=Paris, produit=Stylo, quantite=3, prix=1.2]
+Vente[ville=Paris, produit=Cahier, quantite=4, prix=3.0]
+```
 
-Pour compter simplement le nombre d'éléments par groupe, utilisez `merge` :
+Pour compter les ventes de chaque ville, pas besoin de garder les listes : `merge` ajoute 1 au compteur de la ville, ou l'initialise à 1 si la ville n'est pas encore dans la map.
 
 ```java
 Map<String, Integer> compteParVille = new HashMap<>();
@@ -82,13 +76,9 @@ for (Vente v : ventes) {
 System.out.println(compteParVille); // {Nantes=1, Lyon=2, Paris=3}
 ```
 
-`merge(key, 1, Integer::sum)` ajoute 1 si la clé existe, sinon initialise à 1.
+L'ordre d'itération d'une `HashMap` n'est pas garanti : les villes pourraient sortir dans un autre ordre, ne basez aucune logique dessus.
 
-Notez que l'ordre d'itération d'une `HashMap` n'est pas garanti : l'ordre affiché ici peut varier, ne basez aucune logique dessus.
-
-### Calculer des totaux
-
-Le même principe s'applique pour calculer des sommes ou d'autres agrégations :
+Le même principe permet de calculer le chiffre d'affaires de chaque ville :
 
 ```java
 Map<String, Double> caParVille = new HashMap<>();
@@ -101,15 +91,11 @@ System.out.println(caParVille);
 // {Nantes=12.5, Lyon=31.0, Paris=40.6}
 ```
 
----
+Ces deux méthodes de `Map` sont détaillées dans l'article sur [les maps en Java]({% post_url 2025-10-04-Framework-collections-java-map %}).
 
-## Streams API : Collectors.groupingBy()
+## Regrouper avec `Collectors.groupingBy`
 
-Depuis Java 8, l'API Streams offre une approche déclarative et puissante pour regrouper des données avec `Collectors.groupingBy()`.
-
-### Grouper des objets
-
-La version avec Streams est beaucoup plus concise :
+Avec les Streams, `Collectors.groupingBy` fait le même travail. On lui donne la fonction qui calcule la clé de chaque élément, et il retourne une `Map` dont chaque valeur est la liste des éléments qui ont cette clé :
 
 ```java
 Map<String, List<Vente>> parVille = ventes.stream()
@@ -120,14 +106,13 @@ parVille.forEach((ville, liste) ->
 );
 ```
 
-Avantages :
-- Code concis et déclaratif
-- Pas de gestion manuelle de la Map
-- Composable avec d'autres opérations
+```
+Nantes : 1 ventes
+Lyon : 2 ventes
+Paris : 3 ventes
+```
 
-### Compter les éléments par groupe
-
-Pour compter les éléments de chaque groupe, utilisez le collector `counting()` :
+Le deuxième paramètre de `groupingBy`, facultatif, est un autre collector, qui dit quoi faire des éléments de chaque groupe au lieu de les mettre dans une liste. `Collectors.counting()` les compte :
 
 ```java
 Map<String, Long> compteParVille = ventes.stream()
@@ -140,9 +125,7 @@ System.out.println(compteParVille);
 // {Nantes=1, Lyon=2, Paris=3}
 ```
 
-### Calculer une somme par groupe
-
-Les collectors d'agrégation comme `summingDouble()` permettent de calculer des totaux directement :
+Et `summingDouble` (ou `summingInt` et `summingLong`) additionne une valeur calculée pour chaque élément :
 
 ```java
 Map<String, Double> caParVille = ventes.stream()
@@ -155,15 +138,13 @@ System.out.println(caParVille);
 // {Nantes=12.5, Lyon=31.0, Paris=40.6}
 ```
 
----
+On obtient les mêmes résultats qu'avec les boucles, sans gérer la map soi-même. Notez seulement que `counting()` compte avec des `Long`, là où la boucle utilisait des `Integer`. Dès qu'on combine plusieurs agrégations, comme dans la suite de l'article, la version Stream devient nettement plus courte. La boucle reste plus simple à lire quand le traitement de chaque élément demande plusieurs étapes.
 
-## Agrégations avancées
+Sur un Stream parallèle, `groupingBy` doit fusionner les maps construites par chaque thread, ce qui peut coûter cher. Sa documentation suggère dans ce cas `groupingByConcurrent`, qui remplit une `ConcurrentMap`, si l'ordre des éléments dans chaque groupe n'a pas d'importance.
 
-Au-delà des simples comptages et sommes, Java propose des collectors plus sophistiqués pour obtenir plusieurs statistiques en une seule passe.
+## Plusieurs statistiques par groupe
 
-### Plusieurs statistiques par groupe
-
-Le collector `summarizingDouble()` calcule count, sum, average, min et max en une seule opération :
+`summarizingDouble` calcule en une seule passe le nombre d'éléments, la somme, la moyenne, le minimum et le maximum de chaque groupe, dans un objet `DoubleSummaryStatistics` :
 
 ```java
 Map<String, DoubleSummaryStatistics> statsParVille = ventes.stream()
@@ -184,16 +165,15 @@ statsParVille.forEach((ville, stats) -> {
 });
 ```
 
-Sortie :
+Ce qui donne :
+
 ```
 Nantes : count=1, sum=12.50, avg=12.50, min=12.50, max=12.50
 Lyon : count=2, sum=31.00, avg=15.50, min=6.00, max=25.00
 Paris : count=3, sum=40.60, avg=13.53, min=3.60, max=25.00
 ```
 
-### Trouver le maximum ou minimum par groupe
-
-Pour identifier l'élément avec la valeur maximale dans chaque groupe, utilisez `maxBy()` :
+Pour récupérer l'élément qui a la plus grande valeur dans chaque groupe, et pas seulement cette valeur, on utilise `maxBy` (ou `minBy`) avec un comparateur :
 
 ```java
 Map<String, Optional<Vente>> ventesMaxParVille = ventes.stream()
@@ -207,9 +187,15 @@ ventesMaxParVille.forEach((ville, opt) ->
 );
 ```
 
-### Calculer une moyenne
+```
+Nantes : Vente[ville=Nantes, produit=Livre, quantite=1, prix=12.5]
+Lyon : Vente[ville=Lyon, produit=Livre, quantite=2, prix=12.5]
+Paris : Vente[ville=Paris, produit=Livre, quantite=2, prix=12.5]
+```
 
-Le collector `averagingDouble()` calcule la moyenne d'une valeur numérique pour chaque groupe :
+`maxBy` retourne un `Optional`, qui serait vide s'il n'avait reçu aucun élément. Dans un `groupingBy`, chaque groupe contient au moins un élément, l'`Optional` est donc toujours rempli. Pour obtenir directement la vente, on peut envelopper le collector : `Collectors.collectingAndThen(Collectors.maxBy(...), Optional::get)`.
+
+Enfin, `averagingDouble` calcule une moyenne. Ici, la moyenne des prix unitaires des ventes de chaque ville, sans tenir compte des quantités :
 
 ```java
 Map<String, Double> prixMoyenParVille = ventes.stream()
@@ -219,17 +205,12 @@ Map<String, Double> prixMoyenParVille = ventes.stream()
     ));
 
 System.out.println(prixMoyenParVille);
+// {Nantes=12.5, Lyon=6.85, Paris=5.566666666666666}
 ```
 
----
+## Grouper sur plusieurs clés
 
-## Groupement par plusieurs clés
-
-Parfois, on doit regrouper par plusieurs critères simultanément. Java offre deux approches : créer une clé composite ou imbriquer les groupements.
-
-### Avec un record en clé composite
-
-Créons un record pour la clé composite :
+Pour regrouper par ville et par produit, il y a deux possibilités. La première est d'utiliser une clé composite. Un record s'y prête bien, puisque ses méthodes `equals` et `hashCode` sont générées à partir de ses composants (voir [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})) :
 
 ```java
 public record VilleProduit(String ville, String produit) {}
@@ -245,9 +226,16 @@ parVilleEtProduit.forEach((cle, liste) ->
 );
 ```
 
-### Groupement imbriqué
+```
+Lyon - Stylo : 1 vente(s)
+Paris - Livre : 1 vente(s)
+Nantes - Livre : 1 vente(s)
+Lyon - Livre : 1 vente(s)
+Paris - Stylo : 1 vente(s)
+Paris - Cahier : 1 vente(s)
+```
 
-Plutôt qu'une clé composite, on peut imbriquer les `groupingBy()` pour obtenir une structure hiérarchique :
+La seconde est d'imbriquer deux `groupingBy` : le collector passé en deuxième paramètre est lui-même un regroupement, et on obtient une map de maps.
 
 ```java
 Map<String, Map<String, List<Vente>>> parVillePuisProduit = ventes.stream()
@@ -265,7 +253,6 @@ parVillePuisProduit.forEach((ville, parProduit) -> {
 });
 ```
 
-Sortie :
 ```
 Ville : Nantes
   Livre : 1
@@ -278,9 +265,7 @@ Ville : Paris
   Livre : 1
 ```
 
-### Compter avec groupement imbriqué
-
-Combinez les groupements imbriqués avec des collectors d'agrégation pour des statistiques détaillées :
+Et comme pour un regroupement simple, on peut remplacer les listes par une agrégation en la passant au `groupingBy` intérieur :
 
 ```java
 Map<String, Map<String, Long>> comptesParVilleEtProduit = ventes.stream()
@@ -291,15 +276,14 @@ Map<String, Map<String, Long>> comptesParVilleEtProduit = ventes.stream()
             Collectors.counting()
         )
     ));
+
+System.out.println(comptesParVilleEtProduit);
+// {Nantes={Livre=1}, Lyon={Stylo=1, Livre=1}, Paris={Cahier=1, Stylo=1, Livre=1}}
 ```
 
----
+## Choisir le type de Map
 
-## Personnaliser le type de Map résultante
-
-Par défaut, `groupingBy` retourne une `HashMap`. Si vous avez besoin d'un ordre spécifique ou d'autres propriétés, vous pouvez spécifier le type de Map.
-
-### TreeMap pour un tri automatique
+La documentation de `groupingBy` ne garantit ni le type ni la mutabilité de la map retournée (en pratique, c'est une `HashMap`). Pour choisir, on passe une fabrique en deuxième paramètre, et le collector des valeurs devient le troisième. Avec une `TreeMap`, les villes sont triées :
 
 ```java
 Map<String, List<Vente>> parVilleTriee = ventes.stream()
@@ -308,9 +292,11 @@ Map<String, List<Vente>> parVilleTriee = ventes.stream()
         TreeMap::new,           // Map triée par clé
         Collectors.toList()
     ));
+
+System.out.println(parVilleTriee.keySet()); // [Lyon, Nantes, Paris]
 ```
 
-### LinkedHashMap pour conserver l'ordre d'insertion
+Avec une `LinkedHashMap`, elles restent dans l'ordre de leur première apparition dans la liste :
 
 ```java
 Map<String, Long> parVilleOrdonnee = ventes.stream()
@@ -319,17 +305,21 @@ Map<String, Long> parVilleOrdonnee = ventes.stream()
         LinkedHashMap::new,
         Collectors.counting()
     ));
+
+System.out.println(parVilleOrdonnee); // {Paris=3, Lyon=2, Nantes=1}
 ```
 
----
+Pour obtenir une map non modifiable, on peut envelopper le résultat avec `Collections.unmodifiableMap`. Seule la map est protégée : les listes qu'elle contient restent modifiables.
 
-## Transformer les résultats après groupement
+```java
+Map<String, List<Vente>> groupes = Collections.unmodifiableMap(
+    ventes.stream().collect(Collectors.groupingBy(Vente::ville))
+);
+```
 
-Au lieu de conserver les objets complets dans chaque groupe, on peut transformer ou extraire uniquement certaines valeurs avec `Collectors.mapping()`.
+## Transformer les éléments de chaque groupe
 
-### Extraire seulement certaines valeurs
-
-Pour ne garder qu'un champ spécifique de chaque objet groupé :
+On n'a pas toujours besoin des objets complets dans chaque groupe. `Collectors.mapping` applique une fonction à chaque élément avant de le passer au collector suivant, par exemple pour ne garder que le nom du produit :
 
 ```java
 Map<String, List<String>> produitsParVille = ventes.stream()
@@ -345,24 +335,7 @@ System.out.println(produitsParVille);
 // {Nantes=[Livre], Lyon=[Stylo, Livre], Paris=[Livre, Stylo, Cahier]}
 ```
 
-### Éliminer les doublons avec Set
-
-Si certaines valeurs se répètent, utilisez `toSet()` pour ne conserver que les valeurs uniques :
-
-```java
-Map<String, Set<String>> produitsUniquesParVille = ventes.stream()
-    .collect(Collectors.groupingBy(
-        Vente::ville,
-        Collectors.mapping(
-            Vente::produit,
-            Collectors.toSet()
-        )
-    ));
-```
-
-### Concaténer des chaînes
-
-Pour obtenir une représentation textuelle des valeurs de chaque groupe, utilisez `joining()` :
+Avec `Collectors.toSet()` à la place de `Collectors.toList()`, chaque produit n'apparaît qu'une fois par ville, dans un ensemble dont l'ordre n'est pas garanti. Et avec `joining`, on obtient directement une chaîne :
 
 ```java
 Map<String, String> produitsJointsParVille = ventes.stream()
@@ -378,15 +351,9 @@ System.out.println(produitsJointsParVille);
 // {Nantes=Livre, Lyon=Stylo, Livre, Paris=Livre, Stylo, Cahier}
 ```
 
----
+## Filtrer avant ou après le regroupement
 
-## Filtrer avant ou après le groupement
-
-Le filtrage peut s'effectuer à deux moments : avant de regrouper les éléments, ou après avoir créé les groupes pour ne garder que certains d'entre eux.
-
-### Filtrer avant groupement
-
-Pour ne regrouper que les éléments qui satisfont un critère :
+Pour ne regrouper qu'une partie des éléments, on filtre le Stream avant le `groupingBy`. Ici, on ne garde que les ventes de plus de 10 euros :
 
 ```java
 Map<String, List<Vente>> grossesVentesParVille = ventes.stream()
@@ -394,9 +361,21 @@ Map<String, List<Vente>> grossesVentesParVille = ventes.stream()
     .collect(Collectors.groupingBy(Vente::ville));
 ```
 
-### Filtrer les groupes après groupement
+Une ville dont aucune vente ne passe le filtre disparaît alors du résultat. Pour la garder avec un groupe vide, il faut filtrer à l'intérieur du regroupement, avec `Collectors.filtering` (Java 9+). Avec un seuil de 20 euros :
 
-Pour ne conserver que les groupes qui répondent à une condition (par exemple, taille minimale) :
+```java
+Map<String, Long> grossesVentes = ventes.stream()
+    .collect(Collectors.groupingBy(
+        Vente::ville,
+        Collectors.filtering(v -> v.quantite() * v.prix() > 20, Collectors.counting())
+    ));
+
+System.out.println(grossesVentes); // {Nantes=0, Lyon=1, Paris=1}
+```
+
+Avec un `filter` placé avant le regroupement, Nantes, dont la seule vente fait 12,50 euros, n'apparaîtrait pas du tout : on obtiendrait `{Lyon=1, Paris=1}`.
+
+Pour filtrer les groupes eux-mêmes, par exemple ne garder que les villes qui ont plusieurs ventes, il faut construire la map, puis repartir de ses entrées :
 
 ```java
 Map<String, List<Vente>> villesAvecPlusieursVentes = ventes.stream()
@@ -410,11 +389,9 @@ System.out.println(villesAvecPlusieursVentes.keySet());
 // [Lyon, Paris]
 ```
 
----
+## Construire un rapport par ville
 
-## Cas d'usage : construire un rapport d'agrégation
-
-Combinons plusieurs techniques pour construire un rapport complet avec toutes les statistiques pertinentes par groupe.
+Quand on veut plusieurs informations par groupe, on peut regrouper les ventes, puis construire un objet par groupe à partir de sa liste :
 
 ```java
 public record RapportVille(
@@ -446,120 +423,61 @@ List<RapportVille> rapports = groupes.entrySet().stream()
 rapports.forEach(System.out::println);
 ```
 
-Pour des cas plus avancés, regardez `Collectors.teeing()` (Java 12+) qui permet de combiner deux collectors en une seule passe.
+```
+RapportVille[ville=Nantes, nombreVentes=1, chiffreAffaires=12.5, montantMoyen=12.5, produits=[Livre]]
+RapportVille[ville=Lyon, nombreVentes=2, chiffreAffaires=31.0, montantMoyen=15.5, produits=[Stylo, Livre]]
+RapportVille[ville=Paris, nombreVentes=3, chiffreAffaires=40.6, montantMoyen=13.533333333333333, produits=[Cahier, Stylo, Livre]]
+```
 
----
-
-## Avec les records (Java 16+)
-
-Les records Java s'intègrent naturellement avec les opérations de groupement, offrant une syntaxe claire pour les modèles de données.
+Cette version parcourt chaque groupe plusieurs fois, ce qui ne gêne pas sur de petites listes. `Collectors.teeing` (Java 12+) permet de calculer deux agrégations en une seule passe : chaque élément est envoyé à deux collectors, dont les résultats sont ensuite combinés. Par exemple, pour un bilan avec le nombre de ventes et le chiffre d'affaires de chaque ville :
 
 ```java
-public record Commande(String client, String statut, double montant) {}
+record Bilan(long ventes, double chiffreAffaires) {}
 
-List<Commande> commandes = List.of(
-    new Commande("Alice", "LIVREE", 100.0),
-    new Commande("Bob", "EN_COURS", 50.0),
-    new Commande("Alice", "LIVREE", 75.0),
-    new Commande("Charlie", "ANNULEE", 30.0)
-);
-
-Map<String, Double> montantParClient = commandes.stream()
-    .filter(c -> "LIVREE".equals(c.statut()))
+Map<String, Bilan> bilanParVille = ventes.stream()
     .collect(Collectors.groupingBy(
-        Commande::client,
-        Collectors.summingDouble(Commande::montant)
+        Vente::ville,
+        Collectors.teeing(
+            Collectors.counting(),
+            Collectors.summingDouble(v -> v.quantite() * v.prix()),
+            Bilan::new
+        )
     ));
 
-System.out.println(montantParClient); // {Alice=175.0}
+System.out.println(bilanParVille);
 ```
 
----
-
-## Pièges et bonnes pratiques
-
-### Pièges courants
-
-Modifier la collection pendant le stream :
-```java
-// NE PAS FAIRE : ConcurrentModificationException
-ventes.stream()
-    .forEach(v -> ventes.remove(v)); // ERREUR
+```
+{Nantes=Bilan[ventes=1, chiffreAffaires=12.5], Lyon=Bilan[ventes=2, chiffreAffaires=31.0], Paris=Bilan[ventes=3, chiffreAffaires=40.6]}
 ```
 
-Grouper par valeur nulle :
+## Les clés null
+
+`groupingBy` refuse les clés `null`. Si la liste contenait une vente sans ville, `new Vente(null, "Stylo", 2, 1.2)` par exemple, le regroupement par ville s'arrêterait sur une `NullPointerException: element cannot be mapped to a null key`. La boucle avec `merge` n'aurait pas ce problème, puisqu'une `HashMap` accepte une clé `null`.
+
+On peut écarter ces éléments avant le regroupement, ou les ranger sous une clé par défaut avec `Objects.requireNonNullElse` (Java 9+) :
+
 ```java
-// Gérer les nulls avec un filtre ou une clé par défaut
+// Ignorer les ventes sans ville
 ventes.stream()
     .filter(v -> v.ville() != null)
     .collect(Collectors.groupingBy(Vente::ville));
+
+// Ou les compter sous une clé par défaut
+ventes.stream()
+    .collect(Collectors.groupingBy(
+        v -> Objects.requireNonNullElse(v.ville(), "Inconnue"),
+        Collectors.counting()
+    ));
+// Avec la vente sans ville : {Inconnue=1, Nantes=1, Lyon=2, Paris=3}
 ```
-
-Oublier que `groupingBy` retourne une Map modifiable :
-```java
-// Rendre immuable si nécessaire
-Map<String, List<Vente>> groupes = Collections.unmodifiableMap(
-    ventes.stream().collect(Collectors.groupingBy(Vente::ville))
-);
-```
-
-### À faire
-
-- **Utilisez les records** pour les clés composites (immutables, `equals`/`hashCode` automatiques)
-- **Préférez les Streams** pour la lisibilité et la composition
-- **Choisissez le bon collector** selon vos besoins :
-   - `counting()` pour compter
-   - `summingDouble()` / `summingInt()` pour des totaux
-   - `averagingDouble()` pour des moyennes
-   - `summarizingDouble()` pour plusieurs stats en un coup
-- **Nommez clairement vos variables** : `Map<String, List<Vente>> ventesParVille` plutôt que `Map<String, List<Vente>> map`
-- **Documentez les groupements complexes** (multi-niveaux, agrégations multiples)
-- **Testez les cas limites** : liste vide, valeurs nulles, un seul groupe
-
----
-
-## Comparaison : boucles vs Streams
-
-| Critère         | Boucles + Map          | Streams + groupingBy         |
-|-----------------|------------------------|------------------------------|
-| Lisibilité      | Moyenne                | Excellente                   |
-| Performances    | Similaires             | Similaires (léger overhead)  |
-| Parallélisation | Manuelle               | Facile (`.parallel()`)       |
-| Composition     | Difficile              | Naturelle                    |
-| Cas d'usage     | Contrôle fin, complexe | Transformations déclaratives |
-
-Recommandation :
-- Pour du code simple et déclaratif : **Streams**
-- Pour des optimisations spécifiques ou logique complexe : **boucles classiques**
-
----
-
-## Conclusion
-
-Java offre plusieurs façons de faire des "group by", de l'approche classique avec boucles et `Map` jusqu'aux puissants Streams avec `Collectors.groupingBy()`.
-
-**Récapitulatif :**
-- **Boucles + Map** : contrôle total, verbeux
-- **Streams + groupingBy** : concis, déclaratif, composable
-- **Records** : clés composites élégantes
-- **Collectors** : counting, summing, averaging, summarizing
-- **Groupements imbriqués** : hiérarchies de Maps
-- **Filtrage et transformation** : combinez avec `filter`, `map`, `mapping`
-
-Les Streams et `groupingBy` sont aujourd'hui l'approche idiomatique en Java moderne.
-
----
-
-## Pour aller plus loin
-
-- [Collectors Javadoc](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/stream/Collectors.html)
-- [Stream API Guide](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/stream/package-summary.html)
 
 ## Voir aussi
 
 - [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %})
-- [Les listes (List) en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
 - [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
 - [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})
-- [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
 - [Optional en Java : éviter les NullPointerException]({% post_url 2026-01-26-Optional-en-Java-eviter-les-NullPointerException %})
+- [Python : Comment faire des group by]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
+- [Javadoc de Collectors (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Collectors.html)
+- [Javadoc du package java.util.stream (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/package-summary.html)

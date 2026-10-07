@@ -8,7 +8,7 @@ tags:
   - set
 ---
 
-Dans cet article (partie 3 de la série sur les collections), nous allons nous concentrer sur la famille Set du Framework Collections : ses caractéristiques, ses principales implémentations (HashSet, LinkedHashSet, TreeSet, EnumSet…), leurs différences, pièges courants et bonnes pratiques d'utilisation.
+Troisième partie de notre série sur les collections Java, consacrée aux ensembles. Un `Set` garantit qu'un même élément n'y figure jamais deux fois : nous allons voir sur quoi repose cette garantie, comment choisir entre `HashSet`, `LinkedHashSet`, `TreeSet` et `EnumSet`, et comment calculer une union, une intersection ou une différence.
 <!--more-->
 
 1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
@@ -16,114 +16,19 @@ Dans cet article (partie 3 de la série sur les collections), nous allons nous c
 3. Les ensembles (Set) en Java (vous êtes ici)
 4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
 5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
-6. Utilisations avancées des collections (article à venir)
+6. Utilisations avancées : [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %}) et [Java : Comment faire des group by]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
 
-## Qu'est-ce qu'un Set ?
+Les exemples ont été testés avec Java 21.
 
-`Set` est une sous-interface de `Collection` qui représente un ensemble d'éléments sans doublon.
+## Ce que garantit un Set
 
-- Unicité des éléments (pas de doublons).
-- Pas d'accès par index (contrairement à `List`).
-- La notion d'ordre dépend de l'implémentation (pas d'ordre, selon l'ordre d'insertion, ou trié).
-
-Signature :
+`Set` est une sous-interface de `Collection` qui représente un ensemble au sens mathématique : il ne contient jamais deux éléments égaux. Contrairement à une liste, il n'a pas d'index, et l'ordre dans lequel on retrouve les éléments en le parcourant dépend de l'implémentation.
 
 ```java
-public interface Set<E> extends Collection<E> { /* … */ }
+public interface Set<E> extends Collection<E> { /* ... */ }
 ```
 
-L'unicité est définie par :
-- Pour les ensembles à base de hachage (`HashSet`, `LinkedHashSet`) : la combinaison de `hashCode()` et `equals()` des éléments.
-- Pour les ensembles triés (`TreeSet`) : l'ordre imposé par `Comparator`/`Comparable` (deux éléments considérés « égaux » si `compare(a, b) == 0`).
-
-## Méthodes de l'interface Set
-
-En plus des méthodes héritées de `Collection`, voici les méthodes les plus utilisées avec leurs particularités pour `Set` :
-
-| Méthode                                                | Description                                                                                             |
-|--------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| boolean add(E e)                                       | Ajoute l'élément s'il n'est pas déjà présent. Retourne true si le set a changé (doublons ignorés).      |
-| boolean addAll(Collection<? extends E> c)              | Ajoute les éléments non présents de c. Les doublons sont ignorés. Retourne true si le set a changé.     |
-| boolean contains(Object o)                             | true si l'élément est présent (défini par equals/hashCode, ou par l'ordre du comparateur pour TreeSet). |
-| boolean containsAll(Collection<?> c)                   | true si tous les éléments de c sont présents.                                                           |
-| boolean remove(Object o)                               | Supprime l'élément s'il est présent. Retourne true si un élément a été retiré.                          |
-| boolean removeAll(Collection<?> c)                     | Supprime tous les éléments présents dans c.                                                             |
-| boolean retainAll(Collection<?> c)                     | Ne garde que les éléments aussi présents dans c (intersection).                                         |
-| void clear()                                           | Vide le set.                                                                                            |
-| int size()                                             | Nombre d'éléments.                                                                                      |
-| boolean isEmpty()                                      | true si vide.                                                                                           |
-| Iterator<E> iterator()                                 | Itérateur sur le set (ordre selon l'implémentation : insertion, aucun, trié).                           |
-| Object[] toArray()                                     | Copie les éléments dans un tableau Object[].                                                            |
-| <T> T[] toArray(T[] a)                                 | Copie les éléments dans un tableau typé fourni.                                                         |
-| boolean equals(Object o)                               | Égalité de contenu (indépendante de l'ordre pour les ensembles).                                        |
-| int hashCode()                                         | Hash basé sur les éléments (somme des hashCodes des éléments).                                          |
-| static <E> Set<E> of(E... elements)                    | Crée un set immuable (Java 9+). Rejette les doublons (IllegalArgumentException).                        |
-| static <E> Set<E> copyOf(Collection<? extends E> coll) | Crée une copie immuable d'une collection (Java 10+). Les doublons sont dédupliqués silencieusement.     |
-
-Remarques :
-- `add`/`addAll` n'ajoutent jamais de doublons ; le booléen indique si le set a effectivement changé.
-- Le contrat de `Set.equals` ne dépend pas de l'ordre d'itération : deux sets égaux contiennent les mêmes éléments.
-- Attention à la différence entre les usines immuables : `Set.of` lève une `IllegalArgumentException` en cas de doublon, alors que `Set.copyOf` déduplique silencieusement (un seul exemplaire, arbitraire, est conservé).
-
-## Principales implémentations
-
-### HashSet
-
-- Structure : table de hachage.
-- Pas d'ordre garanti d'itération.
-- Opérations de base (`add`, `contains`, `remove`) en `O(1)` en moyenne.
-- Autorise un seul `null`.
-
-Cas d'usage : ensemble générique sans contrainte d'ordre, rapide par défaut.
-
-### LinkedHashSet
-
-- Même base que `HashSet` + chaîne de maillons pour conserver l'ordre d'insertion.
-- Itération prévisible (ordre d'insertion).
-- Surcoût mémoire minime par rapport à `HashSet`.
-
-Cas d'usage : vous voulez la rapidité d'un `HashSet` avec un ordre d'itération stable (journalisation, export, UI).
-
-### TreeSet (NavigableSet)
-
-- Structure : arbre rouge-noir (trié).
-- Itération triée selon l'ordre naturel ou un `Comparator` fourni au constructeur.
-- Opérations en `O(log n)`.
-- Ne supporte pas `null` avec l'ordre naturel.
-- Fournit l'API `NavigableSet` : `first`, `last`, `lower`, `floor`, `ceiling`, `higher`, `subSet`, `headSet`, `tailSet`…
-
-Cas d'usage : vous avez besoin d'un ensemble trié ou d'opérations par plage.
-
-### EnumSet
-
-- Ensemble ultra-optimisé pour des constantes d'une même `enum` (utilise un bitset en interne).
-- Très compact et rapide, itération dans l'ordre de déclaration des constantes.
-- Ne supporte que des éléments d'une seule énumération.
-
-Cas d'usage : flags/options, états, rôles… Exemple : `EnumSet.of(READ, WRITE)`.
-
-### CopyOnWriteArraySet
-
-- Thread-safe, basé sur copie lors d'écriture (comme `CopyOnWriteArrayList`).
-- Lectures très rapides et sans verrou, chaque mutation crée une nouvelle copie interne.
-- À éviter si beaucoup d'écritures.
-
-Cas d'usage : beaucoup de lectures, peu d'écritures, besoins de sécurité de thread simple.
-
-### ConcurrentSkipListSet
-
-- Version concurrente et triée (structure de skip-list).
-- Sémantique proche d'un `TreeSet` thread-safe, avec coûts légèrement supérieurs.
-
-Cas d'usage : ensemble trié partagé entre threads sans verrou global.
-
-## Complexités
-
-- `HashSet`/`LinkedHashSet` : `add`/`contains`/`remove` ≈ `O(1)` en moyenne.
-- `TreeSet`/`ConcurrentSkipListSet` : `O(log n)`.
-- `EnumSet` : très proche de `O(1)` pour la majorité des opérations.
-
-## Opérations de base
+`Set` n'ajoute aucune méthode à `Collection`, à part les fabriques statiques `of` et `copyOf` que nous verrons plus bas. Ce qui change, c'est le contrat des méthodes existantes. `add` n'ajoute l'élément que s'il n'est pas déjà présent, et le booléen retourné indique si l'ensemble a changé :
 
 ```java
 Set<String> tags = new HashSet<>();
@@ -135,32 +40,78 @@ boolean present = tags.contains("java"); // true
 boolean removed = tags.remove("java");   // true
 ```
 
-## Opérations ensemblistes (union, intersection, différence)
+De même, deux ensembles sont égaux au sens de `equals` s'ils contiennent les mêmes éléments, quel que soit l'ordre de parcours et quelle que soit leur implémentation : un `HashSet` et un `TreeSet` qui contiennent les mêmes chaînes sont égaux.
+
+Reste à savoir quand deux éléments sont "les mêmes". Pour `HashSet` et `LinkedHashSet`, ce sont les méthodes `hashCode()` et `equals()` des éléments qui en décident. Pour `TreeSet`, c'est l'ordre de tri : deux éléments pour lesquels `compareTo` (ou le `compare` du comparateur) retourne 0 sont considérés comme un seul et même élément.
+
+## Les implémentations
+
+| Implémentation          | Structure                       | Ordre de parcours                   | `null`                      | `add`, `contains`, `remove` |
+|-------------------------|---------------------------------|-------------------------------------|-----------------------------|-----------------------------|
+| `HashSet`               | Table de hachage                | Aucun ordre garanti                 | Accepté                     | O(1)                        |
+| `LinkedHashSet`         | Table de hachage + liste chaînée | Ordre d'insertion                   | Accepté                     | O(1)                        |
+| `TreeSet`               | Arbre rouge-noir                | Trié                                | Refusé avec l'ordre naturel | O(log n)                    |
+| `EnumSet`               | Vecteur de bits                 | Ordre de déclaration des constantes | Refusé                      | O(1)                        |
+| `CopyOnWriteArraySet`   | Tableau recopié à chaque écriture | Ordre d'insertion                   | Accepté                     | O(n)                        |
+| `ConcurrentSkipListSet` | Skip list                       | Trié                                | Refusé                      | O(log n) en moyenne         |
+
+`HashSet` est le choix par défaut. Il s'appuie en réalité sur une `HashMap`, dont les éléments du set sont les clés. `add`, `contains` et `remove` se font en temps constant, à condition que le `hashCode` des éléments répartisse bien les valeurs. En contrepartie, l'ordre de parcours n'est pas garanti, et rien ne dit qu'il restera le même au fil des ajouts.
+
+`LinkedHashSet` ajoute à la table de hachage une liste doublement chaînée qui relie les éléments dans leur ordre d'insertion. Les performances restent proches de celles d'un `HashSet` (un peu en dessous, puisqu'il faut maintenir la liste), avec un ordre de parcours prévisible. Ajouter à nouveau un élément déjà présent ne change pas sa place.
+
+`TreeSet` garde ses éléments triés dans un arbre rouge-noir (c'est en fait une `TreeMap` dont il utilise les clés), selon leur ordre naturel ou selon le `Comparator` passé au constructeur. Ses opérations se font en O(log n), et il implémente `NavigableSet`, qui permet de chercher par rapport à une valeur : `first()` et `last()`, `lower()`, `floor()`, `ceiling()` et `higher()` pour l'élément juste avant ou juste après, `headSet()`, `tailSet()` et `subSet()` pour une plage.
+
+```java
+TreeSet<Integer> notes = new TreeSet<>(List.of(12, 5, 18, 9, 15));
+System.out.println(notes);              // [5, 9, 12, 15, 18]
+System.out.println(notes.ceiling(10));  // 12 : le plus petit élément >= 10
+System.out.println(notes.floor(10));    // 9 : le plus grand élément <= 10
+System.out.println(notes.headSet(12));  // [5, 9] : les éléments < 12
+System.out.println(notes.tailSet(12));  // [12, 15, 18] : les éléments >= 12
+```
+
+`EnumSet` est réservé aux constantes d'un même `enum`. Chaque constante y est représentée par un bit, ce qui le rend très compact et très rapide. C'est la bonne structure pour des options, des droits ou des états :
+
+```java
+enum Permission { READ, WRITE, DELETE, ADMIN }
+
+EnumSet<Permission> droits = EnumSet.of(Permission.WRITE, Permission.READ);
+System.out.println(droits);                       // [READ, WRITE]
+System.out.println(EnumSet.complementOf(droits)); // [DELETE, ADMIN]
+```
+
+L'article sur [les enums en Java]({% post_url 2026-04-13-Les-Enums-en-Java-bien-plus-que-des-constantes %}) présente les autres façons de créer un `EnumSet` (`allOf`, `noneOf`, `range`).
+
+Les deux dernières implémentations du tableau sont faites pour les programmes multithreads : nous les verrons à la fin de l'article.
+
+## Union, intersection et différence
+
+Les méthodes `addAll`, `retainAll` et `removeAll` correspondent aux opérations ensemblistes. Comme elles modifient l'ensemble sur lequel on les appelle, on travaille sur une copie pour garder les ensembles de départ intacts :
 
 ```java
 Set<Integer> a = new HashSet<>(Set.of(1, 2, 3));
 Set<Integer> b = new HashSet<>(Set.of(3, 4));
 
-// union: a ∪ b => {1,2,3,4}
 Set<Integer> union = new HashSet<>(a);
 union.addAll(b);
+System.out.println(union); // [1, 2, 3, 4]
 
-// intersection: a ∩ b => {3}
 Set<Integer> inter = new HashSet<>(a);
 inter.retainAll(b);
+System.out.println(inter); // [3]
 
-// différence: a − b => {1,2}
 Set<Integer> diff = new HashSet<>(a);
 diff.removeAll(b);
+System.out.println(diff);  // [1, 2]
 ```
 
-## Ordre d'itération et tri
+Attention, l'ordre d'affichage d'un `HashSet` n'est pas garanti : ici les petits entiers sortent dans l'ordre croissant, mais c'est un effet de l'implémentation sur lequel il ne faut pas compter.
 
-- `HashSet` : aucun ordre garanti.
-- `LinkedHashSet` : ordre d'insertion (stable).
-- `TreeSet` : ordre trié (naturel ou comparateur fourni).
+Pour savoir si un ensemble est inclus dans un autre, on utilise `containsAll` : `a.containsAll(inter)` retourne `true`, `a.containsAll(b)` retourne `false`.
 
-Exemple `TreeSet` :
+## Trier avec un TreeSet
+
+Avec un comparateur, un `TreeSet` peut maintenir un classement à jour. Ici, les joueurs sont triés par score décroissant, puis par nom :
 
 ```java
 record User(String username, int score) {}
@@ -179,22 +130,49 @@ leaderboard.add(new User("carl", 10));
 leaderboard.forEach(System.out::println);
 ```
 
-Attention : dans un `TreeSet`, deux éléments `a` et `b` sont considérés comme doublons si `compare(a, b) == 0`, même si `a.equals(b)` vaut `false`. Assurez-vous que le comparateur est cohérent avec `equals` quand c'est important.
+Ce qui donne :
 
-## Unicité : equals et hashCode
+```
+User[username=alice, score=42]
+User[username=bob, score=42]
+User[username=carl, score=10]
+```
 
-Pour `HashSet`/`LinkedHashSet`, l'unicité repose sur `hashCode` et `equals`. Quelques règles :
+Le `thenComparing` ne sert pas seulement à classer les ex aequo par ordre alphabétique : sans lui, `bob` disparaîtrait du classement. Un `TreeSet` considère en effet que deux éléments sont égaux quand le comparateur retourne 0, et pour un comparateur basé uniquement sur le score, `alice` et `bob` sont égaux :
 
-- Si vous redéfinissez `equals`, redéfinissez aussi `hashCode` avec une logique compatible.
-- N'utilisez pas des champs mutables participant au `hashCode` si ces champs peuvent changer après insertion dans le set.
+```java
+Set<User> byScore = new TreeSet<>(Comparator.comparingInt(User::score).reversed());
+byScore.add(new User("alice", 42));
+byScore.add(new User("bob", 42));   // retourne false
+byScore.add(new User("carl", 10));
+System.out.println(byScore);
+// [User[username=alice, score=42], User[username=carl, score=10]]
+```
 
-Exemple de piège :
+Dans ce set, `byScore.contains(new User("zoe", 42))` retourne même `true`. Pour éviter ces surprises, le comparateur d'un `TreeSet` doit être cohérent avec `equals` : il ne doit retourner 0 que pour des éléments égaux.
+
+## Les éléments doivent avoir un equals et un hashCode cohérents
+
+Pour `HashSet` et `LinkedHashSet`, l'unicité repose sur `hashCode()` et `equals()`, ce qui impose deux règles.
+
+D'abord, si une classe redéfinit `equals`, elle doit redéfinir `hashCode` de façon compatible : deux objets égaux doivent avoir le même `hashCode`. Sinon, deux objets égaux peuvent être rangés dans deux cases différentes de la table de hachage, et le set les garde tous les deux.
+
+Ensuite, un élément ne doit pas être modifié d'une façon qui change son `hashCode` tant qu'il se trouve dans le set. Le set range chaque élément dans une case calculée à partir de son `hashCode` au moment de l'ajout : si le `hashCode` change ensuite, le set cherche l'élément au mauvais endroit.
 
 ```java
 class Person {
     String ssn; // utilisé dans equals/hashCode
     String name;
-    // equals/hashCode basés sur ssn
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Person p && Objects.equals(ssn, p.ssn);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(ssn);
+    }
 }
 
 Set<Person> s = new HashSet<>();
@@ -202,21 +180,43 @@ Person p = new Person();
 p.ssn = "123";
 s.add(p);
 
-p.ssn = "999";        // le hashCode change
-boolean contains = s.contains(p); // peut retourner false !
+p.ssn = "999";                      // le hashCode change
+System.out.println(s.contains(p));  // false
+System.out.println(s.size());       // 1 : p est toujours dans le set...
+System.out.println(s.remove(p));    // false : ... mais on ne peut plus le retirer
 ```
 
-Solution : rendez immuables les champs identifiants (ou n'incluez pas de champs mutables dans `equals`/`hashCode`).
+La solution est de ne baser `equals` et `hashCode` que sur des champs qui ne changent pas, ou mieux, d'utiliser des objets immuables. Les [records]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %}) s'y prêtent bien : leurs champs sont `final`, et `equals` et `hashCode` sont générés à partir de tous leurs composants.
 
-## Immutabilité
+## Dédoublonner une liste
 
-- Construire un set immuable :
+Copier une liste dans un `LinkedHashSet` supprime les doublons tout en gardant l'ordre de première apparition des éléments :
 
 ```java
-Set<String> roles = Set.of("ADMIN", "USER"); // Java 9+
+List<String> emails = List.of("a@x", "b@x", "a@x");
+Set<String> unique = new LinkedHashSet<>(emails); // [a@x, b@x]
 ```
 
-- Exposer une vue non modifiable d'un set interne :
+Et pour revenir à une liste sans doublons, dans le même ordre :
+
+```java
+List<String> dedup = new ArrayList<>(new LinkedHashSet<>(emails)); // [a@x, b@x]
+```
+
+Avec un `HashSet`, les doublons disparaissent aussi, mais l'ordre d'origine est perdu.
+
+## Ensembles non modifiables
+
+`Set.of(...)` (Java 9+) crée un ensemble non modifiable qui refuse les `null` et, plus surprenant, les doublons : `Set.of("ADMIN", "ADMIN")` lève une `IllegalArgumentException: duplicate element: ADMIN`. `Set.copyOf(collection)` (Java 10+), lui, accepte une collection qui contient des doublons et n'en garde qu'un exemplaire.
+
+```java
+Set<String> roles = Set.of("ADMIN", "USER");
+Set<String> copie = Set.copyOf(List.of("ADMIN", "USER", "ADMIN")); // 2 éléments
+```
+
+L'ordre de parcours de ces ensembles n'est pas spécifié, et en pratique il change d'une exécution à l'autre : lancé plusieurs fois de suite, `System.out.println(Set.of("ADMIN", "USER", "GUEST", "ROOT"))` affiche tantôt `[ADMIN, GUEST, ROOT, USER]`, tantôt `[USER, ROOT, GUEST, ADMIN]`.
+
+Pour exposer un set interne en lecture seule, `Collections.unmodifiableSet` retourne une vue non modifiable, comme `unmodifiableList` pour les listes :
 
 ```java
 class Service {
@@ -227,71 +227,24 @@ class Service {
 }
 ```
 
-## Déduplication et conversion
+## Ensembles et threads
 
-- Dédupliquer une liste :
+Comme les listes, `HashSet`, `LinkedHashSet` et `TreeSet` ne sont pas synchronisés. Si plusieurs threads partagent un ensemble, on a le choix entre :
 
-```java
-List<String> emails = List.of("a@x", "b@x", "a@x");
-Set<String> unique = new LinkedHashSet<>(emails); // conserve l'ordre d'insertion
-```
+- `Collections.synchronizedSet(new HashSet<>())`, qui synchronise chaque méthode. Comme pour `synchronizedList`, les parcours doivent se faire dans un bloc `synchronized` sur le set.
+- `ConcurrentHashMap.newKeySet()`, qui retourne un set adossé à une `ConcurrentHashMap`. C'est l'équivalent concurrent d'un `HashSet`, sans verrou global, mais il refuse les `null`.
+- `CopyOnWriteArraySet`, qui recopie son tableau interne à chaque modification. Comme ses éléments sont dans un simple tableau, `add` et `contains` le parcourent en entier : il est fait pour de petits ensembles, très souvent lus et rarement modifiés.
+- `ConcurrentSkipListSet`, l'équivalent concurrent d'un `TreeSet`. Attention, sa méthode `size()` n'est pas en temps constant : elle doit parcourir tous les éléments.
 
-- Recréer une liste sans doublons (même ordre) :
+Dans la partie suivante, nous verrons les [files et les deques]({% post_url 2025-09-26-Framework-collections-java-queue %}), pour traiter des éléments dans leur ordre d'arrivée ou par priorité.
 
-```java
-List<String> dedup = new ArrayList<>(new LinkedHashSet<>(emails));
-```
+## Voir aussi
 
-## Concurrence
-
-- Besoin simple de synchronisation : `Collections.synchronizedSet(new HashSet<>())`.
-- Beaucoup de lectures, peu d'écritures : `CopyOnWriteArraySet`.
-- Ensemble trié concurrent : `ConcurrentSkipListSet`.
-- Évitez d'exposer des sets mutables partagés ; privilégiez l'immuabilité ou le confinement par thread.
-
-## Bonnes pratiques
-
-- Déclarez par l'interface : `Set<Foo> s = new HashSet<>();`
-- Choisissez l'implémentation selon vos besoins :
-  - Pas d'ordre, perfs par défaut : `HashSet`.
-  - Ordre d'insertion stable : `LinkedHashSet`.
-  - Ordre trié ou requêtes par plage : `TreeSet`.
-  - Enumérations : `EnumSet`.
-- Attention aux éléments mutables impliqués dans `equals`/`hashCode`.
-- Pour un ordre d'itération stable sans coût du tri : `LinkedHashSet` plutôt que `TreeSet`.
-- Utilisez `removeIf`, `addAll`, `retainAll`, `removeAll` pour exprimer des opérations ensemblistes clairement.
-
-## Quand préférer List, Set ou Map ?
-
-- `Set` : vous devez garantir l'unicité des éléments, l'ordre n'est pas la priorité (ou dépend de l'implémentation choisie).
-- `List` : l'ordre et les doublons comptent.
-- `Map` : vous avez besoin d'associer chaque clé à une valeur.
-
-## Conclusion
-
-Pour conclure, il faut retenir que les ensembles (Set) garantissent l'unicité des éléments, il ne faut cependant pas oublier d'implémenter `equals`/`hashCode` ou `compareTo`.
-
-Utilisez :
-- `HashSet` par défaut
-- `LinkedHashSet` si l'ordre d'insertion compte
-- `TreeSet` si un tri ou des bornes sont nécessaires
-- `EnumSet` pour les énumérations
-- Les variantes concurrentes si plusieurs threads partagent la structure.
-
-Pour aller plus loin dans la série :
-
-1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
-2. [Les listes (List) en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
-3. Les ensembles (Set) en Java (vous êtes ici)
-4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
-5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
-6. Utilisations avancées des collections (article à venir)
-
-### Pour aller plus loin
-
-- [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
-- [Set - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Set.html)
-- [HashSet - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/HashSet.html)
-- [LinkedHashSet - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/LinkedHashSet.html)
-- [TreeSet/NavigableSet - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/TreeSet.html)
-- [EnumSet - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/EnumSet.html)
+- [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
+- [Les enums en Java]({% post_url 2026-04-13-Les-Enums-en-Java-bien-plus-que-des-constantes %})
+- [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})
+- [Javadoc de Set (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Set.html)
+- [Javadoc de HashSet (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/HashSet.html)
+- [Javadoc de LinkedHashSet (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/LinkedHashSet.html)
+- [Javadoc de TreeSet (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/TreeSet.html)
+- [Javadoc d'EnumSet (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/EnumSet.html)
