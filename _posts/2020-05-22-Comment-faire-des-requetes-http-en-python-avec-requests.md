@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment faire des requêtes HTTP avec requests"
+description: "Faire des requêtes HTTP en Python avec requests : GET, POST, timeouts, gestion des erreurs, appels d'API REST, headers et téléchargement de fichiers."
 tags:
     - python
     - http

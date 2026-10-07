@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment utiliser les sessions avec requests pour optimiser vos appels HTTP"
+description: "Optimiser vos appels HTTP en Python avec requests.Session : connexions keep-alive, cookies et headers partagés, retries avec HTTPAdapter et timeouts."
 tags:
   - python
   - http

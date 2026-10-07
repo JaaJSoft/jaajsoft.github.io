@@ -1,6 +1,8 @@
 ---
 layout: article
 title: Reconnaissance faciale et d'émotion avec AWS Sumerian
+description: "Tutoriel historique (2019) : créer un hôte virtuel AWS Sumerian avec Lex et une webcam pour reconnaître visages et émotions. Service arrêté par AWS en 2023."
+last_modified_at: 2026-07-18
 tags:
     - aws
     - sumerian
@@ -17,7 +19,7 @@ Dans ce tutoriel, nous allons voir comment créer un hôte virtuel sur AWS Sumer
 
 ## Introduction
 
-![Demo_scene2](/assets/images/220619_Reconnaissance/Demo_scene3.png)
+![Demo_scene2](/assets/images/220619_Reconnaissance/Demo_scene3.png){: width="1021" height="583"}
 
 ### Fonctionnalités
 
@@ -44,7 +46,7 @@ Tout ce projet sera réalisé sur [AWS Sumerian](https://aws.amazon.com/fr/sumer
 - [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) : Base de données AWS qui sera utilisée pour enregistrer l'ID de la face et les noms d'utilisateur.
 - [Tracking.js](https://trackingjs.com/) : Bibliothèque JavaScript basée sur OpenCV pour détecter les visages sur les vidéos et les images.
 
-![tech](/assets/images/220619_Reconnaissance/tech.png)
+![tech](/assets/images/220619_Reconnaissance/tech.png){: width="2237" height="1200"}
 
 ## Configuration de la scène
 
@@ -52,13 +54,13 @@ Tout ce projet sera réalisé sur [AWS Sumerian](https://aws.amazon.com/fr/sumer
 
 Tout d'abord, vous devrez créer et configurer une nouvelle scène sur Sumerian en lui accordant tous les accès AWS dont vous avez besoin. Pour cela, créez un *Cognito Identity Pool* en suivant [ce tutoriel](https://docs.sumerian.amazonaws.com/tutorials/create/beginner/aws-setup/). Ce *Cognito Identity Pool* va fournir aux utilisateurs Sumerian un token temporaire vous permettant d'utiliser les services AWS depuis Sumerian tels que Lex, Rekognition ...
 
-![cognito](/assets/images/220619_Reconnaissance/cognito.png)
+![cognito](/assets/images/220619_Reconnaissance/cognito.png){: width="1232" height="436"}
 
 Une fois le *Cognito Identity Pool* créé en sélectionnant les modèles Polly et Lex, vous pouvez obtenir son ID (zone rouge) et configurer votre scène Sumerian à l'aide de celui-ci.
 
 Par défaut, vous ne pourrez accéder qu'à Lex et à Polly. Pour ajouter les droits d'accès à Rekognition et DynamoDB, cliquez sur le lien du rôle (zone verte), puis ajoutez-lui des droits, comme indiqué ci-dessous.
 
-![role](/assets/images/220619_Reconnaissance/role.png)
+![role](/assets/images/220619_Reconnaissance/role.png){: width="379" height="338"}
 
 ### Importation des fichiers et ressources par défaut
 
@@ -66,7 +68,7 @@ Pour importer les ressources défaut sur Sumerian, suivez la section *Re-Importi
 
 Cette scène a également besoin de quelques [fichiers](/assets/files/220619_Reconnaissance/filesToS3.zip) pour fonctionner. Pour ce faire, allez sur [S3](https://console.aws.amazon.com/s3/), créez un [nouveau bucket](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/create-bucket.html) et [importez](https://docs.aws.amazon.com/AmazonS3/latest/user-guide/upload-objects.html) le dossier **scripts**. Assurez-vous de rendre le dossier public pour permettre à Sumerian d'y accéder.
 
-![public](/assets/images/220619_Reconnaissance/public.png)
+![public](/assets/images/220619_Reconnaissance/public.png){: width="544" height="396"}
 
 Par défaut, la scène contient les éléments suivants :
 
@@ -95,13 +97,13 @@ Commençons par créer le chatbot en vous rendant sur votre [console Lex](https:
 2. Sélectionnez un bot **Custom** sur la page **Create your bot**
 3. Personnalisez votre bot avec un nom, une voix adéquate avec l'aspect de votre hôte ... Comme ci-dessous
 
-![botCreation](/assets/images/220619_Reconnaissance/botCreation.png)
+![botCreation](/assets/images/220619_Reconnaissance/botCreation.png){: width="721" height="488"}
 
 L'étape suivante consiste à créer un **Intent** (action personnalisable reconnue par le chatbot). Cliquez simplement sur le bouton **Create Intent** et nommez-le (par exemple, *ChangeCameraStatus* dans notre cas).
 
 Nous voulons maintenant connaître dans quel état l'utilisateur souhaite mettre sa webcam (allumée ou éteinte). Cet état de la webcam peut être géré par un **Slot**. Cliquez sur le bouton **+** à côté de **Slot types** et configurez le slot en lui attribuant un nom et deux valeurs : **On** et **Off**. Cliquez ensuite sur le bouton **Add slot to Intent**.
 
-![createSlot](/assets/images/220619_Reconnaissance/createSlot.png)
+![createSlot](/assets/images/220619_Reconnaissance/createSlot.png){: width="611" height="692"}
 
 Il ne reste plus qu'à configurer le chatbot en ajoutant des fonctionnalités à l'Intent :
 
@@ -109,7 +111,7 @@ Il ne reste plus qu'à configurer le chatbot en ajoutant des fonctionnalités à
 2. Ajouter des expressions reconnues par le chatbot en utilisant le nom du slot comme paramètre dans les expressions
 3. Ajouter des réponses à utiliser lorsque le bot reçoit la demande de l'utilisateur
 
-![intentAndSlotConf2](/assets/images/220619_Reconnaissance/intentAndSlotConf2.png)
+![intentAndSlotConf2](/assets/images/220619_Reconnaissance/intentAndSlotConf2.png){: width="1028" height="1104"}
 
 Enfin, cliquez sur le bouton **Build** en haut de la page et attendez que le chatbot soit prêt.
 
@@ -119,13 +121,13 @@ Le chatbot Lex maintenant créé, nous allons configurer l'hôte sur Sumerian af
 
 Commencez par assigner un composant de dialogue à l'hôte. Vous devez simplement sélectionner votre entité hôte dans le panneau **Sumerian Entities**, ajouter un composant **Dialogue**, configurez-le avec le nom de votre chatbot (comme défini précédemment) et définir **$LATEST** comme version.
 
-![addDialog](/assets/images/220619_Reconnaissance/addDialog.png)
+![addDialog](/assets/images/220619_Reconnaissance/addDialog.png){: width="491" height="567"}
 
-![dialogConf](/assets/images/220619_Reconnaissance/dialogConf.png)
+![dialogConf](/assets/images/220619_Reconnaissance/dialogConf.png){: width="493" height="181"}
 
 Une fois le composant de dialogue ajouté, ajoutez le **Behaviour** ci-dessous à l'hôte.
 
-![hostLexBehaviour](/assets/images/220619_Reconnaissance/hostLexBehaviour.png)
+![hostLexBehaviour](/assets/images/220619_Reconnaissance/hostLexBehaviour.png){: width="932" height="508"}
 
 Ce _Behaviour_ fonctionne comme ceci :
 
@@ -140,7 +142,7 @@ Ce _Behaviour_ fonctionne comme ceci :
 
 Enfin, pour intercepter tous les messages émis par ce Behaviour, ainsi que pour ajouter des événements sur le bouton du microphone, ajoutez un composant de Script à l'entité **MicroButton**, faites glisser le script **MicrophoneScript** vers ce composant et indiquez au script les deux paramètres requis. Ces paramètres sont le nom de l'Intent et du Slot pour activer la webcam.
 
-![addhostscript](/assets/images/220619_Reconnaissance/addhostscript.png)
+![addhostscript](/assets/images/220619_Reconnaissance/addhostscript.png){: width="681" height="282"}
 
 ## Webcam
 
@@ -172,7 +174,7 @@ Après cela, la fonction **onLexResponse** doit détecter le moment où l'utilis
 
 Ensuite, afin que le bouton de caméra puisse lui aussi émettre les messages *switchOn* et *switchOff* quand il est appuyé ou relâché, il suffit de créer un composant Script à l'entité **WebcamButton** et de lui ajouter le script **WebcamScript**.
 
-![addWebcamScript](/assets/images/220619_Reconnaissance/addWebcamScript.png)
+![addWebcamScript](/assets/images/220619_Reconnaissance/addWebcamScript.png){: width="663" height="271"}
 
 Ce script définit une variable globale *cameraOn* afin de sauvegarder l'état de la caméra dans tout le programme (allumée ou éteinte) et émet le message *switchOn* ou *switchOff* en fonction de l'état de la caméra quand le bouton est pressé.
 
@@ -186,7 +188,7 @@ if(Boolean(ctx.worldData.cameraOn)){
 
 Enfin, ces deux messages doivent être reçus par un nouveau Behaviour. Attachez-le à l'entité **Webcam** et modifiez-le comme ci-dessous.
 
-![behaviourWebcam](/assets/images/220619_Reconnaissance/behaviorWebcam.png)
+![behaviourWebcam](/assets/images/220619_Reconnaissance/behaviorWebcam.png){: width="778" height="335"}
 
 1. **Webcam off/on** : Attend respectivement l'émission du message *switchOn* et *switchOff*.
 2. **Switch on/off** : Exécute respectivement les scripts **SwitchOnWebcamScript** et **SwitchOffWebcamScript**.
@@ -194,7 +196,7 @@ Enfin, ces deux messages doivent être reçus par un nouveau Behaviour. Attachez
 
 Faites attention à bien définir l'état **Webcam On** comme l'état initial en cliquant sur l'état puis sur **Set As Initial State**.
 
-![setInitialState](/assets/images/220619_Reconnaissance/setInitialState.png)
+![setInitialState](/assets/images/220619_Reconnaissance/setInitialState.png){: width="496" height="268"}
 
 Les scripts activant la webcam utilisent l'[API WebRTC](https://webrtc.github.io/samples/) pour diffuser le flux de la webcam sur l'entité 3DHTML appelée **Webcam**. Une fois la webcam activée, la variable de contexte **ctx.worldData.cameraOn** passe à *true* pour sauvegarder l'état actuel de la caméra au sein de tout le programme. Pour fonctionner, copiez le code ci-dessous dans la fonction **switchOnWebcam** dans le script **SwitchOnWebcamScript**.
 
@@ -242,7 +244,7 @@ La dernière partie consiste à utiliser le flux de la webcam pour détecter vot
 
 Pour résumer le système, lorsque la webcam est activée, le script de reconnaissance crée un [intervalle JavaScript](https://www.w3schools.com/jsref/met_win_setinterval.asp) qui crée une capture d'écran de la webcam dans un canevas, détecte les visages sur ce canvas et si un visage est détecté, appelle le service AWS Rekognition pour faire la reconnaissance.
 
-![recoDiagram](/assets/images/220619_Reconnaissance/recoDiagram.png)
+![recoDiagram](/assets/images/220619_Reconnaissance/recoDiagram.png){: width="630" height="370"}
 
 ### Création du système de reconnaissance
 
@@ -254,11 +256,11 @@ Gardez en mémoire l'**ID de la collection** et le **nom de la table DynamoDB** 
 
 Commencez cette étape en ajoutant le script **RecognitionScript** à l'entité **Webcam** en lui ajoutant un composant script, et configurez-le avec l'ID de collection et la table DynamoDB créée juste avant.
 
-![addRecoScript](/assets/images/220619_Reconnaissance/addRecoScript.png)
+![addRecoScript](/assets/images/220619_Reconnaissance/addRecoScript.png){: width="649" height="275"}
 
 La détection faciale est effectuée par la bibliothèque **Tracking.js**. Le script doit donc l'inclure pour que cela fonctionne. Ouvrez le fichier **RecognitionScript** dans l'éditeur et ajoutez le lien au fichier **tracking-min.js** et **face-min.js**, téléchargé dans votre bucket S3 précédemment, en tant que ressources externes (sans la partie protocole HTTPS).
 
-![addExtRes](/assets/images/220619_Reconnaissance/addExtRes.png)
+![addExtRes](/assets/images/220619_Reconnaissance/addExtRes.png){: width="494" height="211"}
 
 Avant de commencer à mettre en œuvre la détection faciale, jetez un coup d'œil au script lorsqu'il est ouvert : il contient déjà toutes les fonctions nécessaires à la reconnaissance faciale à l'aide d'AWS Rekognition.
 

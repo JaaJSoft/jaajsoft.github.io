@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Java : Comment faire des group by"
+description: "Faire des group by en Java avec des boucles et une Map ou avec Collectors.groupingBy : agrégations, clés multiples, filtrage et rapports avec les records."
 tags:
   - java
   - collections

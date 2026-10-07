@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment créer une CLI"
+description: "Créer une interface en ligne de commande en Python avec argparse, Click ou Typer, la rendre installable et choisir la bonne bibliothèque."
 author: Pierre Chopinet
 tags:
   - python

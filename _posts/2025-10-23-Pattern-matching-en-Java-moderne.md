@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Pattern matching en Java moderne"
+description: "Le pattern matching en Java moderne : instanceof, switch et record patterns de Java 21, hiérarchies sealed exhaustives, gestion du null et pièges fréquents."
 tags:
   - java
   - pattern-matching

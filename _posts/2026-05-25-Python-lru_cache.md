@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Mettre en cache des fonctions avec lru_cache"
+description: "Mettre en cache le résultat d'une fonction Python avec @lru_cache : fonctionnement LRU, paramètres, @cache, @cached_property et pièges à éviter."
 tags:
   - python
   - performance

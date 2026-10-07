@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment sauvegarder et charger un dataframe Pandas avec Excel (ou du csv)"
+description: "Sauvegarder et charger un DataFrame pandas en CSV ou en Excel pour ajouter de la persistance à vos scripts Python et notebooks Jupyter."
 author: Pierre Chopinet
 tags:
 

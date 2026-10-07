@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Créer ses propres références en LaTeX"
+description: "Créer son propre système d'étiquettes et de références en LaTeX avec les compteurs, \\refstepcounter et hyperref pour générer des liens cliquables."
 author: Louis Chopinet
 tags:
 - LaTeX
@@ -38,13 +39,13 @@ Blabla
 
 donne le résultat :
 
-![image 1](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image1.jpg)
+![image 1](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image1.jpg){: width="687" height="396"}
 
 Si vous utilisez le *package* `hyperref`, dont nous reparlerons, ces références
 sont transformées, dans un pdf, en liens vers l'endroit où vous avez placé votre
 étiquette. On obtient, toutes choses égales par ailleurs :
 
-![image 2](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image2.jpg)
+![image 2](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image2.jpg){: width="511" height="347"}
 
 ## Prérequis : utilisation des compteurs
 
@@ -90,7 +91,7 @@ seuls nous intéressent l'appel à `\stepcounter` et `\theencadre`. Le code :
 
 donne le résultat :
 
-![image 3](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image3.jpg)
+![image 3](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image3.jpg){: width="622" height="390"}
 
 ## Utiliser `\refstepcounter` pour créer une étiquette
 
@@ -146,7 +147,7 @@ Cela a été approfondi dans l'encadré \ref{une étiquette différente !}.
 
 donne le résultat :
 
-![image 4](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image4.jpg)
+![image 4](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image4.jpg){: width="620" height="593"}
 
 *Remarque* : nous écrivons toujours "encadré" avant d'appeler `\ref`, mais il
 est toujours possible et conseillé, d'envelopper cet appel dans une commande *sémantique*, comme :
@@ -177,7 +178,7 @@ environnements de `amsmath`).
 Le même code que précédemment, auquel on rajoute cet appel à `hyperref` donne
 ainsi le résultat :
 
-![image 5](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image5.jpg)
+![image 5](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image5.jpg){: width="608" height="591"}
 
 Cliquer sur les parties encadrées en rouge mène directement jusqu'aux encadrés
 en question (il est possible de changer l'apparence des liens, *cf.* la documentation
@@ -201,18 +202,18 @@ remplacement" et non la valeur du compteur utilisé.
 Utiliser `\hyperref[une étiquette différente !]{cet encadré}` permet
 d'utiliser "cet encadré" comme lien :
 
-![image 6](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image6.jpg)
+![image 6](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image6.jpg){: width="689" height="78"}
 
 Cela permet d'écrire des documents faciles à lire et à comprendre. En utilisant
 les options de `hyperref` ou en définissant des macros sémantiques qui
 appellent (par exemple) `\hyperref[#1]{#2}` après un formatage adéquat du texte,
 on peut définir à un endroit :
 
-![image 7](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image7.jpg)
+![image 7](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image7.jpg){: width="756" height="210"}
 
 et y faire référence de manière très claire à un autre endroit :
 
-![image 8](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image8.jpg)
+![image 8](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image8.jpg){: width="570" height="44"}
 
 ## Conclusion
 

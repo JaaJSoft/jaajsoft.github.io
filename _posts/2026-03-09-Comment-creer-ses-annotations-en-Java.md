@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Comment créer ses annotations en Java"
+description: "Créer ses propres annotations en Java : méta-annotations, paramètres, lecture par réflexion, cas pratiques de validation et d'audit, processeur d'annotations."
 tags:
   - java
   - annotations

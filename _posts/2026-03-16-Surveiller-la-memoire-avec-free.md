@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "free : surveiller et comprendre l'utilisation mémoire sous Linux"
+description: "Surveiller la mémoire sous Linux avec free : lire la sortie, comprendre buff/cache et available, options utiles et aller plus loin avec /proc/meminfo."
 author: Pierre Chopinet
 tags:
   - linux

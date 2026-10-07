@@ -1,6 +1,8 @@
 ---
 layout: article
 title: Comment créer un bot twitter en python avec tweepy
+description: "Tutoriel historique (2019) pour créer un bot Twitter en Python avec tweepy. L'API Twitter/X étant devenue payante, le code ne fonctionne plus tel quel."
+last_modified_at: 2026-07-18
 tags:
     - python
     - twitter
@@ -82,7 +84,7 @@ Une fois le compte créé et que vous êtes connecté avec, allez sur :
 
 Pour pouvoir créer des applications, il faut avoir un compte twitter _developer_ !
 
-![2019-06-20_twitter_apply](/assets/images/2019-06-20_twitter_apply.png)
+![2019-06-20_twitter_apply](/assets/images/2019-06-20_twitter_apply.png){: width="235" height="51"}
 
 Cliquez sur "create new app"
 
@@ -92,13 +94,13 @@ La validation du compte développeur peut prendre plusieurs jours.
 
 Une fois le mode développeur activé. Aller sur votre nom en haut et puis sur [apps](https://developer.twitter.com/en/apps).
 
-![Screenshot_20190620_222031](/assets/images/Screenshot_20190620_222031.png)
+![Screenshot_20190620_222031](/assets/images/Screenshot_20190620_222031.png){: width="1317" height="76"}
 
 Remplissez les informations sur votre bot.
 
 
 
-![Screenshot_20190620_222237](/assets/images/Screenshot_20190620_222237.png)
+![Screenshot_20190620_222237](/assets/images/Screenshot_20190620_222237.png){: width="679" height="836"}
 
 Pour les liens demandés, vous pouvez mettre un lien vers le profil twitter de votre bot.
 

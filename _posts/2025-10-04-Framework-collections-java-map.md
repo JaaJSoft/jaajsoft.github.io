@@ -1,6 +1,7 @@
 ---
 layout: article
 title: Les maps (Map) en Java
+description: "Les maps en Java : interface Map, HashMap, LinkedHashMap et TreeMap, clés, equals et hashCode, gestion des null, performances et bonnes pratiques."
 author: Pierre Chopinet
 tags:
   - java

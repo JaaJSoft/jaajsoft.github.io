@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Comment dockeriser une application Django"
+description: "Dockeriser une application Django pas à pas avec Gunicorn : Dockerfile minimal, lancement en production et docker-compose avec PostgreSQL."
 tags:
   - python
   - django

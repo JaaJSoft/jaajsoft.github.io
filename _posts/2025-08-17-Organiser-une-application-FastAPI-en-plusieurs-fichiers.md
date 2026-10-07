@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Organiser une application FastAPI en plusieurs fichiers"
+description: "Structurer une application FastAPI en plusieurs fichiers et modules Python avec APIRouter : routes, configuration et point d'entrée séparés."
 author: Pierre Chopinet
 tags:
   - python

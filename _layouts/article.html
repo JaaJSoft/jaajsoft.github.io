@@ -11,7 +11,8 @@ type: article
 <div class="layout--article">
   {%- include article/top/custom.html -%}
 
-  <div class="article__content" itemprop="articleBody">{{ content }}</div>
+  {%- comment -%} Chargement différé des images du contenu (performance) {%- endcomment -%}
+  <div class="article__content">{{ content | replace: '<img src=', '<img loading="lazy" decoding="async" src=' }}</div>
 
   {%- if _sharing -%}
     <section class="article__sharing d-print-none">{%- include sharing.html -%}</section>

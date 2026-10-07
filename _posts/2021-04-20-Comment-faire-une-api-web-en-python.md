@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment faire une api web avec Flask"
+description: "Créer une API web en Python avec Flask : premier endpoint, routing, méthodes HTTP et traitement d'une requête POST, avec le code complet du tutoriel."
 tags:
 - python
 - http

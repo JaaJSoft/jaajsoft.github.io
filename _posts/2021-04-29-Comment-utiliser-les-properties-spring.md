@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Spring : Comment utiliser les application properties"
+description: "Définir des application properties dans un projet Spring et les injecter dans votre code Java pour configurer proprement votre application."
 tags:
     - java
     - spring

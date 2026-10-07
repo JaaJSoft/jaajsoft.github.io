@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Linux : Programmer une tâche avec cron"
+description: "Programmer une tâche récurrente sous Linux avec cron : syntaxe de la crontab, exemples courants, dépannage d'un cron qui ne tourne pas et systemd timers."
 tags:
   - linux
   - cron

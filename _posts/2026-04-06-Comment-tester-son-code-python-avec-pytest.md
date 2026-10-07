@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment tester son code avec pytest"
+description: "Tester son code Python avec pytest : premier test, organisation, fixtures, tests paramétrés, exceptions, conftest.py et options utiles."
 tags:
     - python
     - test
