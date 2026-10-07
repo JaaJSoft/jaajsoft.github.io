@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Virtual Threads en Java 21 : la révolution de la concurrence"
+title: "Les Virtual Threads en Java 21"
 author: Pierre Chopinet
 tags:
   - java

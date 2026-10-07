@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Les Enums en Java : bien plus que des constantes"
+title: "Les enums en Java"
 author: Pierre Chopinet
 tags:
   - java

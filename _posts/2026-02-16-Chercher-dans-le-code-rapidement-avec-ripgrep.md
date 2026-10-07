@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Ripgrep (rg) : chercher dans le code à la vitesse de l'éclair"
+title: "Ripgrep (rg) : chercher rapidement dans le code"
 author: Pierre Chopinet
 tags:
   - linux

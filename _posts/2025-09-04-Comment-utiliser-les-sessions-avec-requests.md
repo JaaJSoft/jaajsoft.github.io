@@ -1,6 +1,6 @@
 ---
 layout: article
-title: "Python : Comment utiliser les sessions avec requests pour optimiser vos appels HTTP"
+title: "Python : Comment utiliser les sessions avec requests"
 tags:
   - python
   - http
