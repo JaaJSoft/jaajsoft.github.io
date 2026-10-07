@@ -10,26 +10,29 @@ tags:
 author: Pierre Chopinet
 ---
 
-Quand une fonction est coûteuse à exécuter (calcul lourd, requête réseau, lecture de fichier) et qu'on l'appelle plusieurs fois avec les mêmes arguments, on peut éviter de refaire le travail à chaque fois en mettant son résultat en cache. Python fournit pour cela le décorateur `@lru_cache` dans le module `functools`, qui transforme n'importe quelle fonction en version mémoïsée en une ligne.
+Quand une fonction coûteuse (calcul lourd, requête réseau, lecture de fichier) est appelée plusieurs fois avec les mêmes arguments, on peut garder son résultat en mémoire au lieu de refaire le travail à chaque appel. En Python, le décorateur `@lru_cache` du module `functools` s'en charge en une ligne.
 <!--more-->
 
-C'est l'outil le plus simple pour accélérer une fonction sans toucher à son code : on ajoute le décorateur, et les appels suivants avec les mêmes arguments retournent instantanément la valeur précédemment calculée. Cet article couvre `@lru_cache` mais aussi ses cousins de `functools` (`@cache`, `@cached_property`) et les pièges à éviter.
+Nous allons voir comment l'utiliser et le dimensionner, ses variantes `@cache` et `@cached_property`, et les cas où il vaut mieux s'en passer.
 
-Dans cet article, vous allez apprendre à :
+Dans cet article :
+- Pourquoi mettre en cache une fonction ?
+- Un exemple avec un calcul lent
+- Le principe du cache LRU
+- Inspecter et vider le cache
+- `@cache`, un cache sans limite de taille
+- `@cached_property` pour les attributs calculés
+- Les arguments doivent être hashables
+- Les méthodes d'instance
+- Les fonctions async
+- Le cache est local au processus
+- Quelles fonctions mettre en cache
 
-- Comprendre le principe de la mémoïsation
-- Utiliser `@lru_cache` pour accélérer une fonction
-- Inspecter, vider et dimensionner le cache
-- Utiliser `@cache` et `@cached_property` à bon escient
-- Identifier les limitations et les pièges courants
-
-Pré-requis : être à l'aise avec les fonctions Python et les décorateurs.
-
----
+Pré-requis : être à l'aise avec les fonctions et les [décorateurs]({% post_url 2026-05-14-Python-les-decorateurs %}) en Python. Les exemples ont été testés avec Python 3.13 (`@cache` demande Python 3.9 ou plus récent).
 
 ## Pourquoi mettre en cache une fonction ?
 
-Prenons une fonction qui calcule la suite de Fibonacci de manière récursive :
+Prenons la suite de Fibonacci, calculée de manière récursive :
 
 ```python
 def fibonacci(n):
@@ -38,9 +41,9 @@ def fibonacci(n):
     return fibonacci(n - 1) + fibonacci(n - 2)
 ```
 
-Le problème de cette implémentation, c'est qu'elle recalcule plusieurs fois les mêmes valeurs. Pour `fibonacci(30)`, la fonction est appelée près de 2,7 millions de fois alors que seules 31 valeurs distinctes existent. Le temps d'exécution explose vite : `fibonacci(35)` prend déjà plusieurs secondes.
+Cette implémentation recalcule sans arrêt les mêmes valeurs : pour `fibonacci(30)`, la fonction est appelée près de 2,7 millions de fois alors qu'il n'existe que 31 valeurs distinctes. Le temps d'exécution explose vite : `fibonacci(35)` prend déjà environ une seconde avec Python 3.13, et chaque incrément de `n` multiplie ce temps par 1,6 environ.
 
-En ajoutant un cache, on stocke chaque résultat dès la première fois, et les appels suivants retournent instantanément la valeur :
+Avec un cache, chaque résultat est stocké la première fois qu'il est calculé, et les appels suivants le récupèrent directement :
 
 ```python
 from functools import lru_cache
@@ -52,13 +55,11 @@ def fibonacci(n):
     return fibonacci(n - 1) + fibonacci(n - 2)
 ```
 
-`fibonacci(35)` passe alors de plusieurs secondes à quelques microsecondes. La fonction reste identique, seul le décorateur change.
+Le premier appel à `fibonacci(35)` ne prend plus que quelques dizaines de microsecondes, et les suivants moins d'une microseconde puisque le résultat est déjà en cache. La fonction n'a pas changé, on a seulement ajouté le décorateur. Cette technique s'appelle la mémoïsation : on garde en mémoire les résultats d'une fonction pour ne pas la rappeler avec les mêmes entrées.
 
-Cette technique s'appelle la **mémoïsation** : on garde en mémoire les résultats d'une fonction pour éviter de la rappeler avec les mêmes entrées.
+## Un exemple avec un calcul lent
 
-## Un premier exemple complet
-
-Voici un exemple plus parlant : une fonction qui simule un calcul lent.
+Pour bien voir quand la fonction est réellement exécutée, voici une fonction qui simule un calcul de deux secondes :
 
 ```python
 import time
@@ -85,19 +86,13 @@ print(calcul_lent(5))
 # 25
 ```
 
-Le premier appel exécute la fonction normalement. Les appels suivants avec les mêmes arguments retournent le résultat depuis le cache sans réexécuter le corps de la fonction.
+Le deuxième appel avec l'argument `4` renvoie le résultat depuis le cache, sans exécuter le corps de la fonction : le message "Calcul de 4..." n'apparaît pas.
 
-## Comment fonctionne LRU ?
+## Le principe du cache LRU
 
-LRU signifie **Least Recently Used**, "le moins récemment utilisé". Le cache a une taille maximale (par défaut 128 entrées) et quand cette taille est atteinte, l'entrée la moins récemment utilisée est supprimée pour faire de la place à la nouvelle.
+LRU signifie *Least Recently Used*, "le moins récemment utilisé". Le cache a une taille maximale, 128 entrées par défaut, et quand elle est atteinte, l'entrée qui n'a pas servi depuis le plus longtemps est supprimée pour faire de la place. Si les appels se concentrent sur un petit nombre d'arguments fréquents, ce sont eux qui restent en mémoire.
 
-C'est un compromis raisonnable entre mémoire consommée et taux de réussite du cache. Si vos appels sont concentrés sur un petit nombre d'arguments fréquents, LRU les garde en mémoire et évince les arguments rares.
-
-## Les paramètres de lru_cache
-
-### maxsize
-
-Contrôle le nombre maximal d'entrées dans le cache.
+La taille se règle avec le paramètre `maxsize` :
 
 ```python
 @lru_cache(maxsize=256)
@@ -105,32 +100,24 @@ def ma_fonction(x):
     ...
 ```
 
-- `maxsize=128` (défaut) : taille raisonnable pour la plupart des cas
-- `maxsize=None` : cache illimité, sans éviction. À utiliser uniquement si l'espace des entrées possibles est borné.
-- `maxsize=0` : désactive le cache (utile pour comparer les performances)
+Avec `maxsize=None`, il n'y a plus de limite : le cache ne fait que grossir, à réserver aux cas où le nombre d'arguments possibles est borné. Avec `maxsize=0`, le cache est désactivé, ce qui peut servir à comparer les performances avec et sans.
 
-### typed
-
-Si `typed=True`, les arguments de types différents sont mis en cache séparément, même s'ils sont égaux :
+Le second paramètre, `typed`, concerne les arguments égaux mais de types différents. Par défaut (`typed=False`), ils sont en général considérés comme le même appel :
 
 ```python
-@lru_cache(typed=True)
-def f(x):
-    return x
+@lru_cache
+def ajouter(a, b):
+    return a + b
 
-f(3)    # mis en cache
-f(3.0)  # mis en cache séparément, car float != int
+print(ajouter(1, 2))      # 3
+print(ajouter(1.0, 2.0))  # 3, et non 3.0 : c'est le résultat en cache
 ```
 
-Par défaut, `typed=False` et `f(3)` / `f(3.0)` partagent la même entrée puisque `3 == 3.0`.
+Avec `@lru_cache(typed=True)`, chaque combinaison de types a sa propre entrée, et le second appel renvoie bien `3.0`. La documentation précise que certains types comme `int` et `str` peuvent être mis en cache séparément même avec `typed=False` : pour une fonction à un seul argument, `f(3)` et `f(3.0)` occupent par exemple deux entrées différentes.
 
 ## Inspecter et vider le cache
 
-`@lru_cache` ajoute deux méthodes utiles à la fonction décorée.
-
-### cache_info()
-
-Retourne un `namedtuple` avec les statistiques du cache :
+`@lru_cache` ajoute notamment deux méthodes à la fonction décorée. `cache_info()` renvoie les statistiques du cache :
 
 ```python
 @lru_cache(maxsize=100)
@@ -144,16 +131,9 @@ print(carre.cache_info())
 # CacheInfo(hits=1, misses=2, maxsize=100, currsize=2)
 ```
 
-- `hits` : nombre d'appels où le résultat venait du cache
-- `misses` : nombre d'appels où la fonction a vraiment été exécutée
-- `maxsize` : taille maximale du cache
-- `currsize` : nombre d'entrées actuellement stockées
+`hits` compte les appels servis par le cache, `misses` ceux où la fonction a vraiment été exécutée, `maxsize` est la taille maximale et `currsize` le nombre d'entrées stockées. Le rapport `hits / (hits + misses)` donne le taux de réussite du cache : s'il reste bas, le cache ne sert pas à grand-chose, ou `maxsize` est trop petit.
 
-Le ratio `hits / (hits + misses)` est le taux de réussite du cache. Plus il est élevé, plus le cache est efficace.
-
-### cache_clear()
-
-Vide entièrement le cache :
+`cache_clear()` vide le cache et remet les compteurs à zéro :
 
 ```python
 carre.cache_clear()
@@ -161,11 +141,11 @@ print(carre.cache_info())
 # CacheInfo(hits=0, misses=0, maxsize=100, currsize=0)
 ```
 
-Utile dans les tests, après avoir modifié des données sous-jacentes, ou pour libérer de la mémoire.
+C'est utile dans les tests, pour repartir d'un cache vide, ou quand les données dont dépend la fonction ont changé. Enfin, la fonction d'origine reste accessible par l'attribut `__wrapped__` (`carre.__wrapped__(4)`), pour l'appeler sans passer par le cache.
 
-## @cache : la version simplifiée
+## `@cache`, un cache sans limite de taille
 
-Depuis Python 3.9, `functools.cache` est un raccourci pour `@lru_cache(maxsize=None)`, c'est-à-dire un cache sans limite de taille :
+Depuis Python 3.9, `functools.cache` est un raccourci pour `@lru_cache(maxsize=None)` :
 
 ```python
 from functools import cache
@@ -177,13 +157,13 @@ def fibonacci(n):
     return fibonacci(n - 1) + fibonacci(n - 2)
 ```
 
-C'est en réalité un alias exact : `functools.cache` fait simplement `return lru_cache(maxsize=None)(user_function)`, il n'y a donc aucune différence de performance entre les deux. En revanche, comme il n'y a pas de limite de taille, un cache sans éviction est plus rapide qu'un `@lru_cache` avec un `maxsize` borné (qui doit maintenir l'ordre d'utilisation). À utiliser quand on sait que le nombre d'entrées distinctes restera raisonnable (par exemple : récursivité avec un domaine borné).
+C'est un simple alias, dont le code se résume à `return lru_cache(maxsize=None)(user_function)`. Les deux écritures donnent donc exactement le même cache, avec les mêmes performances et les mêmes méthodes `cache_info()` et `cache_clear()`. Comme il n'a jamais à supprimer d'entrée, ce cache sans limite est un peu plus léger et plus rapide qu'un `@lru_cache` avec un `maxsize`, qui doit tenir à jour l'ordre d'utilisation des entrées.
 
-> Attention : avec `@cache`, rien n'évite que le cache grossisse indéfiniment. Si vos arguments sont très variés, préférez `@lru_cache` avec un `maxsize` explicite.
+En contrepartie, rien ne l'empêche de grossir indéfiniment. Réservez `@cache` aux fonctions dont le nombre d'arguments distincts reste raisonnable, par exemple une récursion sur un domaine borné, et gardez `@lru_cache` avec un `maxsize` explicite si les arguments sont très variés.
 
-## @cached_property : pour les propriétés calculées
+## `@cached_property` pour les attributs calculés
 
-`@cached_property` (Python 3.8+) est l'équivalent pour les méthodes d'instance qui calculent un attribut dérivé. Le résultat est calculé une seule fois par instance, à la première lecture :
+`@cached_property` (Python 3.8+) applique le même principe à un attribut calculé : la méthode est exécutée à la première lecture, puis le résultat est conservé pour cette instance.
 
 ```python
 from functools import cached_property
@@ -206,9 +186,7 @@ print(doc.nombre_mots)
 # 6 (pas de recalcul)
 ```
 
-Contrairement à `@lru_cache`, le résultat est stocké directement sur l'instance (dans `doc.__dict__`). Quand l'instance est libérée par le ramasse-miettes, sa valeur cachée disparaît avec elle : pas de fuite mémoire.
-
-Pour invalider la valeur, il suffit de la supprimer :
+Le résultat est stocké directement dans l'instance (dans `doc.__dict__`), pas dans un cache partagé : il disparaît avec l'instance, sans risque de fuite mémoire. Pour forcer un nouveau calcul, on supprime l'attribut :
 
 ```python
 del doc.nombre_mots  # force le recalcul au prochain accès
@@ -216,7 +194,7 @@ del doc.nombre_mots  # force le recalcul au prochain accès
 
 ## Les arguments doivent être hashables
 
-Le cache est implémenté avec un dictionnaire, et les clés de dictionnaire doivent être hashables. Cela exclut les types mutables comme `list`, `dict` ou `set` :
+Le cache est un dictionnaire dont les clés sont construites à partir des arguments, qui doivent donc être hashables. Cela exclut les types modifiables comme `list`, `dict` ou `set` :
 
 ```python
 @lru_cache
@@ -227,21 +205,17 @@ somme((1, 2, 3))  # OK : tuple est hashable
 somme([1, 2, 3])  # TypeError: unhashable type: 'list'
 ```
 
-Pour contourner cette limite, on convertit l'argument en type hashable (par exemple un `tuple` ou un `frozenset`) avant l'appel :
+Pour contourner la limite, on convertit l'argument avant l'appel, en `tuple` en général, ou en `frozenset` si l'ordre et les doublons n'ont pas d'importance pour la fonction :
 
 ```python
-@lru_cache
-def somme_unique(items):
-    return sum(items)
-
-# On passe par un tuple
 ma_liste = [1, 2, 3, 2, 1]
-total = somme_unique(tuple(ma_liste))
+total = somme(tuple(ma_liste))
+print(total)  # 9
 ```
 
-## Attention aux méthodes d'instance
+## Les méthodes d'instance
 
-Utiliser `@lru_cache` sur une méthode d'instance fonctionne, mais avec un piège important : le cache contient une référence à `self`, ce qui empêche le ramasse-miettes de libérer l'instance tant que le cache existe.
+`@lru_cache` fonctionne sur une méthode, mais `self` fait alors partie des arguments, donc de la clé du cache :
 
 ```python
 class Calculateur:
@@ -250,14 +224,13 @@ class Calculateur:
         return x * 2
 ```
 
-Sur le long terme, cela peut créer une fuite mémoire si vous créez de nombreuses instances. Deux alternatives :
+Le cache, partagé par toutes les instances de la classe, garde une référence vers chaque instance utilisée. Une instance ne peut donc pas être libérée tant que son entrée n'est pas sortie du cache ou que le cache n'a pas été vidé, et avec `@cache` ou `maxsize=None`, cela n'arrive jamais : un programme qui crée beaucoup d'instances voit sa mémoire grossir.
 
-1. Utiliser `@cached_property` si la valeur ne dépend que de l'instance.
-2. Déplacer la méthode en fonction libre (en passant les attributs nécessaires en arguments), puis appliquer `@lru_cache` dessus.
+Si la valeur ne dépend que de l'instance, `@cached_property` est plus adapté. Sinon, on peut sortir la méthode de la classe pour en faire une fonction qui reçoit seulement les attributs dont elle a besoin, et mettre le cache sur cette fonction.
 
-## @lru_cache et les fonctions async
+## Les fonctions async
 
-Le décorateur `@lru_cache` ne fonctionne pas correctement avec les fonctions asynchrones : il met en cache la **coroutine** retournée par l'appel, pas son résultat. Une coroutine ne pouvant être attendue qu'une seule fois, le deuxième `await` lèvera une exception.
+`@lru_cache` ne fonctionne pas avec une fonction `async` : il met en cache l'objet coroutine renvoyé par l'appel, pas son résultat. Or une coroutine ne peut être attendue qu'une seule fois, le deuxième `await` avec le même argument lève donc `RuntimeError: cannot reuse already awaited coroutine`.
 
 ```python
 @lru_cache
@@ -265,23 +238,23 @@ async def fetch(url):  # piège
     ...
 ```
 
-Pour mettre en cache une fonction `async`, utilisez une bibliothèque dédiée comme `async-lru` ou `aiocache`.
+Pour une fonction `async`, il faut passer par une bibliothèque dédiée comme `async-lru` ou `aiocache`.
 
 ## Le cache est local au processus
 
-`@lru_cache` stocke ses entrées dans la mémoire du processus Python. Cela implique plusieurs choses :
+`@lru_cache` stocke ses entrées dans la mémoire du processus Python. Le cache est donc perdu à chaque redémarrage de l'application, et plusieurs processus, comme les *workers* de Gunicorn, ont chacun le leur. Pour un cache partagé entre processus ou qui survit aux redémarrages, il faut un stockage externe comme Redis : c'est ce que montrent les articles sur le cache avec Flask, Django et FastAPI, en lien plus bas.
 
-- Le cache est perdu à chaque redémarrage de l'application
-- Plusieurs processus (par exemple plusieurs workers Gunicorn) ne partagent pas leur cache
-- Les accès concurrents sont protégés par un verrou interne : la mise à jour du cache est thread-safe. En revanche, ce verrou n'est pas tenu pendant l'exécution de la fonction : si deux threads demandent en même temps une clé absente du cache, la fonction sera bel et bien exécutée deux fois (il n'y a pas de déduplication des appels en vol).
+Au sein d'un même processus, le cache est thread-safe : sa structure reste cohérente même si plusieurs threads l'utilisent en même temps. Par contre, si un thread appelle la fonction alors qu'un autre est encore en train de calculer le résultat pour les mêmes arguments, la fonction peut être exécutée une deuxième fois : le cache ne regroupe pas les appels en cours.
 
-Si vous avez besoin d'un cache partagé entre processus ou persistant, regardez du côté de Redis, de `cachetools`, ou d'une couche de cache applicative (voir les articles sur le cache Flask, Django et FastAPI plus bas).
+## Quelles fonctions mettre en cache
 
-## Cas d'usage pratiques
+Le cache ne convient qu'aux fonctions dont le résultat dépend uniquement de leurs arguments. Une fonction qui a des effets de bord (écriture en base, envoi d'un email, modification d'un fichier) ne serait exécutée qu'au premier appel, et une fonction qui dépend de l'heure ou du hasard renverrait toujours la même valeur. Attention aussi aux fonctions qui renvoient un objet modifiable, une liste par exemple : c'est le même objet qui est renvoyé à chaque appel, et le modifier modifie aussi la valeur en cache.
 
-### Mémoïsation d'algorithmes récursifs
+Voici trois situations où le cache est utile.
 
-L'usage classique : transformer une récursivité exponentielle en récursivité polynomiale.
+### Les algorithmes récursifs
+
+C'est l'usage classique : un calcul récursif qui repasse sans cesse par les mêmes valeurs, comme le nombre de combinaisons de `k` éléments parmi `n`.
 
 ```python
 from functools import cache
@@ -293,11 +266,11 @@ def combinaisons(n, k):
     return combinaisons(n - 1, k - 1) + combinaisons(n - 1, k)
 ```
 
-Sans cache, `combinaisons(30, 15)` déclencherait des millions d'appels redondants. Avec `@cache`, chaque couple `(n, k)` est calculé une seule fois.
+Sans cache, `combinaisons(30, 15)` déclencherait plus de 300 millions d'appels. Avec `@cache`, chacun des 255 couples `(n, k)` rencontrés n'est calculé qu'une seule fois.
 
-### Appels coûteux : I/O ou requêtes externes
+### Les appels réseau
 
-Une fonction qui interroge une API peut bénéficier énormément du cache, à condition que les données ne changent pas pendant la session :
+Une fonction qui interroge une API gagne beaucoup à être mise en cache, à condition que les données ne changent pas pendant l'exécution du programme :
 
 ```python
 import requests
@@ -309,13 +282,11 @@ def fetch_user(user_id):
     return response.json()
 ```
 
-Si plusieurs parties du code demandent le même utilisateur, on évite les allers-retours réseau.
+Si plusieurs parties du code demandent le même utilisateur, on évite des allers-retours réseau. Par contre, si les données peuvent changer en cours de route, le cache renverra une version périmée : il faut alors le vider au bon moment avec `cache_clear()`, ou utiliser un cache avec une durée de vie, comme `TTLCache` ou le décorateur `ttl_cache` de la bibliothèque `cachetools`.
 
-> Attention : si les données peuvent changer en cours d'exécution, le cache renverra une version périmée. Dans ce cas, prévoyez un mécanisme d'invalidation ou utilisez un cache avec TTL (par exemple `cachetools.TTLCache`).
+### Les expressions régulières
 
-### Factory ou parsing
-
-Quand on doit construire un objet coûteux à partir d'une clé, et que la clé revient souvent :
+Quand un objet coûteux à construire dépend d'une clé qui revient souvent, on peut mettre sa construction en cache :
 
 ```python
 import re
@@ -326,32 +297,13 @@ def compile_regex(pattern):
     return re.compile(pattern)
 ```
 
-Compiler une regex est rapide mais pas gratuit. Mettre la fonction de compilation en cache évite de recompiler les mêmes patterns à chaque utilisation.
-
-Cela dit, le module `re` maintient déjà en interne un cache des derniers patterns compilés (512 entrées par défaut, via `re._MAXCACHE`) : appeler directement `re.compile(pattern)` de façon répétée n'est donc pas si coûteux. Un `@lru_cache` reste utile si vous voulez un cache plus grand, sans éviction, ou garanti pour vos patterns fréquents.
-
-## Bonnes pratiques
-
-### À faire
-
-- Utiliser `@cache` ou `@lru_cache(maxsize=None)` quand le domaine d'entrées est borné (récursivité avec petites valeurs)
-- Spécifier un `maxsize` explicite si les entrées peuvent être très variées
-- Vérifier `cache_info()` régulièrement pour valider que le cache est efficace
-- Préférer `@cached_property` pour les attributs calculés sur une instance
-- Convertir les arguments mutables en types hashables (`tuple`, `frozenset`) si nécessaire
-
-### À éviter
-
-- Mettre `@lru_cache` sur une méthode d'instance dans un code qui crée beaucoup d'objets (risque de fuite mémoire)
-- Utiliser `@cache` sur une fonction dont les arguments sont très variés (cache illimité, mémoire qui grossit)
-- Mettre en cache des fonctions qui ont des effets de bord (écriture en base, envoi d'email, modification d'un fichier...)
-- Compter sur le cache pour des données qui peuvent changer en cours d'exécution sans mécanisme d'invalidation
-- Décorer une fonction `async` avec `@lru_cache` (ça mettra en cache la coroutine, pas le résultat)
+Pour les expressions régulières, le module `re` applique d'ailleurs déjà ce principe : `re.compile` et les fonctions comme `re.search` gardent en cache les derniers motifs compilés (jusqu'à 512 en Python 3.13, valeur de la constante privée `re._MAXCACHE`). Appeler `re.compile` plusieurs fois avec le même motif coûte donc peu, et un `@lru_cache` comme celui-ci n'apporte quelque chose que si votre programme utilise plus de motifs différents que ce cache interne, partagé avec tout le reste du programme, ne peut en garder.
 
 ## Voir aussi
 
 - [Python : Comment utiliser les décorateurs]({% post_url 2026-05-14-Python-les-decorateurs %})
-- [Comment utiliser un cache avec Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
+- [Comment ajouter un cache à une application Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
 - [Comment ajouter du cache à une application Django]({% post_url 2025-11-01-Comment-ajouter-du-cache-a-une-application-Django %})
-- [Utiliser fastapi-cache2 avec FastAPI]({% post_url 2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
+- [Ajouter un cache à notre application FastAPI avec redis]({% post_url 2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
 - [Documentation officielle de `functools`](https://docs.python.org/fr/3/library/functools.html)
+- [FAQ Python : How do I cache method calls?](https://docs.python.org/3/faq/programming.html#how-do-i-cache-method-calls)

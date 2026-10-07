@@ -8,26 +8,30 @@ tags:
 author: Pierre Chopinet
 ---
 
-Arrivé avec Python 3.10 (octobre 2021), le pattern matching va bien plus loin qu'un simple `switch / case` comme on en trouve dans d'autres langages. Il permet non seulement de comparer des valeurs, mais aussi de **déstructurer** des objets, des listes ou des dictionnaires en une seule instruction.
+Python 3.10 (octobre 2021) a introduit l'instruction `match`, qui ressemble au `switch` d'autres langages mais va plus loin : en plus de comparer des valeurs, elle sait déstructurer des listes, des dictionnaires ou des objets, et en extraire les champs dans la même ligne.
 <!--more-->
 
-Si vous avez déjà croisé le pattern matching en [Java]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %}), en Rust ou en OCaml, c'est la même idée : remplacer des chaînes `if/elif/else` verbeuses par une syntaxe déclarative qui exprime à la fois la condition et l'extraction des données dans la même ligne.
+Si vous avez déjà croisé le pattern matching en [Java]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %}), en Rust ou en OCaml, c'est la même idée : remplacer des chaînes de `if/elif` par des motifs qui décrivent la forme des données attendues.
 
 Dans cet article :
-- Le principe du `match` / `case` et quand l'utiliser
-- Match sur des littéraux, des séquences, des dictionnaires
-- Déstructurer des classes et des dataclasses
-- Ajouter des conditions supplémentaires avec `if` (guards)
-- Le piège classique du capture vs comparaison
-- Bonnes pratiques et cas d'usage
+- Pourquoi match / case ?
+- Comparer des valeurs
+- Capturer une valeur
+- Déstructurer une liste ou un tuple
+- Déstructurer un dictionnaire
+- Déstructurer un objet
+- Imbriquer les motifs
+- Ajouter une condition avec `if`
+- Un nom simple est toujours une capture
+- Router des messages
+- Un mini-évaluateur d'expressions
+- Quand préférer un `if`
 
-Pré-requis : Python 3.10 ou plus récent.
-
----
+Pré-requis : Python 3.10 ou plus récent. Les exemples ont été testés avec Python 3.13.
 
 ## Pourquoi match / case ?
 
-Sans pattern matching, on enchaîne souvent des `if/elif` qui mélangent vérification de type, accès à des attributs et extraction de valeurs :
+Sans pattern matching, on enchaîne souvent des `if/elif` qui mélangent vérification de type, accès aux clés et extraction des valeurs :
 
 ```python
 def decrire(message):
@@ -43,7 +47,7 @@ def decrire(message):
         return "message inconnu"
 ```
 
-Avec `match / case`, le même code devient :
+Avec `match`, on écrit :
 
 ```python
 def decrire(message):
@@ -58,13 +62,11 @@ def decrire(message):
             return "message inconnu"
 ```
 
-La structure du message et l'extraction des champs apparaissent directement dans le `case`. Plus de `.get()`, plus de variables intermédiaires, plus de répétition.
+Chaque `case` décrit la forme du message attendu et extrait les champs dont on a besoin, sans `.get()` ni variables intermédiaires. Seule différence avec la première version : un message `echo` sans champ `data` tombe maintenant dans le cas par défaut, puisque le motif exige la présence de la clé.
 
----
+## Comparer des valeurs
 
-## Premier exemple : match sur des littéraux
-
-Le cas le plus simple : comparer une valeur à des littéraux.
+Le cas le plus simple consiste à comparer une valeur à des littéraux :
 
 ```python
 def description_statut(code):
@@ -82,36 +84,9 @@ print(description_statut(200))  # OK
 print(description_statut(418))  # Statut inconnu
 ```
 
-Quelques règles :
-- Les `case` sont testés dans l'ordre, le premier qui correspond gagne.
-- Le wildcard `_` correspond à tout (équivalent au `default` d'un `switch`).
-- Sans `case _`, un `match` qui ne correspond à rien ne fait simplement rien (pas d'exception).
+Les `case` sont testés dans l'ordre, et le premier qui correspond l'emporte. Le motif `_` correspond à tout, c'est l'équivalent du `default` d'un `switch`. Sans lui, un `match` qui ne trouve aucun `case` correspondant ne fait rien, sans lever d'exception : prévoyez donc un `case _` dès qu'une valeur inattendue est possible.
 
----
-
-## Capture de variables
-
-Un `case` peut capturer la valeur dans une variable :
-
-```python
-def describe(value):
-    match value:
-        case 0:
-            return "zéro"
-        case n:
-            return f"nombre {n}"
-
-print(describe(0))    # zéro
-print(describe(42))   # nombre 42
-```
-
-Ici, `case n` capture n'importe quelle valeur dans `n`, qui devient utilisable dans le corps du `case`. Attention, ce comportement est à la source du **piège le plus fréquent** de `match / case`, qu'on verra plus loin.
-
----
-
-## Alternatives avec `|`
-
-Pour regrouper plusieurs valeurs dans un même `case`, on utilise `|` :
+Pour accepter plusieurs valeurs dans un même `case`, on les sépare par `|` :
 
 ```python
 def categorie_http(code):
@@ -126,13 +101,33 @@ def categorie_http(code):
             return "erreur serveur"
         case _:
             return "autre"
+
+print(categorie_http(404))  # erreur client
 ```
 
----
+Notez que `match` est une instruction et non une expression : contrairement aux expressions `switch` de Java ou au `match` de Rust, il ne renvoie pas de valeur. On ne peut donc pas écrire `resultat = match x: ...`, d'où le `return` dans chaque `case` et le `match` placé dans une fonction, comme dans tous les exemples de cet article.
 
-## Match sur des séquences
+## Capturer une valeur
 
-Le pattern matching permet de déstructurer des listes et des tuples :
+Un `case` peut aussi capturer la valeur dans une variable :
+
+```python
+def describe(value):
+    match value:
+        case 0:
+            return "zéro"
+        case n:
+            return f"nombre {n}"
+
+print(describe(0))    # zéro
+print(describe(42))   # nombre 42
+```
+
+`case n` correspond à n'importe quelle valeur et la range dans la variable `n`, utilisable dans le corps du `case`. Ce comportement est à l'origine du piège le plus courant avec `match`, détaillé plus bas.
+
+## Déstructurer une liste ou un tuple
+
+Les motifs de séquence vérifient le nombre d'éléments et les extraient :
 
 ```python
 def analyser_commande(tokens):
@@ -151,16 +146,13 @@ print(analyser_commande(["ls"]))               # commande sans argument : ls
 print(analyser_commande(["cp", "a", "b"]))     # cp avec 2 arguments : ['a', 'b']
 ```
 
-- `[cmd, *args]` capture le premier élément dans `cmd` et le reste dans `args`.
-- On peut aussi capturer le milieu : `[premier, *milieu, dernier]`.
+`[cmd, arg]` ne correspond qu'à une séquence de deux éléments. Avec `*`, on capture le reste : `[cmd, *args]` met le premier élément dans `cmd` et les suivants dans la liste `args`. On peut aussi récupérer le milieu avec `[premier, *milieu, dernier]`.
 
-> Les chaînes de caractères **ne correspondent pas** aux patterns de séquence, même si elles sont itérables. C'est volontaire : `case [a, b]` ne matchera pas la chaîne `"ab"`. Pour matcher des caractères, faites un `case str()` puis traitez la chaîne.
+Attention, une chaîne de caractères ne correspond jamais à un motif de séquence, même si elle est itérable : `case [a, b]` ne correspond pas à `"ab"`. C'est voulu. Pour traiter une chaîne, on utilise le motif de type `case str()`, puis on la manipule dans le corps du `case`.
 
----
+## Déstructurer un dictionnaire
 
-## Match sur des dictionnaires
-
-Les patterns de dictionnaire vérifient que **certaines clés** sont présentes avec les bonnes valeurs :
+Un motif de dictionnaire vérifie que certaines clés sont présentes, avec les bonnes valeurs :
 
 ```python
 def traiter_evenement(event):
@@ -178,21 +170,21 @@ print(traiter_evenement({"type": "click", "x": 10, "y": 20, "timestamp": 1234}))
 # clic en (10, 20)
 ```
 
-Point important : le pattern `{"type": "click", "x": x, "y": y}` **n'exige pas** que ce soient les seules clés. Les clés supplémentaires (comme `timestamp` ci-dessus) sont autorisées. C'est le comportement opposé des patterns de séquence, qui sont stricts sur la longueur.
-
-Pour capturer toutes les clés restantes, utilisez `**rest` :
+Les clés qui ne sont pas dans le motif, comme `timestamp` ici, sont ignorées. C'est l'inverse des motifs de séquence, qui imposent la longueur exacte. Pour récupérer les clés restantes, on utilise `**` :
 
 ```python
-match event:
-    case {"type": type_, **autres_champs}:
-        return f"type={type_}, autres={autres_champs}"
+def resumer(event):
+    match event:
+        case {"type": type_, **autres_champs}:
+            return f"type={type_}, autres={autres_champs}"
+
+print(resumer({"type": "click", "x": 10, "y": 20}))
+# type=click, autres={'x': 10, 'y': 20}
 ```
 
----
+## Déstructurer un objet
 
-## Match sur des classes
-
-On peut matcher sur le type d'un objet et déstructurer ses attributs en même temps. Le plus simple est d'utiliser une `dataclass`, qui fournit automatiquement les informations nécessaires :
+On peut aussi vérifier le type d'un objet et extraire ses attributs dans le même motif. Le plus simple est de partir d'une `dataclass` :
 
 ```python
 from dataclasses import dataclass
@@ -224,13 +216,9 @@ print(quadrant(Point(3, 4)))    # Q1
 print(quadrant(Point(-2, -5)))  # Q3
 ```
 
-Deux syntaxes coexistent dans le pattern :
-- **Positionnelle** : `Point(0, 0)` matche un `Point` avec `x=0` et `y=0`. Fonctionne grâce à `__match_args__` (fourni automatiquement par `@dataclass`).
-- **Par mot-clé** : `Point(x=0, y=_)` est explicite et plus robuste si l'ordre des attributs change.
+Deux syntaxes sont possibles. La forme positionnelle, `Point(0, 0)`, s'appuie sur l'attribut `__match_args__` que `@dataclass` génère à partir de l'ordre des champs. La forme par mot-clé, `Point(x=0, y=_)`, est plus explicite et continue de fonctionner si l'ordre des attributs change : c'est celle à privilégier pour une classe qui a plus de deux ou trois attributs.
 
-### Sans dataclass
-
-Pour une classe normale, il faut définir `__match_args__` pour activer la forme positionnelle :
+Avec une classe classique, la forme par mot-clé fonctionne directement. Pour la forme positionnelle, il faut définir `__match_args__` soi-même, sinon Python lève une erreur `TypeError: Utilisateur() accepts 0 positional sub-patterns (2 given)` :
 
 ```python
 class Utilisateur:
@@ -251,11 +239,9 @@ print(saluer(Utilisateur("Alice", "admin")))   # Bonjour Alice (admin)
 print(saluer(Utilisateur("Bob", "viewer")))    # Bonjour Bob
 ```
 
----
+## Imbriquer les motifs
 
-## Combinaison : match imbriqué
-
-Les patterns se composent. On peut matcher une liste de dictionnaires, ou un dataclass qui contient d'autres dataclasses :
+Les motifs se combinent entre eux : un objet peut contenir d'autres objets, une liste des dictionnaires, etc.
 
 ```python
 from dataclasses import dataclass
@@ -278,13 +264,11 @@ def longueur_manhattan(s):
 print(longueur_manhattan(Segment(Point(0, 0), Point(3, 4))))  # 7
 ```
 
-Cette capacité à imbriquer rend `match / case` particulièrement bien adapté au traitement de structures arborescentes (AST, JSON, configuration).
+C'est ce qui rend `match` pratique pour parcourir des structures arborescentes : arbres syntaxiques, documents JSON, fichiers de configuration.
 
----
+## Ajouter une condition avec `if`
 
-## Guards : conditions supplémentaires avec `if`
-
-Un `case` peut être complété par une condition `if` (appelée *guard*) :
+Un `case` peut être complété par une condition `if`, appelée *guard* :
 
 ```python
 def classer(valeur):
@@ -305,15 +289,13 @@ print(classer(0))     # zéro
 print(classer(3.14))  # nombre flottant
 ```
 
-`int(n)` est un pattern de type : il matche si la valeur est un `int`, et capture la valeur dans `n`. Le guard `if n < 0` ajoute une contrainte supplémentaire.
+`int(n)` est un motif de type : il correspond si la valeur est un `int` et la capture dans `n`. La condition n'est évaluée que si le motif correspond, et si elle est fausse, Python passe au `case` suivant.
 
-> Attention : `bool` étant une sous-classe d'`int`, `classer(True)` matche `case int(n)` (avec `n` valant `True`, soit `1`) et renvoie donc `"entier positif"`. Si vous devez distinguer les booléens des entiers, placez un `case bool()` avant le `case int()`.
+Attention, `bool` est une sous-classe d'`int` : `classer(True)` correspond à `case int(n)` (avec `n` qui vaut `True`, soit 1) et renvoie donc `"entier positif"`. Pour distinguer les booléens des entiers, il faut placer un `case bool()` avant les `case int()`.
 
----
+## Un nom simple est toujours une capture
 
-## Le piège du capture vs comparaison
-
-Voici l'erreur la plus fréquente avec `match / case`. Imaginons qu'on veuille tester un statut contre des constantes :
+Voici l'erreur la plus fréquente avec `match`. On veut comparer un statut à des constantes :
 
 ```python
 ACTIF = "actif"
@@ -323,17 +305,29 @@ def message_statut(s):
     match s:
         case ACTIF:      # piège ! ce n'est PAS une comparaison
             return "utilisateur actif"
-        case INACTIF:    # inatteignable
+        case INACTIF:
             return "utilisateur inactif"
 ```
 
-Ce code ne fonctionne pas : `case ACTIF` est interprété comme une **capture**, comme `case n` plus haut. Python crée une nouvelle variable nommée `ACTIF` qui capture la valeur de `s`, peu importe sa valeur. Le `case` matche toujours, et le deuxième est inatteignable.
+`case ACTIF` n'est pas une comparaison avec la constante, mais une capture comme le `case n` vu plus haut : n'importe quelle valeur correspond et se retrouve dans une nouvelle variable `ACTIF`. Dans cet exemple, Python s'en rend compte, puisque le second `case` ne pourrait jamais être atteint, et refuse de compiler la fonction :
 
-La règle : **un nom simple (`ACTIF`) est toujours une capture, jamais une comparaison.**
+```
+SyntaxError: name capture 'ACTIF' makes remaining patterns unreachable
+```
 
-Pour comparer à une constante, deux solutions :
+Le piège est plus sournois quand la capture se trouve dans le dernier `case`, ou dans le seul : aucune erreur, et la fonction répond "utilisateur actif" quel que soit le statut. En dehors d'une fonction, la capture écrase même la constante, car les variables capturées restent définies après le `match` :
 
-### Solution 1 : qualifier le nom avec un point
+```python
+ACTIF = "actif"
+
+match "inactif":
+    case ACTIF:
+        pass
+
+print(ACTIF)  # inactif
+```
+
+Pour comparer à une constante, il faut un nom qualifié, avec un point : `Classe.ATTRIBUT`, `module.CONSTANTE`. On peut regrouper les constantes dans une classe :
 
 ```python
 class Statut:
@@ -350,7 +344,7 @@ def message_statut(s):
             return "statut inconnu"
 ```
 
-### Solution 2 : utiliser une Enum (recommandé)
+Ou, plus naturellement, utiliser une Enum :
 
 ```python
 from enum import Enum
@@ -369,38 +363,11 @@ def message_statut(s):
             return "statut inconnu"
 ```
 
-> Retenez : si le nom contient un point (`Module.CONSTANTE`, `Classe.attribut`, `enum.VALEUR`), c'est une comparaison. Sinon, c'est une capture.
+Avec une Enum classique, la chaîne `"actif"` ne correspond pas à `Statut.ACTIF` : `message_statut("actif")` renvoie `"statut inconnu"`. Il faut convertir la valeur avant le `match` avec `Statut("actif")`, ou hériter de `StrEnum` (Python 3.11 et plus), dont les membres sont égaux à leur valeur.
 
----
+## Router des messages
 
-## Match n'est pas une expression
-
-Contrairement au `switch` de Java 21 ou au `match` de Rust, le `match` Python est une **instruction**, pas une expression. Il ne retourne pas directement de valeur :
-
-```python
-# Ne fonctionne pas :
-# resultat = match x:
-#     case 0:
-#         "zéro"
-#     case _:
-#         "autre"
-
-# La forme correcte :
-def description(x):
-    match x:
-        case 0:
-            return "zéro"
-        case _:
-            return "autre"
-```
-
-Cette limitation rend souvent utile d'encapsuler le `match` dans une fonction qui retourne la valeur calculée, comme dans tous les exemples ci-dessus.
-
----
-
-## Cas d'usage : router des messages
-
-Un cas où `match / case` brille : router des messages typés dans une application réseau, un bot, ou une CLI.
+`match` est à l'aise pour aiguiller des messages structurés, ceux d'une API, d'un bot ou d'une CLI :
 
 ```python
 def traiter(message):
@@ -423,13 +390,11 @@ print(traiter({"action": "delete", "resource": "user", "id": 42}))
 # Suppression de l'utilisateur 42
 ```
 
-Sans `match`, ce code demanderait une cascade de `if/elif` avec beaucoup de `.get()` et de variables intermédiaires.
+Le premier motif va chercher le nom dans un dictionnaire imbriqué (`"data": {"name": nom}`). L'ordre des `case` compte : `{"action": action}` attrape toutes les actions qui n'ont pas été traitées avant lui, et `case _` tout ce qui n'a même pas de clé `action`.
 
----
+## Un mini-évaluateur d'expressions
 
-## Cas d'usage : parser un AST simple
-
-Le pattern matching imbriqué est particulièrement adapté aux structures arborescentes. Voici un mini-évaluateur d'expressions arithmétiques :
+Dernier exemple, un évaluateur d'expressions arithmétiques représentées sous forme d'arbre. Chaque `case` traite un type de nœud, la récursion fait le reste :
 
 ```python
 from dataclasses import dataclass
@@ -465,66 +430,16 @@ expression = Multiplication(
 print(evaluer(expression))  # 20
 ```
 
-Ce style déclaratif rend la logique d'évaluation directement lisible.
+## Quand préférer un `if`
 
----
-
-## Bonnes pratiques
-
-### À faire
-
-- **Utiliser `match / case` pour la déstructuration**, pas pour une simple comparaison à 2-3 valeurs (où un `if/elif` reste plus lisible).
-- **Toujours prévoir un `case _:`** pour les cas non gérés, sinon le `match` peut passer silencieusement.
-- **Préférer les patterns par mot-clé** (`Point(x=0, y=y)`) pour les classes avec plus de 2-3 attributs : c'est plus robuste si l'ordre change.
-- **Utiliser des dataclasses ou des Enum** pour clarifier l'intention et éviter le piège du capture.
-
-### À ne pas faire
-
-- **Comparer un nom simple à une constante** : `case MA_CONSTANTE` capture, ne compare pas. Utilisez `Module.MA_CONSTANTE` ou une Enum.
-- **Mettre de la logique complexe dans les guards** : si un guard dépasse une ligne lisible, extrayez-le dans une fonction.
-- **Abuser de l'imbrication** : au-delà de 2 niveaux, la lisibilité chute. Découpez la logique en plusieurs fonctions qui font chacune un `match`.
-- **Utiliser `match` comme un dispatch de méthodes** : si vos `case` se limitent à appeler une méthode par type, le polymorphisme classique est probablement plus adapté.
-
----
-
-## Quand l'utiliser, quand l'éviter
-
-`match / case` brille quand :
-- Vous traitez des structures de données (dict JSON, AST, message protocolaire).
-- Vous avez besoin de comparer ET d'extraire dans le même geste.
-- Vous travaillez sur une hiérarchie de classes (dataclasses, Enum).
-
-Un simple `if / elif` reste préférable quand :
-- Vous comparez 2 ou 3 valeurs sans extraction.
-- Les conditions sont des expressions complexes qui ne tiennent pas dans un pattern.
-- Vous voulez rester compatible avec Python 3.9 ou plus ancien.
-
----
-
-## Conclusion
-
-Le pattern matching est l'un des ajouts les plus puissants de Python 3.10. Il transforme du code défensif (`isinstance`, `.get()`, variables temporaires) en code déclaratif qui exprime la structure attendue des données.
-
-**Points clés :**
-- `match / case` combine comparaison et déstructuration en une seule instruction.
-- Les patterns existent pour les littéraux, les séquences, les dictionnaires et les classes.
-- Un nom simple dans un `case` est toujours une capture, jamais une comparaison.
-- Les dataclasses et les Enums se marient particulièrement bien avec `match / case`.
-- Pour comparer à une constante, qualifiez-la (`Module.NOM`) ou utilisez une Enum.
-
----
-
-## Pour aller plus loin
-
-- [PEP 634 - Structural Pattern Matching: Specification](https://peps.python.org/pep-0634/)
-- [PEP 635 - Structural Pattern Matching: Motivation and Rationale](https://peps.python.org/pep-0635/)
-- [PEP 636 - Structural Pattern Matching: Tutorial](https://peps.python.org/pep-0636/)
-- [Documentation officielle : match statement](https://docs.python.org/3/reference/compound_stmts.html#the-match-statement)
+`match` est intéressant quand il faut à la fois vérifier la forme des données et en extraire des valeurs : documents JSON, messages, arbres, hiérarchies de dataclasses ou d'Enum. Pour comparer une variable à deux ou trois valeurs, un `if/elif` reste plus lisible, de même quand les conditions sont des expressions qui ne rentrent pas dans un motif. Si vos `case` se contentent d'appeler une méthode différente selon le type de l'objet, le polymorphisme classique (une méthode redéfinie dans chaque classe) est souvent plus adapté. Enfin, `match` n'existe pas avant Python 3.10 : à éviter si votre code doit tourner sur une version plus ancienne.
 
 ## Voir aussi
 
 - [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
-- [Python : Comment utiliser les décorateurs]({% post_url 2026-05-14-Python-les-decorateurs %})
-- [Python : Comment utiliser les f-strings]({% post_url 2026-02-09-Python-f-strings-formatage-chaines %})
-- [Python : Comment tester son code avec pytest]({% post_url 2026-04-06-Comment-tester-son-code-python-avec-pytest %})
-- [Sealed classes en Java]({% post_url 2026-01-14-Sealed-classes-en-Java %})
+- [Les Sealed classes en Java]({% post_url 2026-01-14-Sealed-classes-en-Java %})
+- [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})
+- [PEP 634 - Structural Pattern Matching: Specification](https://peps.python.org/pep-0634/)
+- [PEP 635 - Structural Pattern Matching: Motivation and Rationale](https://peps.python.org/pep-0635/)
+- [PEP 636 - Structural Pattern Matching: Tutorial](https://peps.python.org/pep-0636/)
+- [Documentation officielle : l'instruction match](https://docs.python.org/3/reference/compound_stmts.html#the-match-statement)
