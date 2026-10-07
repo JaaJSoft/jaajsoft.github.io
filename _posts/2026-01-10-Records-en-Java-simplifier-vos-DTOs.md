@@ -8,25 +8,26 @@ tags:
 author: Pierre Chopinet
 ---
 
-Les records, introduits en Java 14 (preview) et finalisés en Java 16, révolutionnent l'écriture de classes de données immuables. Fini le boilerplate des getters, `equals()`, `hashCode()` et `toString()` : un record fait tout ça en une ligne.
+Un DTO en Java, c'est souvent un constructeur, des _getters_, `equals()`, `hashCode()` et `toString()` : une trentaine de lignes pour trois champs. Les records, arrivés en preview avec Java 14 et finalisés en Java 16, génèrent tout ça à partir d'une seule ligne. Dans ce tutoriel, nous allons voir comment les écrire, les personnaliser, et les utiliser avec Spring Boot et Jackson.
 <!--more-->
 
-Dans cet article, vous découvrirez :
-- Ce qu'est un record et pourquoi l'utiliser pour vos DTOs
-- La syntaxe et les fonctionnalités des records
-- Comment personnaliser les records (validation, constructeurs, méthodes)
-- Les limitations et bonnes pratiques
-- L'intégration avec Spring Boot, Jackson et JPA
+Dans cet article :
+- Qu'est-ce qu'un record ?
+- Utiliser un record
+- Personnaliser un record
+- Records imbriqués et pattern matching
+- Records et collections
+- Records avec Spring Boot et Jackson
+- Ce qu'un record ne peut pas faire
+- Records ou Lombok ?
 
-Pré-requis : Java 16 ou plus récent. Le pattern matching avec records nécessite Java 21+.
-
----
+Pré-requis : Java 16 ou plus récent, Java 21 pour les exemples avec pattern matching.
 
 ## Qu'est-ce qu'un record ?
 
-Un **record** est une classe Java déclarée avec le mot-clé `record` au lieu de `class`. Il représente un agrégat immuable de données, parfait pour les DTOs (Data Transfer Objects), les valeurs métier ou les résultats de requêtes.
+Un record est une classe déclarée avec le mot-clé `record` au lieu de `class`. Il sert à transporter des données qui ne changent pas : le corps d'une requête ou d'une réponse d'API, une valeur métier comme un email ou un montant, le résultat d'une requête, un événement...
 
-### Avant les records (Java 15 ou inférieur)
+Voici un DTO écrit à l'ancienne, avant Java 16 :
 
 ```java
 public final class UserDTO {
@@ -66,25 +67,22 @@ public final class UserDTO {
 }
 ```
 
-Environ 35 lignes de code pour une simple classe de données.
-
-### Avec un record (Java 16 ou plus récent)
+35 lignes. Le même DTO avec un record :
 
 ```java
 public record UserDTO(Long id, String name, String email) {}
 ```
 
-Une ligne. Le compilateur génère automatiquement :
-- Un constructeur canonique avec tous les paramètres
-- Des accesseurs `id()`, `name()`, `email()` (pas de préfixe `get`)
-- `equals()`, `hashCode()`, `toString()`
-- La classe est `final` et les champs sont `private final`
+À partir de cette ligne, le compilateur génère :
+- un constructeur qui prend tous les composants, appelé constructeur canonique
+- un accesseur par composant : `id()`, `name()` et `email()`, sans préfixe `get`
+- `equals()`, `hashCode()` et `toString()`, calculés à partir de tous les composants
 
----
+La classe est implicitement `final` et chaque composant devient un champ `private final`.
 
-## Syntaxe et fonctionnalités de base
+## Utiliser un record
 
-### Déclaration simple
+Un record s'instancie comme n'importe quelle classe :
 
 ```java
 public record Point(int x, int y) {}
@@ -96,20 +94,7 @@ System.out.println(p.y());      // 20
 System.out.println(p);           // Point[x=10, y=20]
 ```
 
-### Immutabilité
-
-Les composants d'un record sont `final`. Impossible de les modifier après construction.
-
-```java
-public record Product(String sku, double price) {}
-
-Product p = new Product("ABC-123", 99.99);
-// p.price = 50.0; // ERREUR : pas de setter
-```
-
-### Equals et hashCode
-
-Basés sur **tous les composants** du record.
+Deux records sont égaux quand tous leurs composants sont égaux :
 
 ```java
 Point p1 = new Point(5, 10);
@@ -120,13 +105,24 @@ System.out.println(p1.equals(p2));  // true
 System.out.println(p1.equals(p3));  // false
 ```
 
----
+Comme `hashCode()` suit la même règle, un record fait une bonne clé de `HashMap`, par exemple pour [regrouper des données selon plusieurs critères]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %}).
+
+Il n'y a pas de setter et les champs sont `final`, on ne peut donc pas modifier un record après sa création :
+
+```java
+public record Product(String sku, double price) {}
+
+Product p = new Product("ABC-123", 99.99);
+// p.price = 50.0; // ne compile pas : le champ est private et final
+```
+
+Attention, cette immutabilité est superficielle (la Javadoc de `java.lang.Record` parle de *shallowly immutable*). Si un composant est une `ArrayList`, le record garde la même référence, mais le contenu de la liste peut toujours changer. On verra juste après comment faire une copie défensive.
 
 ## Personnaliser un record
 
-### Validation dans le constructeur canonique
+### Valider dans le constructeur compact
 
-Vous pouvez ajouter de la logique de validation sans redéclarer tous les paramètres grâce au **constructeur compact**.
+Pour valider les valeurs, inutile de réécrire tout le constructeur. Un constructeur compact, sans liste de paramètres, s'exécute avant l'affectation des champs :
 
 ```java
 public record Email(String address) {
@@ -143,26 +139,47 @@ Email e1 = new Email("user@example.com");  // OK
 Email e2 = new Email("invalide");          // IllegalArgumentException
 ```
 
-### Constructeurs alternatifs
+L'affectation des champs est ajoutée automatiquement à la fin du constructeur compact. Écrire `this.address = ...` dedans est même refusé par le compilateur (`cannot assign a value to final variable address`). Par contre, on peut réaffecter le paramètre avant cette affectation, pour faire une copie défensive :
 
 ```java
-public record Rectangle(int width, int height) {
-    // Constructeur carré
-    public Rectangle(int side) {
-        this(side, side);
+public record Team(String name, List<String> members) {
+    public Team {
+        members = List.copyOf(members); // copie non modifiable
+    }
+}
+```
+
+Avec cette copie, modifier la liste passée au constructeur n'a plus d'effet sur le record, et `team.members().add("Eve")` lance une `UnsupportedOperationException`.
+
+Ou pour normaliser une valeur, ici un arrondi au dixième :
+
+```java
+public record Temperature(double celsius) {
+    public Temperature {
+        celsius = Math.round(celsius * 10.0) / 10.0; // arrondi à 1 décimale
+    }
+
+    public double fahrenheit() {
+        return celsius * 9.0 / 5.0 + 32.0;
     }
 }
 
-Rectangle r1 = new Rectangle(10, 20);
-Rectangle r2 = new Rectangle(15);  // Carré 15x15
+Temperature t = new Temperature(23.456);
+System.out.println(t.celsius());     // 23.5
+System.out.println(t.fahrenheit());  // 74.3
 ```
 
-### Méthodes personnalisées
+### Ajouter des constructeurs et des méthodes
 
-Un record peut contenir des méthodes métier.
+Un record peut avoir d'autres constructeurs, à condition qu'ils appellent un autre constructeur du record avec `this(...)`, et donc au bout du compte le constructeur canonique. Il peut aussi contenir des méthodes métier :
 
 ```java
 public record Rectangle(int width, int height) {
+    // Constructeur pour un carré
+    public Rectangle(int side) {
+        this(side, side);
+    }
+
     public int area() {
         return width * height;
     }
@@ -172,38 +189,19 @@ public record Rectangle(int width, int height) {
     }
 }
 
-Rectangle r = new Rectangle(10, 10);
+Rectangle r = new Rectangle(10);
+System.out.println(r);              // Rectangle[width=10, height=10]
 System.out.println(r.area());       // 100
 System.out.println(r.isSquare());   // true
 ```
 
-### Redéfinir les accesseurs
+### Redéfinir un accesseur
 
-```java
-public record Temperature(double celsius) {
-    // Accesseur personnalisé
-    @Override
-    public double celsius() {
-        return Math.round(celsius * 10.0) / 10.0; // arrondi à 1 décimale
-    }
+On peut aussi écrire soi-même un accesseur, avec exactement le même nom et le même type de retour que le composant (sinon : `invalid accessor method in record`). Par contre, il doit renvoyer la valeur du champ : la Javadoc de `java.lang.Record` impose que la copie `new Temperature(t.celsius())` soit égale à `t`. Avec l'arrondi placé dans l'accesseur `celsius()` plutôt que dans le constructeur, cette copie ne serait plus égale à l'original, et `toString()` afficherait toujours `Temperature[celsius=23.456]`.
 
-    public double fahrenheit() {
-        // On passe par l'accesseur celsius() pour profiter de l'arrondi.
-        // Avec le champ brut (celsius), on obtiendrait 74.2208.
-        return celsius() * 9.0 / 5.0 + 32.0;
-    }
-}
+### Implémenter une interface
 
-Temperature t = new Temperature(23.456);
-System.out.println(t.celsius());     // 23.5
-System.out.println(t.fahrenheit());  // 74.3
-```
-
----
-
-## Records et interfaces
-
-Un record peut implémenter une ou plusieurs interfaces.
+Un record peut implémenter une ou plusieurs interfaces. Ici, l'accesseur généré `id()` sert directement d'implémentation à la méthode de l'interface :
 
 ```java
 public interface Identifiable {
@@ -219,11 +217,9 @@ Identifiable entity = new UserDTO(1L, "Alice", "alice@example.com");
 System.out.println(entity.id());  // 1
 ```
 
----
+## Records imbriqués et pattern matching
 
-## Imbrication et composition
-
-### Records imbriqués
+Un record peut contenir d'autres records :
 
 ```java
 public record Address(String street, String city, String zipCode) {}
@@ -236,7 +232,7 @@ Person p = new Person("Alice", addr);
 System.out.println(p.address().city());  // Paris
 ```
 
-### Décomposition avec pattern matching (Java 21+)
+Depuis Java 21, un record pattern permet de déstructurer un record et ceux qu'il contient en une seule fois :
 
 ```java
 static void printCity(Person person) {
@@ -247,11 +243,11 @@ static void printCity(Person person) {
 }
 ```
 
----
+`printCity(p)` affiche `Alice habite à Paris`. Attention, le pattern imbriqué `Address(...)` ne correspond pas à une adresse `null` : avec `new Person("Bob", null)`, ce `switch` lance une `MatchException`. Depuis Java 22, les composants inutilisés comme `street` et `zip` peuvent être remplacés par `_`. Tout ça est détaillé dans l'article sur le [pattern matching en Java]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %}).
 
 ## Records et collections
 
-Les records fonctionnent parfaitement avec les collections et les streams.
+Les accesseurs s'utilisent comme des références de méthode, ce qui rend les records pratiques avec les streams :
 
 ```java
 public record User(Long id, String name, int age) {}
@@ -274,11 +270,11 @@ Map<Integer, List<User>> byAge = users.stream()
     .collect(Collectors.groupingBy(User::age));
 ```
 
----
-
-## Records avec Spring Boot
+## Records avec Spring Boot et Jackson
 
 ### DTOs pour les API REST
+
+Les records conviennent bien aux corps de requête et de réponse d'une API :
 
 ```java
 public record CreateUserRequest(String name, String email) {}
@@ -297,7 +293,11 @@ public class UserController {
 }
 ```
 
+Jackson, utilisé par Spring Boot pour le JSON, désérialise le corps de la requête en appelant le constructeur canonique du record, et sérialise la réponse à partir de ses accesseurs.
+
 ### Validation avec Bean Validation
+
+Les annotations de validation se placent directement sur les composants :
 
 ```java
 import jakarta.validation.constraints.*;
@@ -314,9 +314,11 @@ public record CreateUserRequest(
 ) {}
 ```
 
-### Records et Jackson (sérialisation JSON)
+Pour qu'elles soient vérifiées, il faut l'annotation `@Valid` sur le paramètre du contrôleur, comme dans l'exemple précédent, et la dépendance `spring-boot-starter-validation`, qui n'est pas incluse dans `spring-boot-starter-web`.
 
-Jackson (depuis 2.12+) supporte nativement les records.
+### Renommer un champ JSON
+
+Jackson gère les records depuis sa version 2.12, et les annotations habituelles fonctionnent sur les composants :
 
 ```java
 public record Product(
@@ -326,108 +328,39 @@ public record Product(
 ) {}
 ```
 
-Sérialisation et désérialisation automatique :
+`new Product(1L, "Laptop", 999.99)` donne le JSON suivant, et le même JSON est relu sans problème :
 
 ```json
-{
-  "id": 1,
-  "name": "Laptop",
-  "unit_price": 999.99
-}
+{"id":1,"name":"Laptop","unit_price":999.99}
 ```
 
----
+Testé avec Jackson 2.22.3 et 3.2.3. Spring Boot 4 utilise Jackson 3, dont les annotations restent dans le package `com.fasterxml.jackson.annotation` : l'exemple ne change pas.
 
-## Limitations et contraintes
+## Ce qu'un record ne peut pas faire
 
-Ce qu'un record **ne peut pas** faire :
+Un record ne peut pas :
+- hériter d'une autre classe (il hérite déjà de `java.lang.Record`), mais il peut implémenter des interfaces
+- déclarer des champs d'instance en plus de ses composants (erreur `field declaration must be static`)
+- être `abstract` ou être étendu, puisqu'il est implicitement `final`
 
-- Étendre une autre classe (mais peut implémenter des interfaces)
-- Déclarer des champs d'instance en dehors de ses composants (même `final`) : seul l'état défini par les composants est autorisé
-- Être abstrait
-- Être déclaré non-final
+Il peut par contre avoir des champs et des méthodes statiques, être générique (`record Pair<T, U>(T first, U second) {}`), et être déclaré dans une classe ou même directement dans une méthode.
 
-Ce qu'un record **peut** faire :
+Un record ne peut pas non plus servir d'entité JPA. La Javadoc de `@Entity` (Jakarta Persistence 3.2) est explicite : une entité doit être une classe non `final` avec un constructeur sans paramètre, et un record ne peut pas être désigné comme entité. Cette même version accepte par contre un record comme `@Embeddable`. Pour les entités, on garde donc des classes classiques, et les records servent aux DTOs qu'on en tire.
 
-- Implémenter des interfaces
-- Contenir des méthodes statiques
-- Contenir des champs statiques
-- Être générique : `record Pair<T, U>(T first, U second) {}`
-- Être imbriqué dans une classe
+## Records ou Lombok ?
 
----
+Lombok répond au même problème avec des annotations : `@Value` génère une classe immuable avec ses getters, `equals()`, `hashCode()` et `toString()`, et `@Data` fait la même chose pour une classe modifiable, setters compris.
 
-## Bonnes pratiques
+La différence, c'est qu'un record fait partie du langage : pas de dépendance ni d'annotation processor à configurer, et le compilateur connaît sa structure, ce qui permet les record patterns (une classe annotée avec `@Value` ne peut pas être déstructurée dans un `switch`). Attention si vous migrez de l'un à l'autre : les accesseurs d'un record s'appellent `name()`, pas `getName()`.
 
-### À faire avec les records
-
-- **DTOs** (Request/Response dans les APIs)
-- **Value Objects** (Email, Money, Coordinates)
-- **Résultats de requêtes** (projections)
-- **Tuples** et paires de valeurs
-- **Événements** (Event Sourcing, messaging)
-
-### À éviter avec les records
-
-- **Entités JPA** : utilisez des classes classiques
-- **Données mutables** : si vous avez besoin de setters
-- **Héritage complexe** : un record ne peut pas étendre une classe
-
-### Conseils
-
-- Gardez les records **simples** : pas de logique métier complexe
-- Utilisez le **constructeur compact** pour les validations simples
-- Préférez la **composition** plutôt que l'héritage (records + interfaces)
-- Documentez vos records avec Javadoc si nécessaire
-- Combinez records et **pattern matching** (Java 21+) pour un code élégant
-
----
-
-## Records vs Lombok
-
-Lombok offre `@Data`, `@Value` pour réduire le boilerplate. Pourquoi préférer les records ?
-
-| Critère          | Records        | Lombok                      |
-|------------------|----------------|-----------------------------|
-| Standard Java    | Oui (Java 16+) | Non (dépendance externe)    |
-| Compilation      | Rapide         | Annotation processor (lent) |
-| IDE support      | Natif          | Plugin nécessaire           |
-| Immutabilité     | Par défaut     | `@Value` seulement          |
-| Lisibilité       | Excellente     | Masque le code généré       |
-| Pattern matching | Oui (Java 21+) | Non                         |
-
-Verdict : si vous êtes sur Java 16+, préférez les records. Lombok reste utile pour les entités JPA et certains cas complexes.
-
----
-
-## Conclusion
-
-Les records simplifient drastiquement l'écriture de classes de données en Java. En une ligne, vous obtenez une classe immuable, typée, avec `equals`, `hashCode` et `toString` générés automatiquement.
-
-**Points clés à retenir :**
-
-- Records = syntaxe minimale pour les données immuables
-- Parfaits pour les DTOs, value objects et projections
-- Personnalisables (validation, méthodes, interfaces)
-- Ne conviennent pas aux entités JPA
-- Natifs depuis Java 16, sans dépendances externes
-- Combinables avec pattern matching (Java 21+)
-
----
-
-## Pour aller plus loin
-
-- [JEP 395: Records (Final, JDK 16)](https://openjdk.org/jeps/395)
-- [Documentation Oracle sur les records](https://docs.oracle.com/en/java/javase/17/language/records.html)
-- [Jackson support for Java records](https://github.com/FasterXML/jackson-databind/wiki/Jackson-Release-2.12#java-16-record-classes)
-- [Spring Framework 6 et records](https://docs.spring.io/spring-framework/reference/core/beans/java/instantiating-container.html)
+Sur Java 16 ou plus, je vous conseille les records pour les DTOs et les valeurs immuables, et Lombok là où un record ne convient pas, comme les entités JPA. Les deux ne s'excluent pas : `@Builder` de Lombok fonctionne aussi sur un record (testé avec Lombok 1.18.46).
 
 ## Voir aussi
 
 - [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
-- [Sealed classes en Java]({% post_url 2026-01-14-Sealed-classes-en-Java %})
-- [Optional en Java : éviter les NullPointerException]({% post_url 2026-01-26-Optional-en-Java-eviter-les-NullPointerException %})
-- [Comment faire des group by en Java]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
-- [Comment ajouter du cache à une application Spring Boot]({% post_url 2025-11-08-Comment-ajouter-du-cache-a-une-application-Spring-Boot %})
-- [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
-- [Comment utiliser les properties Spring]({% post_url 2021-04-29-Comment-utiliser-les-properties-spring %})
+- [Les Sealed classes en Java]({% post_url 2026-01-14-Sealed-classes-en-Java %})
+- [Java : Comment faire des group by]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
+- [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %})
+- [JEP 395 : Records](https://openjdk.org/jeps/395)
+- [Documentation Oracle sur les records](https://docs.oracle.com/en/java/javase/17/language/records.html)
+- [Notes de version de Jackson 2.12](https://github.com/FasterXML/jackson/wiki/Jackson-Release-2.12), qui ajoute le support des records
