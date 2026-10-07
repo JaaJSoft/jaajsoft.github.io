@@ -12,48 +12,28 @@ tags:
 author: Pierre Chopinet
 ---
 
-Le cache est l'un des leviers les plus efficaces pour améliorer la latence et réduire la charge d'une application. Spring Boot fournit une abstraction de cache très puissante, compatible avec plusieurs moteurs (Caffeine, Redis, Ehcache, Hazelcast).
+Quand une méthode coûte cher (un appel à une API lente, une grosse requête SQL) et qu'elle renvoie souvent le même résultat pour les mêmes paramètres, la mettre en cache évite de refaire le travail à chaque appel. Spring propose pour ça une abstraction de cache à base d'annotations, que Spring Boot configure tout seul avec Caffeine, Redis et d'autres moteurs. Nous allons voir comment la mettre en place, la configurer, et invalider les données au bon moment.
 <!--more-->
 
 Dans cet article :
-- Pourquoi utiliser un cache et quand l'éviter
-- L'abstraction Spring Cache et ses annotations
-- Configurer Caffeine (en mémoire) et Redis (partagé)
-- Définir des clés, conditions et TTL
-- Stratégies d'invalidation et tests
-- Monitoring avec Actuator et Micrometer
-- Pièges courants et bonnes pratiques
+- Les dépendances
+- Activer le cache
+- Mettre en cache le résultat d'une méthode
+- Les annotations et les clés
+- Les appels internes ne passent pas par le cache
+- Configurer Caffeine
+- Configurer Redis
+- Invalider le cache après une écriture
+- Tester le cache
+- Suivre le cache avec Actuator
 
-Pré-requis : Java 17 ou plus récent et Spring Boot 3.x. Les exemples ont été testés sur la ligne Spring Boot 3.5 (la dernière de la branche 3.x) ; ils restent valables sur Spring Boot 4.1, la version stable la plus récente.
+Pré-requis : Java 17 ou plus récent et Spring Boot 3 ou 4. Les exemples ont été testés avec Spring Boot 3.5.16 et Spring Boot 4.1.1 (Java 21), les différences de la version 4 sont signalées au fil de l'article.
 
----
+## Les dépendances
 
-## Pourquoi mettre du cache ?
+L'abstraction de cache fait partie de Spring Framework, et le starter `spring-boot-starter-cache` l'ajoute avec son auto-configuration. Il faut ensuite choisir où stocker les données. Caffeine garde le cache en mémoire, dans la JVM : c'est le plus rapide, mais chaque instance de l'application a son propre cache. Redis stocke le cache dans un serveur à part, partagé par toutes les instances. Spring Boot sait aussi configurer Ehcache (via JCache), Hazelcast, Infinispan, Couchbase et Cache2k.
 
-- Diminuer la latence des endpoints et batchs.
-- Réduire la charge CPU/IO de services internes ou bases de données.
-- Lisser les pics de trafic et améliorer la résilience.
-- Faire des économies d'infrastructure.
-
-Attention : le cache n'est pas un substitut à un modèle de données ou d'indexation correct. Il complète une conception saine.
-
----
-
-## Panorama de l'abstraction Spring Cache
-
-L'API Spring Cache fournit :
-
-- Des annotations déclaratives : `@EnableCaching`, `@Cacheable`, `@CacheEvict`, `@CachePut`, `@Caching`.
-- Un mécanisme de génération de clé (SpEL) et de conditions (`condition`, `unless`).
-- Une intégration transparente avec différents `CacheManager` (Caffeine, Redis, Ehcache).
-
-Le code métier reste identique : seul le backend change via la configuration.
-
----
-
-## Démarrage rapide
-
-### Dépendances Maven
+Avec Maven :
 
 ```xml
 <!-- Les versions des starters Spring Boot sont gérées par le parent BOM
@@ -66,13 +46,13 @@ Le code métier reste identique : seul le backend change via la configuration.
   </dependency>
 
   <!-- Choisissez un moteur -->
-  <!-- Caffeine (en mémoire, très rapide, TTL/size policy) -->
+  <!-- Caffeine (en mémoire, local à chaque instance) -->
   <dependency>
     <groupId>com.github.ben-manes.caffeine</groupId>
     <artifactId>caffeine</artifactId>
   </dependency>
 
-  <!-- Ou Redis (partagé, scalable) -->
+  <!-- Ou Redis (partagé entre les instances) -->
   <!--
   <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -82,7 +62,7 @@ Le code métier reste identique : seul le backend change via la configuration.
 </dependencies>
 ```
 
-Gradle (Kotlin DSL) :
+Avec Gradle (Kotlin DSL) :
 
 ```kotlin
 // Avec le plugin Spring Boot / io.spring.dependency-management, les versions
@@ -94,25 +74,27 @@ dependencies {
 }
 ```
 
-### Activer le cache
+Sans aucune bibliothèque de cache, Spring Boot se rabat sur une simple `ConcurrentHashMap` en mémoire. C'est pratique pour démarrer, mais la documentation de Spring Boot ne la recommande pas en production.
 
-Dans votre classe d'application (ou une classe de config) :
+## Activer le cache
+
+Le cache s'active avec l'annotation `@EnableCaching`, sur une classe de configuration :
 
 ```java
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Configuration;
 
+@Configuration
 @EnableCaching
-@SpringBootApplication
-public class Application {
-  public static void main(String[] args) {
-    SpringApplication.run(Application.class, args);
-  }
+public class CacheConfig {
 }
 ```
 
-### Première méthode cachée
+On voit souvent cette annotation directement sur la classe principale de l'application. Ça fonctionne, mais la documentation de Spring Boot le déconseille : le cache devient alors obligatoire partout, y compris dans les tests qui ne chargent qu'une partie de l'application. Dans une classe dédiée, il reste facile à isoler.
+
+## Mettre en cache le résultat d'une méthode
+
+Il suffit ensuite d'annoter la méthode avec `@Cacheable`. Dans les exemples, `Price` est un simple record (`public record Price(String id, BigDecimal amount) {}`) :
 
 ```java
 import org.springframework.cache.annotation.Cacheable;
@@ -121,7 +103,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class PriceService {
 
-  // Cache "prices" par défaut ; clé générée à partir des arguments (SpEL)
+  // Cache "prices", avec productId comme clé
   @Cacheable(cacheNames = "prices", key = "#productId")
   public Price getPrice(String productId) {
     return fetchPriceFromSlowApi(productId); // appel coûteux
@@ -129,24 +111,65 @@ public class PriceService {
 }
 ```
 
-- Premier appel : MISS, exécution réelle et mise en cache.
-- Appels suivants avec la même clé : HIT.
+Au premier appel avec un `productId` donné, Spring exécute la méthode et range le résultat dans le cache `prices`. Aux appels suivants avec le même `productId`, il renvoie directement la valeur du cache, sans exécuter la méthode.
 
----
+L'attribut `key` est une expression SpEL. Sans lui, Spring construit la clé à partir des paramètres : le paramètre lui-même s'il n'y en a qu'un, une clé composée (`SimpleKey`) s'il y en a plusieurs. Les paramètres doivent donc avoir des méthodes `equals()` et `hashCode()` correctes, ce qui est le cas des `String`, des nombres et des records.
 
-## Choisir un moteur de cache
+## Les annotations et les clés
 
-- Caffeine : en mémoire, ultra-rapide, TTL/size/expire-after-write/access, très simple en mono-process.
-- Redis : partagé (cluster/containers), en mémoire avec persistance optionnelle (RDB/AOF), TTL par entrée, idéal multi-réplicas.
-- Ehcache, Hazelcast, Infinispan : alternatives JVM, parfois distribuées, selon vos contraintes.
+Quatre annotations couvrent la plupart des besoins :
 
-Commencez simple : Caffeine local en dev/POC, puis passez à Redis en prod multi-instances.
+- `@Cacheable` : renvoie la valeur du cache si elle existe, sinon exécute la méthode et met le résultat en cache
+- `@CachePut` : exécute toujours la méthode, et met le cache à jour avec son résultat
+- `@CacheEvict` : supprime une entrée du cache, ou tout son contenu avec `allEntries = true`
+- `@Caching` : combine plusieurs de ces annotations sur une même méthode
 
----
+Quelques exemples :
 
-## Configuration Caffeine
+```java
+// Clé composite avec SpEL
+@Cacheable(cacheNames = "products", key = "#shopId + ':' + #productId")
+public Product getProduct(String shopId, String productId) { ... }
 
-`application.yml` :
+// Ne rien mettre en cache si l'id est null, ni si le résultat est null
+@Cacheable(cacheNames = "prices", key = "#id", condition = "#id != null", unless = "#result == null")
+public Price price(String id) { ... }
+
+// Mettre le cache à jour avec la valeur enregistrée
+@CachePut(cacheNames = "prices", key = "#p.id")
+public Price savePrice(Price p) { return repo.save(p); }
+
+// Invalidation ciblée après update
+@CacheEvict(cacheNames = "prices", key = "#p.id")
+public Price updatePrice(Price p) { return repo.save(p); }
+
+// Invalidation massive (ex: job de purge)
+@CacheEvict(cacheNames = {"prices", "products"}, allEntries = true)
+public void clearAllCaches() {}
+```
+
+`condition` est évaluée avant l'appel : si elle est fausse, le cache est complètement ignoré. `unless` est évaluée après, sur le résultat (`#result`), et empêche seulement la mise en cache. Sans ce `unless`, un résultat `null` est mis en cache comme les autres avec Caffeine, et les appels suivants renvoient ce `null` sans réessayer. Au passage, `#p.id` fonctionne aussi sur un record.
+
+Pour que SpEL connaisse les noms des paramètres (`#productId`, `#p`...), le code doit être compilé avec l'option `-parameters` de `javac`. Le parent Maven de Spring Boot et son plugin Gradle l'activent. Sans elle, il faut désigner les paramètres par leur position : `#p0` ou `#a0` pour le premier.
+
+Choisissez aussi des clés stables. Une clé qui contient une valeur différente à chaque appel (un horodatage, un identifiant de requête) crée une nouvelle entrée à chaque fois : le cache se remplit sans jamais servir.
+
+## Les appels internes ne passent pas par le cache
+
+Les annotations de cache fonctionnent grâce à un proxy que Spring place autour du bean : c'est lui qui intercepte l'appel et consulte le cache. Quand une méthode appelle une autre méthode du même objet, l'appel ne passe pas par ce proxy, et le cache est ignoré :
+
+```java
+public BigDecimal getPriceWithTax(String productId) {
+  // Appel interne : il ne passe pas par le proxy, donc pas par le cache
+  return getPrice(productId).amount().multiply(new BigDecimal("1.20"));
+}
+```
+
+Si cette méthode est dans `PriceService`, chaque appel à `getPriceWithTax` rappelle l'API lente, alors que `getPrice` est annotée avec `@Cacheable`. Le plus simple est de placer la méthode mise en cache dans un autre bean, injecté là où on en a besoin. Pour la même raison, le cache n'est pas encore actif dans une méthode `@PostConstruct`.
+
+## Configurer Caffeine
+
+Quand Caffeine est dans le classpath, Spring Boot crée un `CaffeineCacheManager`, qui se règle dans `application.yml` :
 
 ```yaml
 spring:
@@ -156,11 +179,18 @@ spring:
       spec: maximumSize=10000,expireAfterWrite=10m,recordStats
 ```
 
-Déclarer un `CacheManager` explicite (optionnel si vous utilisez la propriété ci-dessus) :
+La spécification limite chaque cache à 10 000 entrées, fait expirer une entrée 10 minutes après son écriture, et active les statistiques (`recordStats`), dont les métriques ont besoin. La taille maximale évite que le cache grossisse sans limite.
+
+Attention, `cache-names` crée les caches au démarrage, mais fige aussi la liste : une méthode qui utilise un cache absent de la liste échoue au premier appel avec `IllegalArgumentException: Cannot find cache named '...'`. Sans `cache-names`, Caffeine crée les caches à la demande.
+
+Si Caffeine et Redis sont tous les deux présents dans le classpath, Spring Boot choisit Redis, car il teste les moteurs dans un ordre fixe. On force alors le choix avec `spring.cache.type: caffeine`.
+
+On peut aussi déclarer soi-même le `CacheManager`, par exemple dans la classe `CacheConfig` vue plus haut :
 
 ```java
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -168,6 +198,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
+@EnableCaching
 public class CacheConfig {
 
   @Bean
@@ -182,22 +213,13 @@ public class CacheConfig {
 }
 ```
 
-Récupérer des stats (Micrometer) :
+C'est l'un ou l'autre : dès qu'un bean `CacheManager` existe, Spring Boot n'en crée plus, et les propriétés `spring.cache.*` ne sont plus utilisées.
 
-```yaml
-management:
-  endpoints.web.exposure.include: ["metrics", "health"]
-```
+Caffeine a une limite : le cache reste local à chaque instance. Si l'application tourne sur trois instances, une entrée invalidée sur l'une reste en cache sur les deux autres jusqu'à son expiration. Dans ce cas, il faut un cache partagé.
 
-Puis consultez `/actuator/metrics/cache.gets`, etc.
+## Configurer Redis
 
----
-
-## Configuration Redis (prod multi-instances)
-
-Dépendances : `spring-boot-starter-data-redis` (Lettuce par défaut).
-
-`application.yml` :
+Avec `spring-boot-starter-data-redis`, Spring Boot crée un `RedisCacheManager`. La configuration minimale indique où trouver Redis et la durée de vie des entrées :
 
 ```yaml
 spring:
@@ -208,30 +230,31 @@ spring:
   cache:
     type: redis
     cache-names: [prices, products]
+    redis:
+      time-to-live: 10m
 ```
 
-Configurer TTL par cache et sérialisation :
+Par défaut, les valeurs sont stockées avec la sérialisation Java : les objets mis en cache doivent implémenter `Serializable`, sinon la mise en cache lève une exception. Pour stocker du JSON et régler une durée de vie différente par cache, on déclare son propre `RedisCacheManager` :
 
 ```java
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.cache.*;
-
 import java.time.Duration;
 import java.util.Map;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair;
+import org.springframework.data.redis.serializer.RedisSerializer;
 
 @Configuration
 public class RedisCacheConfig {
 
   @Bean
   public RedisCacheManager redisCacheManager(RedisConnectionFactory cf) {
-    GenericJackson2JsonRedisSerializer json = new GenericJackson2JsonRedisSerializer();
-
     RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-        .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(json))
+        .serializeValuesWith(SerializationPair.fromSerializer(RedisSerializer.json()))
         .entryTtl(Duration.ofMinutes(10)); // TTL par défaut
 
     Map<String, RedisCacheConfiguration> configs = Map.of(
@@ -247,61 +270,41 @@ public class RedisCacheConfig {
 }
 ```
 
-Remarques :
-- Les clés sont des `String` ; les valeurs sérialisées en JSON (lisibles, évolutives).
-- Adaptez le TTL à la volatilité métier de la donnée.
+`RedisSerializer.json()` renvoie le sérialiseur JSON de Spring Data Redis, basé sur Jackson. Jackson n'est pas inclus dans le starter Redis : il est déjà présent dans une application web (`spring-boot-starter-web`), sinon on ajoute `spring-boot-starter-json`. Beaucoup d'exemples utilisent directement `new GenericJackson2JsonRedisSerializer()` : ça fonctionne avec Spring Boot 3, mais cette classe est dépréciée dans Spring Data Redis 4 (Spring Boot 4), qui passe à Jackson 3. Comme Spring Boot 4 n'embarque plus Jackson 2 par défaut, l'application ne démarre même pas (`NoClassDefFoundError: com/fasterxml/jackson/databind/...`). `RedisSerializer.json()` choisit la bonne implémentation dans les deux versions.
 
----
+Les clés sont préfixées par le nom du cache suivi de `::`. Après un appel à `getPrice("A-42")`, on retrouve l'entrée dans Redis :
 
-## Annotations essentielles et SpEL
-
-- `@Cacheable(cacheNames, key, unless, condition)` : lit/écrit si absence.
-- `@CachePut` : force l'écriture sans court-circuiter l'exécution.
-- `@CacheEvict(cacheNames, key, allEntries)` : supprime ; utile après une écriture.
-- `@Caching` : combiner plusieurs annotations.
-
-Exemples :
-
-```java
-// Clé composite avec SpEL
-@Cacheable(cacheNames = "productByShop", key = "#shopId + ':' + #productId")
-public Product getProduct(String shopId, String productId) { ... }
-
-// Conditionner le cache
-@Cacheable(cacheNames = "prices", key = "#id", condition = "#id != null", unless = "#result == null")
-public Price price(String id) { ... }
-
-// Invalidation ciblée après update
-@CacheEvict(cacheNames = "prices", key = "#p.id")
-public Price updatePrice(Price p) { return repo.save(p); }
-
-// Invalidation massive (ex: job de purge)
-@CacheEvict(cacheNames = {"prices", "products"}, allEntries = true)
-public void clearAllCaches() {}
+```
+$ redis-cli GET "prices::A-42"
+"{\"@class\":\"com.example.cache.Price\",\"id\":\"A-42\",\"amount\":[\"java.math.BigDecimal\",9.99]}"
+$ redis-cli TTL "prices::A-42"
+(integer) 889
 ```
 
-Astuce : définissez des clés stables et explicites ; évitez celles sensibles aux variations (locales, ordre de paramètres).
+La durée de vie de 15 minutes du cache `prices` s'applique bien (900 secondes au moment de l'écriture). Le JSON contient le nom de la classe (`@class`), dont Jackson se sert pour recréer le bon objet à la lecture. La documentation de Spring Data Redis prévient que ce mécanisme est dangereux avec des données venant d'une source non fiable : ce Redis doit rester réservé à vos applications. Pensez aussi qu'une entrée écrite par une ancienne version de l'application peut ne plus se relire si la classe a changé entre deux déploiements.
 
----
+Comme pour Caffeine, ce bean remplace l'auto-configuration : `spring.cache.cache-names` et `spring.cache.redis.*` ne sont plus pris en compte. Ici, le cache `products` garde 5 minutes, et tout autre cache prend les 10 minutes de `defaultConfig`. Pour seulement ajuster le `RedisCacheManager` créé par Spring Boot, il existe aussi un bean `RedisCacheManagerBuilderCustomizer`.
 
-## Stratégie d'invalidation
+Avec Spring Boot 4, les écritures dans le cache Redis sont en plus asynchrones par défaut : une valeur mise en cache ou supprimée peut n'être visible dans Redis qu'un court instant après l'appel. Pour un cache qui a besoin d'écritures immédiates, on construit le gestionnaire avec `RedisCacheManager.builder(RedisCacheWriter.create(cf, writer -> writer.immediateWrites()))`.
 
-La cohérence est clé. Quelques approches :
+## Invalider le cache après une écriture
 
-- Invalidation au plus près des mutations : utilisez `@CacheEvict` dans les services qui écrivent.
-- Écouter des événements domain (DDD) : `@TransactionalEventListener` pour évincer après commit.
-- TTL raisonnable pour limiter la dérive en cas d'oubli d'invalidation.
-- Préremplissage (warmup) des caches les plus chauds au démarrage ou via un job.
+Un cache n'est utile que s'il ne renvoie pas de données périmées. La règle de base est d'invalider au plus près des écritures : chaque méthode qui modifie une donnée porte un `@CacheEvict` (ou un `@CachePut`) sur l'entrée concernée. La durée de vie sert de filet de sécurité si une invalidation a été oubliée, et se règle selon la fréquence à laquelle la donnée change.
 
-Exemple avec événement :
+Quand l'écriture se fait dans une transaction, mieux vaut n'invalider qu'une fois la transaction validée : si l'entrée est supprimée avant le commit, une autre requête peut relire l'ancienne valeur en base et la remettre en cache. Une solution est de publier un événement et de l'écouter avec `@TransactionalEventListener` :
 
 ```java
 public record PriceChangedEvent(String productId) {}
 
 @Service
 public class PriceWriter {
+  private final PriceRepository repo;
   private final ApplicationEventPublisher publisher;
-  public PriceWriter(ApplicationEventPublisher publisher) { this.publisher = publisher; }
+
+  public PriceWriter(PriceRepository repo, ApplicationEventPublisher publisher) {
+    this.repo = repo;
+    this.publisher = publisher;
+  }
 
   @Transactional
   public void updatePrice(Price p) {
@@ -318,11 +321,11 @@ public class PriceCacheInvalidator {
 }
 ```
 
----
+Par défaut, l'écouteur est appelé après le commit (phase `AFTER_COMMIT`) : en cas de rollback, le cache n'est pas touché. Attention, si l'événement est publié en dehors de toute transaction, l'écouteur n'est pas appelé du tout, et l'entrée reste en cache. Pour l'appeler quand même dans ce cas, on ajoute `fallbackExecution = true` à l'annotation.
 
-## Tests du cache
+## Tester le cache
 
-Test unitaire du `key` SpEL et du comportement : utilisez un `CacheManager` réel (Caffeine en mémoire) via `@SpringBootTest` ou `@DataJpaTest` + import de config. Vidangez le cache entre scénarios si nécessaire.
+Pour vérifier qu'une méthode est bien mise en cache, le plus simple est un test `@SpringBootTest`, qui utilise le vrai `CacheManager` :
 
 ```java
 @SpringBootTest
@@ -344,16 +347,22 @@ class PriceServiceTest {
 }
 ```
 
-Pour Redis en test : utilisez Testcontainers Redis ou un Redis éphémère.
+Ce test vérifie que le résultat est rangé sous la clé attendue. Pour vérifier en plus que l'appel coûteux n'a lieu qu'une fois, on remplace le bean qui fait cet appel par un mock avec `@MockitoBean`, et on compte ses appels avec `verify(api, times(1))`.
 
----
+Attention, Spring réutilise le même contexte, et donc les mêmes caches, entre les tests qui ont la même configuration. Pour que chaque test parte d'un cache vide :
 
-## Monitoring et métriques
+```java
+@BeforeEach
+void clearCaches() {
+  cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
+}
+```
 
-Avec Actuator + Micrometer :
+Pour tester avec Redis, Testcontainers permet de lancer un vrai serveur Redis dans un conteneur le temps des tests.
 
-- `cache.gets`, `cache.puts`, `cache.evictions`, `cache.size`, latences.
-- Export Prometheus/Grafana pour visualiser le taux de HIT (visez 80% ou plus sur les chemins chauds).
+## Suivre le cache avec Actuator
+
+Pour savoir si le cache sert vraiment, Spring Boot Actuator publie des métriques pour chaque cache. On ajoute la dépendance :
 
 ```xml
 <!-- pom.xml -->
@@ -363,53 +372,46 @@ Avec Actuator + Micrometer :
 </dependency>
 ```
 
+Puis on expose l'endpoint `metrics` :
+
 ```yaml
 management:
   endpoints:
     web:
       exposure:
-        include: ["health", "metrics", "prometheus"]
+        include: "health,metrics"
 ```
 
----
+Après trois appels à `getPrice("A-42")`, le premier qui rate le cache et deux qui le trouvent, on interroge la métrique `cache.gets` en filtrant sur le cache `prices` et les succès (`hit`) :
 
-## Pièges courants et bonnes pratiques
+```bash
+curl -s "http://localhost:8080/actuator/metrics/cache.gets?tag=cache:prices&tag=result:hit" | jq '.measurements'
+```
 
-- Ne cachez pas des données hautement sensibles dans un cache partagé sans chiffrement.
-- Attention à la cardinalité des clés (ex: `vary` non contrôlé) qui peut entraîner une explosion mémoire.
-- Évitez de mettre en cache des erreurs ou `null` sans TTL réduit ou garde-fou (`unless`).
-- Pour les applications multi-instances, évitez le cache en mémoire seul ; préférez Redis.
-- Pensez au versioning de schéma de vos objets mis en cache (compatibilité JSON lors des déploiements progressifs).
-- Définissez une politique de TTL par type de donnée, documentée et mesurable.
+```json
+[
+  {
+    "statistic": "COUNT",
+    "value": 2.0
+  }
+]
+```
 
----
+Avec `result:miss`, on obtient 1. Le rapport entre les deux donne le taux de succès du cache. On trouve aussi `cache.size` et `cache.evictions`.
 
-## Conclusion
+Ces compteurs ont besoin des statistiques du moteur. Sans `recordStats` dans la spécification Caffeine, seule `cache.size` est publiée, et Micrometer le signale au démarrage par un avertissement `The cache 'prices' is not recording statistics`. Avec Redis, il faut ajouter `spring.cache.redis.enable-statistics: true`, ou appeler `enableStatistics()` sur le builder si on déclare son propre `RedisCacheManager`. Enfin, seuls les caches qui existent au démarrage sont suivis : un cache créé à la volée au premier appel n'apparaît pas dans les métriques. C'est une raison de plus de lister ses caches dans `cache-names`.
 
-La mise en place du cache avec Spring Boot apporte des gains concrets et rapides.
+Pour envoyer ces métriques vers Prometheus et les afficher dans Grafana, il suffit d'ajouter la dépendance `micrometer-registry-prometheus` et d'exposer aussi l'endpoint `prometheus`.
 
-**Points clés à retenir :**
-
-- Commencez simple avec Caffeine en local et mesurez les gains sur 2-3 méthodes coûteuses
-- En production multi-instances, migrez vers Redis pour un cache partagé et consistant
-- Mettez en place une stratégie d'invalidation au plus près des écritures avec `@CacheEvict`
-- Définissez des TTL adaptés à la volatilité de chaque type de donnée
-- Surveillez les taux de hit/miss et la taille des caches via les métriques Actuator
-- Restez vigilant sur la cardinalité des clés et la sécurité des données sensibles
-
----
-
-## Pour aller plus loin
-
-- [Documentation Spring Cache](https://docs.spring.io/spring-framework/reference/integration/cache.html)
-- [Spring Boot - Cache auto-configuration](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#io.caching)
-- [Caffeine](https://github.com/ben-manes/caffeine)
-- [Spring Data Redis](https://docs.spring.io/spring-data/redis/docs/current/reference/html/)
-- [Micrometer](https://micrometer.io/)
+Voilà, vous savez maintenant ajouter du cache à une application Spring Boot. Commencez par une ou deux méthodes vraiment coûteuses, et vérifiez avec ces métriques que le cache est bien utilisé avant d'aller plus loin.
 
 ## Voir aussi
 
 - [Comment ajouter du cache à une application Django]({% post_url 2025-11-01-Comment-ajouter-du-cache-a-une-application-Django %})
-- [Comment utiliser un cache avec Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
-- [Limiter le rate d'une API FastAPI avec Redis]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
-- [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})
+- [Comment ajouter un cache à une application Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
+- [Ajouter un cache à notre application FastAPI avec redis]({% post_url 2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
+- [Spring : Comment utiliser les application properties]({% post_url 2021-04-29-Comment-utiliser-les-properties-spring %})
+- [Documentation Spring Framework sur le cache](https://docs.spring.io/spring-framework/reference/integration/cache.html)
+- [Documentation Spring Boot sur le cache](https://docs.spring.io/spring-boot/reference/io/caching.html)
+- [Spring Data Redis : le cache Redis](https://docs.spring.io/spring-data/redis/reference/redis/redis-cache.html)
+- [Caffeine](https://github.com/ben-manes/caffeine)
