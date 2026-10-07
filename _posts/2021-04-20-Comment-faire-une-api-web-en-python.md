@@ -50,11 +50,16 @@ Maintenant installons *flask* :
 pip3 install flask
 ```
 
-Si vous avez une erreur vous disant que vous n'avez pas assez de permissions,
-faites :
+Sur les distributions récentes (Debian 12, Ubuntu 23.04 et suivantes), pip refuse
+d'installer des paquets dans le python du système, même avec l'option `--user`,
+et affiche l'erreur `externally-managed-environment`. Dans ce cas, créez un
+environnement virtuel dans le dossier de votre projet et installez Flask dedans :
 
 ```bash
-pip3 install --user flask
+sudo apt install python3-venv
+python3 -m venv venv
+source venv/bin/activate
+pip install flask
 ```
 
 ### Windows
