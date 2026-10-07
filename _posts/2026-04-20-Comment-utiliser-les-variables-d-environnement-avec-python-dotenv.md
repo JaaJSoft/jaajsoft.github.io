@@ -10,29 +10,29 @@ tags:
 author: Pierre Chopinet
 ---
 
-Gérer la configuration d'une application Python (clés d'API, identifiants de
-base de données, mode debug…) directement dans le code source est une mauvaise
-pratique. Les variables d'environnement permettent de séparer la configuration
-du code, et `python-dotenv` rend cette gestion simple et efficace grâce aux
-fichiers `.env`.
+Écrire la configuration d'une application Python (clés d'API, identifiants de
+base de données, mode debug...) directement dans le code source pose vite
+problème. Les variables d'environnement permettent de séparer la configuration
+du code, et `python-dotenv` permet de les définir dans un fichier `.env`
+pendant le développement.
 <!--more-->
 
-C'est un outil incontournable pour tout projet Python, que ce soit une API
-Flask/FastAPI, un script de traitement de données ou une application Django.
-Si vous avez déjà dockerisé une application, vous avez probablement manipulé
-des variables d'environnement : `python-dotenv` vous permet de les gérer de
-la même manière en développement local.
+On le retrouve dans tous les types de projets Python : API Flask ou FastAPI,
+script de traitement de données, application Django. Si vous avez déjà
+dockerisé une application, vous avez probablement manipulé des variables
+d'environnement : `python-dotenv` permet de travailler de la même manière en
+développement local.
 
-Dans cet article, vous allez apprendre à :
-
-- Comprendre pourquoi externaliser la configuration dans des variables d'environnement
-- Installer et utiliser `python-dotenv`
-- Écrire un fichier `.env` avec la bonne syntaxe
-- Charger les variables dans votre code Python
-- Gérer plusieurs environnements (dev, test, production)
-- Protéger vos secrets en excluant `.env` du dépôt Git
-
----
+Dans cet article :
+- Pourquoi utiliser des variables d'environnement ?
+- Installation
+- Créer un fichier .env
+- Charger les variables dans Python
+- Priorité des variables
+- Spécifier un fichier différent
+- Exemple concret : une connexion à une base de données
+- Protéger ses secrets avec .gitignore
+- Utilisation avec Docker
 
 ## Pourquoi utiliser des variables d'environnement ?
 
@@ -50,26 +50,25 @@ conn = psycopg2.connect(
 )
 ```
 
-Ce code pose plusieurs problèmes :
+Le mot de passe est visible par toute personne qui a accès au dépôt Git. Pour
+passer du développement à la production, il faut modifier le code, et chaque
+développeur de l'équipe doit changer le fichier pour y mettre ses propres
+identifiants.
 
-- **Sécurité** : le mot de passe est visible dans le dépôt Git par quiconque y a accès
-- **Rigidité** : pour changer d'environnement (dev → production), il faut modifier le code
-- **Collaboration** : chaque développeur doit modifier le fichier pour ses propres identifiants
-
-La solution est de stocker ces valeurs dans des **variables d'environnement**.
-C'est l'un des principes de l'application [twelve-factor](https://12factor.net/fr/config) :
+On stocke plutôt ces valeurs dans des variables d'environnement. C'est l'un des
+principes de l'application [twelve-factor](https://12factor.net/fr/config) :
 la configuration doit être séparée du code.
 
 ## Installation
 
-Installez `python-dotenv` avec pip :
+Installez `python-dotenv` avec pip, de préférence dans un environnement
+virtuel (pensez à l'activer avant) :
 
 ```bash
 pip install python-dotenv
 ```
 
-> Si vous utilisez un environnement virtuel (ce qui est recommandé), activez-le
-> avant d'installer le package.
+Les exemples de cet article ont été testés avec python-dotenv 1.2.4.
 
 ## Créer un fichier .env
 
@@ -92,11 +91,10 @@ API_KEY=sk-1234567890abcdef
 
 Quelques règles de syntaxe à connaître :
 
-- Les lignes commençant par `#` sont des commentaires
-- Les espaces autour du `=` sont autorisés mais déconseillés
-- Les valeurs contenant des espaces doivent être entre guillemets : `APP_NAME="Mon Application"`
-- Les variables peuvent référencer d'autres variables : `DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`
-- Les lignes vides sont ignorées
+- Les lignes commençant par `#` sont des commentaires, et les lignes vides sont ignorées
+- python-dotenv accepte des espaces autour du `=`, mais un shell les refuse : mieux vaut s'en passer
+- Les guillemets ne sont pas obligatoires, même si la valeur contient des espaces, mais ils gardent le fichier lisible par un shell : `APP_NAME="Mon Application"`
+- Les variables peuvent référencer d'autres variables : `DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`. Seule la forme avec accolades est interprétée, `$DB_USER` reste tel quel
 
 ## Charger les variables dans Python
 
@@ -121,15 +119,23 @@ print(f"Connexion à {db_host}:{db_port}")
 print(f"Mode debug : {debug}")
 ```
 
-`os.getenv()` accepte un second paramètre qui sert de **valeur par défaut**
-si la variable n'est pas définie. C'est utile pour les paramètres qui ont une
-valeur raisonnable par défaut.
+Avec le fichier `.env` précédent, on obtient :
 
-À noter : si le fichier `.env` n'existe pas, `load_dotenv()` ne lève pas
-d'erreur et retourne simplement `False`. C'est ce comportement silencieux
-qui permet au même code de fonctionner en local (où le `.env` est présent)
-et en production (où les variables sont déjà injectées dans l'environnement
-par l'orchestrateur).
+```
+Connexion à localhost:5432
+Mode debug : True
+```
+
+`os.getenv()` accepte un second paramètre qui sert de valeur par défaut si la
+variable n'est pas définie. C'est utile pour les paramètres qui ont une valeur
+raisonnable par défaut. Notez aussi que les variables d'environnement sont
+toujours des chaînes de caractères : c'est à vous de les convertir, d'où le
+`int()` et la comparaison avec `"true"`.
+
+Si le fichier `.env` n'existe pas, `load_dotenv()` ne lève pas d'erreur et
+retourne simplement `False`. C'est ce comportement silencieux qui permet au même
+code de fonctionner en local (où le `.env` est présent) et en production (où les
+variables sont déjà injectées dans l'environnement par l'orchestrateur).
 
 ### Utilisation avec dotenv_values()
 
@@ -150,9 +156,9 @@ l'environnement global, par exemple dans des tests.
 
 ## Priorité des variables
 
-Par défaut, `load_dotenv()` **ne remplace pas** les variables d'environnement
-déjà définies. Cela signifie que si `DB_HOST` est déjà défini dans
-l'environnement système, la valeur du `.env` sera ignorée.
+Par défaut, `load_dotenv()` ne remplace pas les variables d'environnement
+déjà définies. Si `DB_HOST` est déjà défini dans l'environnement système, la
+valeur du `.env` est ignorée.
 
 ```python
 # Les variables système ont la priorité
@@ -160,7 +166,7 @@ load_dotenv()  # DB_HOST du .env ignoré si déjà défini dans l'environnement
 ```
 
 Ce comportement est voulu : en production, on définit les variables
-d'environnement directement (via Docker, systemd, le cloud provider…), et le
+d'environnement directement (via Docker, systemd, le cloud provider...), et le
 fichier `.env` ne sert qu'en développement local.
 
 Pour forcer le remplacement des variables existantes, utilisez le paramètre
@@ -171,15 +177,14 @@ Pour forcer le remplacement des variables existantes, utilisez le paramètre
 load_dotenv(override=True)
 ```
 
-> Attention : utilisez `override=True` avec précaution. En production, cela pourrait
-> écraser des variables d'environnement définies volontairement par
-> l'infrastructure.
+Attention avec `override=True` en production : il peut écraser des variables
+d'environnement définies volontairement par l'infrastructure.
 
 ## Spécifier un fichier différent
 
-Par défaut, `load_dotenv()` cherche un fichier `.env` dans le répertoire
-courant, puis remonte l'arborescence. On peut aussi spécifier un chemin
-explicitement :
+Par défaut, `load_dotenv()` cherche un fichier `.env` dans le dossier du script
+Python qui l'appelle, puis dans les dossiers parents. On peut aussi lui donner
+un chemin explicitement :
 
 ```python
 from dotenv import load_dotenv
@@ -188,8 +193,7 @@ from dotenv import load_dotenv
 load_dotenv(".env.production")
 ```
 
-Ce mécanisme est utile pour gérer **plusieurs environnements** avec des
-fichiers distincts :
+Ce mécanisme sert à gérer plusieurs environnements avec des fichiers distincts :
 
 ```text
 mon_projet/
@@ -213,21 +217,26 @@ else:
     load_dotenv()  # .env par défaut
 ```
 
-Enfin, si votre script peut être lancé depuis n'importe quel répertoire (par
-exemple un cron, un test ou un import depuis un sous-package), la fonction
-`find_dotenv()` localise automatiquement le fichier `.env` en remontant
-l'arborescence à partir du fichier appelant :
+Attention, contrairement à la recherche par défaut, un chemin relatif comme
+`.env.test` part du répertoire courant, pas du dossier du script : il faut
+lancer le programme depuis la racine du projet, ou construire un chemin
+absolu avec `Path(__file__).parent / ".env.test"`.
+
+La recherche par défaut est faite par la fonction `find_dotenv()`, que
+`load_dotenv()` appelle quand on ne lui passe pas de chemin. On peut l'appeler
+soi-même pour changer son comportement, par exemple pour chercher le `.env` à
+partir du répertoire courant plutôt qu'à partir du script :
 
 ```python
 from dotenv import load_dotenv, find_dotenv
 
-load_dotenv(find_dotenv())
+load_dotenv(find_dotenv(usecwd=True))
 ```
 
 ## Exemple concret : une connexion à une base de données
 
-Voici un exemple complet qui montre comment structurer proprement la
-configuration d'une connexion à PostgreSQL :
+Voici un exemple complet qui montre comment structurer la configuration d'une
+connexion à PostgreSQL :
 
 ```
 # .env
@@ -269,19 +278,29 @@ from config import config
 print(f"Connexion à : {config.database_url}")
 ```
 
-Ce pattern de classe `Config` est très courant dans les projets Flask et
-FastAPI. Il centralise toute la configuration au même endroit.
+Ce qui affiche :
 
-Pour une approche plus moderne avec typage strict et validation automatique
-au démarrage, on peut utiliser [`pydantic-settings`](https://docs.pydantic.dev/latest/concepts/pydantic_settings/),
-qui s'intègre particulièrement bien avec FastAPI. Pydantic se charge alors
+```
+Connexion à : postgresql://admin:motdepasse_secret@localhost:5432/mon_app
+```
+
+Ce pattern de classe `Config` est très courant dans les projets Flask et
+FastAPI : toute la configuration est centralisée au même endroit. Pour une
+variable obligatoire, comme le mot de passe, on peut utiliser
+`os.environ["DB_PASSWORD"]` à la place de `os.getenv()` : il lève une
+`KeyError` si la variable n'existe pas, et l'application s'arrête dès son
+démarrage au lieu d'échouer plus tard.
+
+Pour aller plus loin, avec du typage strict et une validation automatique au
+démarrage, on peut utiliser [`pydantic-settings`](https://docs.pydantic.dev/latest/concepts/pydantic_settings/),
+souvent utilisé avec FastAPI. Pydantic se charge alors
 de convertir les types (un `int` reste un `int`, un `bool` reste un `bool`)
 et de lever une erreur explicite si une variable obligatoire est absente.
 
 ## Protéger ses secrets avec .gitignore
 
-Le fichier `.env` contient des secrets. Il ne doit **jamais** être commité
-dans le dépôt Git. Ajoutez-le à votre `.gitignore` :
+Le fichier `.env` contient des secrets. Il ne doit jamais être commité dans le
+dépôt Git. Ajoutez-le à votre `.gitignore` :
 
 ```
 # Variables d'environnement
@@ -305,13 +324,15 @@ SECRET_KEY=
 API_KEY=
 ```
 
-Ce fichier `.env.example` peut être commité : il sert de documentation pour
-les autres développeurs qui rejoignent le projet.
+Ce fichier `.env.example` peut être commité (c'est le rôle de la ligne
+`!.env.example` du `.gitignore`) : il sert de documentation pour les autres
+développeurs qui rejoignent le projet. N'y mettez jamais de valeurs de
+production.
 
 ## Utilisation avec Docker
 
-Si vous dockerisez votre application, `python-dotenv` s'intègre naturellement
-dans le workflow. En développement, le fichier `.env` est chargé par
+Si vous dockerisez votre application, le même code fonctionne en local et dans
+le conteneur. En développement, le fichier `.env` est chargé par
 `python-dotenv`. En production, les variables sont injectées par Docker :
 
 ```yaml
@@ -336,10 +357,11 @@ services:
 ```
 
 Dans les deux cas, le code Python reste identique. En développement,
-`load_dotenv()` lit le `.env` et peuple l'environnement du processus. Dans
-le conteneur Docker, le `.env` n'est en général pas embarqué dans l'image :
-Docker lit lui-même le fichier au démarrage pour injecter les variables, et
-`load_dotenv()` ne trouve rien à charger (il retourne `False` silencieusement).
+`load_dotenv()` lit le `.env` et peuple l'environnement du processus. Dans le
+conteneur, c'est Docker qui lit le fichier au démarrage pour injecter les
+variables, et `load_dotenv()` ne trouve rien à charger (il retourne `False`
+silencieusement). Cela suppose que le `.env` ne soit pas copié dans l'image :
+avec un `COPY . .` dans le Dockerfile, ajoutez-le à votre `.dockerignore`.
 Dans tous les cas, `os.getenv("DB_HOST")` récupère la bonne valeur :
 
 ```python
@@ -347,26 +369,9 @@ load_dotenv()  # En dev : charge le .env / En Docker : no-op, les variables sont
 db_host = os.getenv("DB_HOST")
 ```
 
-## Bonnes pratiques
-
-### À faire
-
-- Toujours ajouter `.env` au `.gitignore`
-- Fournir un `.env.example` avec des valeurs vides ou d'exemple
-- Utiliser des valeurs par défaut raisonnables avec `os.getenv("CLÉ", "défaut")`
-- Centraliser la configuration dans un module dédié (`config.py`)
-- Valider les variables critiques au démarrage de l'application
-
-### À éviter
-
-- Commiter le fichier `.env` dans le dépôt Git
-- Utiliser `override=True` en production
-- Mettre des valeurs de production dans le `.env.example`
-- Appeler `load_dotenv()` plusieurs fois sans raison
-
 ## Voir aussi
 
-- [Comment dockeriser une application Flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %})
+- [Comment dockeriser une application flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %})
 - [Comment dockeriser une application FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
 - [Comment dockeriser une application Django]({% post_url 2025-10-25-Comment-dockeriser-une-application-Django %})
 - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})

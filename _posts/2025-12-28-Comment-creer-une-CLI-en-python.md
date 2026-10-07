@@ -16,14 +16,11 @@ Dans ce tutoriel, vous allez apprendre à créer une interface en ligne de comma
 - `click` : une bibliothèque populaire et intuitive
 - `typer` : une bibliothèque moderne basée sur les type hints
 
+Les exemples ont été testés avec Python 3.13, click 8.5.0 et typer 0.27.3.
+
 ## Pourquoi créer une CLI ?
 
-Une CLI permet de rendre vos scripts Python interactifs et configurables sans modifier le code. Les avantages :
-
-- Passer des paramètres facilement
-- Créer des outils réutilisables
-- Automatiser des tâches dans des scripts bash ou pipelines CI/CD
-- Fournir une interface utilisateur simple et efficace
+Une CLI permet de paramétrer un script sans toucher au code : on lui passe des arguments au lancement, comme à n'importe quelle commande du système. Le même script devient un outil réutilisable, que l'on peut appeler à la main, depuis un script bash ou dans une pipeline CI/CD.
 
 ## argparse (bibliothèque standard)
 
@@ -53,7 +50,7 @@ python script.py Pierre --age 25
 # Vous avez 25 ans.
 ```
 
-### Arguments positionnels vs optionnels
+### Arguments positionnels et optionnels
 
 ```python
 import argparse
@@ -75,6 +72,31 @@ print(f"Output: {args.output}")
 print(f"Verbose: {args.verbose}")
 print(f"Nombre: {args.nombre}")
 ```
+
+Un argument positionnel est obligatoire et repéré par sa position, un argument optionnel commence par `-` ou `--`. `action="store_true"` en fait un simple drapeau, qui vaut `True` s'il est présent. argparse génère aussi l'aide à partir de ces déclarations :
+
+```bash
+python script.py --help
+```
+
+Ce qui donne, avec Python 3.13 :
+
+```
+usage: script.py [-h] [-o OUTPUT] [-v] [-n NOMBRE] fichier
+
+Gestionnaire de fichiers
+
+positional arguments:
+  fichier              Chemin du fichier
+
+options:
+  -h, --help           show this help message and exit
+  -o, --output OUTPUT  Fichier de sortie
+  -v, --verbose        Mode verbeux
+  -n, --nombre NOMBRE  Nombre de lignes (défaut: 10)
+```
+
+Depuis Python 3.14, cette aide s'affiche en couleur.
 
 ### Sous-commandes avec argparse
 
@@ -253,7 +275,7 @@ if __name__ == "__main__":
     typer.run(main)
 ```
 
-C'est tout! Typer déduit automatiquement les types et génère l'aide.
+C'est tout ! Typer déduit les types des annotations et génère l'aide tout seul. Il installe aussi la bibliothèque Rich, qui met en forme l'aide et les messages d'erreur dans des encadrés.
 
 ### Options avancées avec Typer
 
@@ -370,36 +392,32 @@ dependencies = [
 mon-outil = "mon_package.cli:app"
 ```
 
-Installez ensuite avec :
+Ici, le code de la CLI (l'objet `app` de Typer) se trouve dans `mon_package/cli.py`, à côté du `pyproject.toml`. Installez ensuite le projet avec :
 
 ```bash
 pip install -e .
 ```
 
-Votre commande `mon-outil` sera disponible globalement.
+La commande `mon-outil` est alors disponible dans l'environnement où le paquet est installé (le venv actif, s'il y en a un).
 
 ## Comparaison des bibliothèques
 
-| Fonctionnalité         | argparse   | click       | typer       |
-|------------------------|------------|-------------|-------------|
-| Installation           | Inclus     | pip         | pip         |
-| Syntaxe                | Impérative | Décorateurs | Type hints  |
-| Courbe d'apprentissage | Moyenne    | Facile      | Très facile |
-| Sous-commandes         | Oui        | Oui         | Oui         |
-| Couleurs/style         | Non        | Oui         | Oui         |
-| Autocomplétion         | Non        | Intégré     | Intégré     |
-| Validation             | Basique    | Avancée     | Avancée     |
+| Fonctionnalité         | argparse                                 | click       | typer       |
+|------------------------|------------------------------------------|-------------|-------------|
+| Installation           | Inclus                                   | pip         | pip         |
+| Syntaxe                | Impérative                               | Décorateurs | Type hints  |
+| Courbe d'apprentissage | Moyenne                                  | Facile      | Très facile |
+| Sous-commandes         | Oui                                      | Oui         | Oui         |
+| Couleurs/style         | Non (aide en couleur depuis Python 3.14) | Oui         | Oui         |
+| Autocomplétion         | Non                                      | Intégrée    | Intégrée    |
+| Validation             | Basique                                  | Avancée     | Avancée     |
 
-**Recommandations :**
-
-- **argparse** : Pour des scripts simples sans dépendances externes
-- **click** : Pour des CLI complexes avec beaucoup de personnalisation
-- **typer** : Pour des CLI modernes avec une syntaxe propre et typée
+Pour choisir : argparse suffit pour un script simple qui ne doit pas avoir de dépendance externe, click convient aux CLI complexes qui demandent beaucoup de personnalisation, et typer donne le code le plus court si vous utilisez déjà les annotations de type.
 
 ## Voir aussi
 
+- [Python : Comment utiliser les décorateurs]({% post_url 2026-05-14-Python-les-decorateurs %})
+- [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - Documentation argparse : [https://docs.python.org/3/library/argparse.html](https://docs.python.org/3/library/argparse.html)
 - Documentation click : [https://click.palletsprojects.com](https://click.palletsprojects.com)
 - Documentation typer : [https://typer.tiangolo.com](https://typer.tiangolo.com)
-- [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
-- [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
