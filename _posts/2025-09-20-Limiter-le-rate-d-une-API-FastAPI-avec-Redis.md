@@ -1,6 +1,7 @@
 ﻿---
 layout: article
 title: "Comment ajouter un rate limiter à notre application FastAPI avec redis"
+description: "Limiter le nombre de requêtes d'une API FastAPI avec fastapi-limiter et Redis : limite par IP, clé d'API ou utilisateur, reverse proxy et gestion du 429."
 author: Pierre Chopinet
 tags:
   - python

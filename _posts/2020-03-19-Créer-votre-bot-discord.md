@@ -1,6 +1,8 @@
 ---
 layout: article
 title: Créer son propre bot discord
+description: "Les grandes étapes pour créer un bot Discord en Java : compte développeur, premier Hello Discord et déploiement. Article de 2020 conservé à titre historique."
+last_modified_at: 2026-07-18
 tags:
     - java
     - discord
@@ -22,7 +24,7 @@ De l'extérieur un *bot* discord fonctionne comme un simple compte. Dans les fai
 ### Créer votre *bot*
 Pour créer une application il faut vous rendre sur cette page https://discord.com/developers/applications (vous devriez y être connecté). Comme vous pouvez le voir (image ci-dessous), j'ai déjà une application nommée "Le Melting *bot*". Normalement, vous ne devriez en avoir aucune, les différentes applications que vous aurez créées vont s'afficher ici. Cliquez sur *New Application* entourée en rouge sur l'image.
 
-![interface création d'application](/assets/images/2020-03-19-bot-discord/approuge.png)
+![interface création d'application](/assets/images/2020-03-19-bot-discord/approuge.png){: width="1928" height="965"}
 
 Donnez le nom que vous désirez à votre application. Allez ensuite dans l'onglet *bot* puis cliquez sur *Add bot* et... Voilà, il est créé. À partir de là, vous pouvez changer le nom de votre *bot* ou lui mettre une image de profil à votre guise. Dans ce tutoriel, en ces temps de confinement lié au coronavirus, notre *bot* d'exemple s'appellera "On peut sortir ?". Ce sera un *bot* très simple qui répondra "non" dès que quelqu'un demandera si on peut sortir.
 
@@ -99,7 +101,7 @@ public class Application extends ListenerAdapter {
 ```
 À partir de là, le code est assez explicite. Quand on reçoit un message, on regarde si le contenu correspond à "On peut sortir ?", on envoie ensuite dans le channel du message "Non. #RestezChezVous". Exécutez votre application et testez-la sur votre serveur. Dans notre exemple ça donne ça :
 
-![messages du *bot*](/assets/images/2020-03-19-bot-discord/sortiiiir.PNG)
+![messages du *bot*](/assets/images/2020-03-19-bot-discord/sortiiiir.PNG){: width="370" height="135"}
 
 
 Voilà ! Votre *bot* discord est créé et fonctionnel. JDA propose beaucoup de fonctionnalités que je vous laisse découvrir dans sa documentation https://ci.dv8tion.net/job/JDA/javadoc/. Je vous recommande également d'aller lire le *readme* du code source. Il explique plus en détail comment utiliser la bibliothèque.

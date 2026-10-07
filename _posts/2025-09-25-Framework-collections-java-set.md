@@ -1,6 +1,7 @@
 ---
 layout: article
 title: Les ensembles (Set) en Java
+description: "Les ensembles en Java : interface Set, HashSet, LinkedHashSet, TreeSet et EnumSet, opérations ensemblistes, equals et hashCode, pièges et bonnes pratiques."
 author: Pierre Chopinet
 tags:
   - java

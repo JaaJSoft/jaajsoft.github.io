@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment sauvegarder des tableaux NumPy"
+description: "Sauvegarder et recharger des tableaux NumPy en Python : formats binaire .npy, texte et .npz pour ajouter de la persistance à vos applications."
 author: Pierre Chopinet
 tags:
 - python

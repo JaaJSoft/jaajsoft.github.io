@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Kubernetes : Comment déployer un cluster k8s bare-metal avec k3s"
+description: "Déployer un cluster Kubernetes bare-metal, sans cloud provider, avec k3s et k3sup : préparation des nodes, master, ajout des workers et test avec kubectl."
 tags:
     - kubernetes
     - k8s

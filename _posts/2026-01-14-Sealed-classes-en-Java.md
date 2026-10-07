@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Les Sealed classes en Java"
+description: "Les sealed classes de Java 17 pour contrôler les sous-types d'une hiérarchie : combinaison avec les records, pattern matching exhaustif et types algébriques."
 tags:
   - java
   - sealed

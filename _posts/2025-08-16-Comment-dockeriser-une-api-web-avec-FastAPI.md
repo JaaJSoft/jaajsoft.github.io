@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Comment dockeriser une application FastAPI"
+description: "Dockeriser une API FastAPI avec un Dockerfile multi-étapes et une image finale Alpine, optimisée pour la taille et la vitesse d'installation."
 author: Pierre Chopinet
 tags:
 - python

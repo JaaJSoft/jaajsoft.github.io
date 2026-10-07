@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Le pattern matching avec match et case"
+description: "Le pattern matching de Python 3.10 avec match et case : littéraux, captures, séquences, dictionnaires, classes, guards et piège capture vs comparaison."
 tags:
   - python
   - pattern-matching

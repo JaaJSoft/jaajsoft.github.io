@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Comment dockeriser une application flask"
+description: "Dockeriser une API Flask avec Docker et Gunicorn : écriture du Dockerfile, construction de l'image et test du conteneur, pas à pas."
 author: Pierre Chopinet
 tags:
 

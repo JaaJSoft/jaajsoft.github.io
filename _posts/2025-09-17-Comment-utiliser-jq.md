@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Comment manipuler du JSON en ligne de commande avec jq"
+description: "Lire, filtrer et transformer du JSON en ligne de commande avec jq : les bases, 15 commandes utiles, combinaison avec curl, docker et kubectl, et une cheatsheet."
 author: Pierre Chopinet
 tags:
   - linux

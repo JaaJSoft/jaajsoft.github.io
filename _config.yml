@@ -22,8 +22,10 @@ url     : https://blog.jaaj.dev
 baseurl : # does not include hostname
 title   : JaaJBlog
 description: > # this means to ignore newlines until "Language & timezone"
-  JaaJ : Articles, tutoriels et actualités informatiques
-image : logo.png
+  Tutoriels et articles techniques en français sur Python, Java, Linux, Docker
+  et Kubernetes, avec des exemples de code concrets et des bonnes pratiques.
+tagline: Tutoriels Python, Java, Linux et DevOps
+seo_paginator_message: "Page %<current>s sur %<total>s - "
 
 
 ## => Language and Timezone
@@ -210,6 +212,13 @@ exclude:
   - /vendor
 
 defaults:
+  - scope:
+      path: ""
+    values:
+      # Image Open Graph / JSON-LD par défaut (jekyll-seo-tag)
+      image: /assets/images/logo/logo.png
+      twitter:
+        card: summary
   - scope:
       path: ""
       type: posts

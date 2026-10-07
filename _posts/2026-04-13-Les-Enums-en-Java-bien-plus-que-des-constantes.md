@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Les Enums en Java : bien plus que des constantes"
+description: "Les enums en Java au-delà des constantes : champs, constructeurs, interfaces, méthodes par constante, EnumSet, EnumMap et machine à états."
 author: Pierre Chopinet
 tags:
   - java

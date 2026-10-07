@@ -1,6 +1,7 @@
 ---
 layout: article
 title: Les files (Queue) et Deques en Java
+description: "Les files en Java : Queue et Deque, ArrayDeque, LinkedList, PriorityQueue et BlockingQueue, leurs différences, pièges courants et bonnes pratiques."
 author: Pierre Chopinet
 tags:
   - java

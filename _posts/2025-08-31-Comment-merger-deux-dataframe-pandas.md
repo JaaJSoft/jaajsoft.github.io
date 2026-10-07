@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment merger deux DataFrame pandas"
+description: "Fusionner deux DataFrame pandas avec merge : types de jointures, clés multiples, suffixes, indicator, validate, doublons et différences avec join et concat."
 tags:
   - python
   - pandas
