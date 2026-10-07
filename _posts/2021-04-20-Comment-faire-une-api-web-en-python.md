@@ -254,7 +254,7 @@ curl -X POST http://127.0.0.1:5000/test -d "param1=jeej"
 {"param1":"jeej"}
 ```
 
-> Attention, `request.form` ne contient que les données envoyées sous forme de
+Attention, `request.form` ne contient que les données envoyées sous forme de
 formulaire (`application/x-www-form-urlencoded` ou `multipart/form-data`). Si le
 client envoie du JSON, il faut utiliser `request.get_json()` pour récupérer les
 données.
@@ -322,9 +322,9 @@ def test2_endpoint_post():
 
 ## Voir aussi
 
-- [Comment utiliser un cache avec Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
+- [Comment ajouter un cache à une application Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
 - [Comment dockeriser une application flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %})
-- [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
-- [Comment créer une CLI en Python]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
-- [Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
+- [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+- [Python : Comment créer une CLI]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
+- [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - [La doc de flask](https://flask.palletsprojects.com/)

@@ -230,8 +230,8 @@ Voilà, vous êtes maintenant capable de sauvegarder et charger vos _dataframes_
 
 - [La documentation de Pandas](https://pandas.pydata.org/docs/)
 - [Automatiser le nettoyage de données avec pandas]({% post_url 2025-12-14-Automatiser-le-nettoyage-de-donnees-avec-pandas %})
-- [Comment faire des group by en Python]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
-- [Comment merger deux DataFrame pandas]({% post_url 2025-08-31-Comment-merger-deux-dataframe-pandas %})
-- [Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
-- [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
-- [Comment faire une api avec flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
+- [Python : Comment faire des group by]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
+- [Python : Comment merger deux DataFrame pandas]({% post_url 2025-08-31-Comment-merger-deux-dataframe-pandas %})
+- [Python : Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
+- [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+- [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})

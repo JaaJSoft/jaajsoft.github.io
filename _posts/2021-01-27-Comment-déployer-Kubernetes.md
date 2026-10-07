@@ -180,7 +180,7 @@ xxxxxxxx2   Ready    control-plane 1d    v1.36.2+k3s1
 xxxxxxxx3   Ready    <none>        1d    v1.36.2+k3s1
 ```
 
-> Voir aussi : [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %}) : pratique avec `kubectl -o json | jq`.
+Pour exploiter la sortie JSON de `kubectl` (option `-o json`) dans des scripts, `jq` est très pratique : voir [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %}).
 
 ## La suite
 
