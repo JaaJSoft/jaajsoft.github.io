@@ -72,7 +72,7 @@ Notre fichier csv exporté contient :
 
 Comme on peut le voir, par défaut l'index du dataframe est exporté. Ce qui n'est pas forcément le comportement voulu...
 
-Pour régler ça on passe l'option `index=False` à la méthode :
+Pour régler ça, on passe l'option `index=False` à la méthode :
 
 ```python
 df.to_csv(
@@ -126,8 +126,8 @@ df.to_csv(
 
 ### Chargement des données depuis un csv
 
-Maintenant qu'on sait exporter nos données vers un fichier csv.
-Comment charger les données depuis ce même format ?
+Maintenant qu'on sait exporter nos données vers un fichier csv,
+comment charger les données depuis ce même format ?
 
 Pour cela, nous allons utiliser la fonction `read_csv` de pandas :
 
@@ -135,7 +135,7 @@ Pour cela, nous allons utiliser la fonction `read_csv` de pandas :
 new_df = pd.read_csv("export_without_index.csv", sep=';')
 print(new_df.to_string())
 ```
-On passe comme pour l'export le format de notre séparateur.
+On passe, comme pour l'export, notre séparateur.
 
 ```
    A  B   C   D
@@ -173,8 +173,8 @@ Super, on a notre première persistance de données avec pandas !
 ## Persistance au format Excel
 
 Excel est utilisé partout de nos jours, il peut être pratique d'extraire nos données de notre dataframe au format Excel
-afin de le partager à d'autres équipes.
-Ou à l'inverse d'autres équipes non techniques peuvent nous fournir des données au format Excel.
+afin de les partager avec d'autres équipes.
+Ou, à l'inverse, d'autres équipes non techniques peuvent nous fournir des données au format Excel.
 
 ### Pré-requis
 
@@ -201,7 +201,7 @@ Toutes les options présentées précédemment avec le format csv sont aussi dis
 
 ### Chargement des données depuis un Excel
 
-Pour charger des données depuis un Excel comme avec un csv, on utilise une fonction de pandas `read_excel`.
+Pour charger des données depuis un Excel comme avec un csv, on utilise une fonction de pandas, `read_excel`.
 
 ```python
 excel_df = pd.read_excel(

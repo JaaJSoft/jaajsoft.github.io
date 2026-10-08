@@ -19,7 +19,7 @@ ajouter de la persistance à votre application python. <!--more-->
 ### Sauvegarde des données
 
 Pour sauvegarder votre tableau NumPy, on utilise le comportement natif de python
-pour l'ouverture d'un fichier, et on appelle la fonction save de NumPy :
+pour l'ouverture d'un fichier, et on appelle la fonction `save` de NumPy :
 
 ```python
 import numpy as np
@@ -30,7 +30,7 @@ with open('array.npy', 'wb') as f:
     np.save(f, array)
 ```
 
-Le fichier en sortie utilise un format binaire spécifique numpy. Sur la première
+Le fichier en sortie utilise un format binaire spécifique à numpy. Sur la première
 ligne, on trouve les paramètres de notre tableau persisté :
 
 ```
@@ -66,7 +66,7 @@ données dans un format compréhensible par tous.
 
 ### Sauvegarde des données
 
-On utilise une autre fonction de numpy `savetxt` :
+On utilise une autre fonction de numpy, `savetxt` :
 
 ```python
 array = np.array([[6, 9, 42], [4, 2, 9]])
@@ -83,7 +83,7 @@ Notre fichier csv contient :
 4.000000000000000000e+00,2.000000000000000000e+00,9.000000000000000000e+00
 ```
 
-Les nombres sont enregistrés par défaut en nombre flottant, pour régler ça, on
+Les nombres sont enregistrés par défaut en nombre flottant. Pour régler ça, on
 spécifie un format à notre export :
 
 ```python
@@ -115,7 +115,7 @@ print(array_loaded_from_text)
 
 Si la quantité de données est conséquente, il peut être intéressant de
 compresser les données enregistrées. La fonction de sauvegarde utilisée
-précédemment `savetxt` permet de compresser nativement les données, si le
+précédemment, `savetxt`, permet de compresser nativement les données si le
 fichier de sortie possède l'extension .gz (pour gzip ou GNU zip).
 
 ```python
@@ -132,7 +132,7 @@ np.savetxt('array_compressed.gz', big_array, delimiter=',')
 Le gain de place est intéressant (le fichier compressé est plus de deux fois
 plus petit), cependant l'enregistrement et le chargement des données
 sauvegardées au format gz seront plus longs. Notez que sur des données
-aléatoires comme ici, la compression est loin d'être optimale : sur des données
+aléatoires comme ici, la compression est peu efficace : sur des données
 réelles, souvent plus régulières, le gain est généralement meilleur.
 
 Le chargement se fait de la même façon que précédemment, la fonction `loadtxt`
@@ -146,7 +146,7 @@ big_array_loaded = np.loadtxt('array_compressed.gz', delimiter=',')
 
 NumPy propose une dernière façon de persister vos données avec le format npz,
 qui a l'avantage de pouvoir sauvegarder plusieurs tableaux numpy dans le même
-fichier et contrairement au format texte, ce format supporte des tableaux à n
+fichier. Et contrairement au format texte, ce format supporte des tableaux à n
 dimensions.
 
 ```python
@@ -176,7 +176,7 @@ array_loaded_from_npz = loaded_npz['array']
 big_array_loaded_from_npz = loaded_npz['big_array']
 ```
 
-Comme pour `loadtxt` la fonction `load` se charge de décompresser
+Comme pour `loadtxt`, la fonction `load` se charge de décompresser
 automatiquement.
 
 ## Conclusion

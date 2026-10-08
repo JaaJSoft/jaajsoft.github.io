@@ -11,11 +11,11 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, vous allez apprendre à faire des requêtes HTTP en Python en utilisant la bibliothèque requests. <!--more--> L'objectif de ce tutoriel est d'apprendre comment faire :
+Dans ce tutoriel, vous allez apprendre à faire des requêtes HTTP en Python en utilisant la bibliothèque requests. <!--more--> L'objectif de ce tutoriel est d'apprendre à :
 
-- Des requêtes HTTP en Python (GET, HEAD, POST, PUT, DELETE)
-- Le traitement du résultat d'une requête
-- La modification des headers d'une requête
+- faire des requêtes HTTP en Python (GET, HEAD, POST, PUT, DELETE)
+- traiter le résultat d'une requête
+- modifier les headers d'une requête
 
 ## Installation
 
@@ -31,7 +31,7 @@ Depuis un terminal, installation de python3 :
 sudo apt install python3
 ```
 
-Vous aurez ensuite besoin de pip le gestionnaire de package de python, il est souvent préinstallé avec python, mais dans le doute :
+Vous aurez ensuite besoin de pip, le gestionnaire de paquets de python. Il est souvent préinstallé avec python, mais dans le doute :
 
 ```bash
 sudo apt install python3-pip
@@ -61,7 +61,7 @@ Sur Windows, ça se complique un peu, commencez par télécharger python3 pour W
 
 Déplacez-vous dans le dossier où vous avez installé python et faites :
 
-`shift + click droit -> ouvrir une fenêtre powershell` (sur Windows 7 pour les réfractaires au changement ça doit être cmd)
+`shift + click droit -> ouvrir une fenêtre powershell` (sur Windows 7, pour les réfractaires au changement, ça doit être cmd)
 
 Vous êtes normalement dans un terminal, entrez alors :
 
@@ -71,7 +71,7 @@ Vous êtes normalement dans un terminal, entrez alors :
 
 ### MacOS
 
-N'ayant pas de Mac, je ne peux pas tester l'installation, il faut toutefois aussi utiliser python et [PIP](https://pypi.org/project/pip/), et suivre les instructions pour linux afin d'installer la bibliothèque *requests*.
+N'ayant pas de Mac, je ne peux pas tester l'installation. Il faut toutefois aussi utiliser python et [pip](https://pypi.org/project/pip/), et suivre les instructions pour linux afin d'installer la bibliothèque *requests*.
 
 ## Une requête HTTP ?
 
@@ -81,11 +81,11 @@ Source Wikipédia
 
 Il existe 5 principales méthodes HTTP :
 
-- GET, permet d'accéder à une ressource.
-- HEAD, permet de récupérer l'en-tête d'une ressource, par exemple pour connaître la date de sa dernière modification (utile pour le système de cache d'un navigateur)
-- POST, permet d'ajouter une ressource
-- PUT, permet de mettre à jour une ressource
-- DELETE, permet de supprimer une ressource
+- GET : accéder à une ressource
+- HEAD : récupérer l'en-tête d'une ressource, par exemple pour connaître la date de sa dernière modification (utile pour le système de cache d'un navigateur)
+- POST : ajouter une ressource
+- PUT : mettre à jour une ressource
+- DELETE : supprimer une ressource
 
 ## Requêtes basiques
 
@@ -125,11 +125,11 @@ Ce qui permet d'avoir les informations suivantes sur la ressource :
 ```text
 {'Connection': 'keep-alive', 'Content-Length': '10575', 'Server': 'GitHub.com', 'Content-Type': 'text/html; charset=utf-8', 'Strict-Transport-Security': 'max-age=31556952', 'Last-Modified': 'Fri, 20 Mar 2020 09:39:39 GMT', 'ETag': 'W/"5e748f5b-9528"', 'Access-Control-Allow-Origin': '*', 'Expires': 'Fri, 22 May 2020 09:46:06 GMT', 'Cache-Control': 'max-age=600', 'Content-Encoding': 'gzip', 'X-Proxy-Cache': 'MISS', 'X-GitHub-Request-Id': '7DD0:5D0B:292B1C:3342F8:5EC79D05', 'Accept-Ranges': 'bytes', 'Date': 'Fri, 22 May 2020 09:36:06 GMT', 'Via': '1.1 varnish', 'Age': '0', 'X-Served-By': 'cache-cdg20727-CDG', 'X-Cache': 'MISS', 'X-Cache-Hits': '0', 'X-Timer': 'S1590140167.863279,VS0,VE107', 'Vary': 'Accept-Encoding', 'X-Fastly-Request-ID': '7bccbb14a86614bdc56df3295ea37e17a144569b'}
 ```
-Très peu clair pour un humain, mais cela permet pour un navigateur d'avoir des informations très utiles sur la ressource demandée.
+Très peu clair pour un humain, mais cela permet à un navigateur d'avoir des informations très utiles sur la ressource demandée.
 
 ### Requête POST
 
-Et finalement la requête *post* qui s'utilise de la même manière qu'une requête *get* sauf que les paramètres sont passés dans le corps de la requête et pas avec l'url.
+La requête *post* s'utilise de la même manière qu'une requête *get*, sauf que les paramètres sont passés dans le corps de la requête et pas dans l'URL.
 Pour passer un json en paramètre dans le _body_ :
 ```python
 import requests
@@ -288,7 +288,7 @@ Pour une réponse texte, `response.text` décode le contenu avec l'encodage anno
 
 Dans certains cas, il peut être utile de changer les headers d'une requête pour se faire passer pour un navigateur web et accéder à certains contenus dont l'accès est restreint depuis un script.
 
-Par exemple ici pour se faire passer pour Mozilla Firefox :
+Par exemple ici pour se faire passer pour Internet Explorer 11 :
 
 ```python
 import requests

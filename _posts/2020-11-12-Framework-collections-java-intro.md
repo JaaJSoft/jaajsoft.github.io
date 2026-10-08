@@ -9,7 +9,7 @@ author: Julien Chevron
 
 ---
 
-Dans cet article, nous allons nous attarder sur une des fonctionnalités Java les plus utilisées, mais souvent que trop peu maîtrisée : Les collections.
+Dans cet article, nous allons nous attarder sur une des fonctionnalités Java les plus utilisées, mais souvent trop peu maîtrisée : les collections.
 <!--more-->
 Cet article s'inscrit dans une série d'articles concernant les collections, leurs utilisations et fonctionnalités dont voici le sommaire :
 
@@ -24,21 +24,21 @@ Cet article s'inscrit dans une série d'articles concernant les collections, leu
 
 Apparue en Java 1.2, l'API Collection propose aux développeurs une manière de stocker et structurer des données quel que soit leur type.
 
-Une collection est simplement un objet qui regroupe plusieurs éléments en une seule unité. Elles sont utilisées pour stocker, structurer, récupérer et manipuler des données. En règle générale, elles représentent des éléments de données qui forment un groupe naturel, par exemple un jeu de cartes, un annuaire téléphonique (une correspondance des noms avec les numéros de téléphone)...
+Une collection est simplement un objet qui regroupe plusieurs éléments en une seule unité. Les collections sont utilisées pour stocker, structurer, récupérer et manipuler des données. En règle générale, elles représentent des éléments de données qui forment un groupe naturel, par exemple un jeu de cartes, un annuaire téléphonique (une correspondance des noms avec les numéros de téléphone)...
 
-Avec cette définition, il est judicieux de se demander à quoi bon utiliser une collection à la place d'un tableau. La réponse est simple : Les collections sont capables de manipuler un ensemble d'objet dont le nombre n'est pas connu au préalable à la différence d'un tableau qui doit être instancié en connaissant sa taille. Les collections sont ainsi capables d'augmenter dynamiquement leurs tailles au fur et à mesure que des objets y sont insérés. Nous pouvons aussi ajouter que le Framework Collections propose des implémentations conçues pour les accès concurrents (notamment dans le package *java.util.concurrent*), là où un tableau n'offre aucune protection de ce type. Attention toutefois : les implémentations classiques comme *ArrayList* ou *HashMap* ne sont pas *Thread Safe* pour autant.
+Avec cette définition, il est judicieux de se demander à quoi bon utiliser une collection à la place d'un tableau. La réponse est simple : les collections sont capables de manipuler un ensemble d'objets dont le nombre n'est pas connu au préalable, à la différence d'un tableau qui doit être instancié en connaissant sa taille. Les collections sont ainsi capables d'augmenter dynamiquement leurs tailles au fur et à mesure que des objets y sont insérés. Nous pouvons aussi ajouter que le Framework Collections propose des implémentations conçues pour les accès concurrents (notamment dans le package *java.util.concurrent*), là où un tableau n'offre aucune protection de ce type. Attention toutefois : les implémentations classiques comme *ArrayList* ou *HashMap* ne sont pas *Thread Safe* pour autant.
 
-Retenons alors le principal : Si vous avez besoin de stocker et de manipuler une liste d'objets sans connaître au préalable le nombre de ces objets, vous devrez donc utiliser des collections !
+Retenons alors le principal : si vous avez besoin de stocker et de manipuler une liste d'objets sans connaître au préalable le nombre de ces objets, vous devrez donc utiliser des collections !
 
 ## Présentation du Framework Collections
 
 ### Architecture
 
-Le Framework Collections est une architecture présente dans la bibliothèque standard de Java représentant les différentes collections. Ce Framework se constitue de trois éléments principaux :
+Le Framework Collections est une architecture présente dans la bibliothèque standard de Java représentant les différentes collections. Ce Framework se compose de trois éléments principaux :
 
 1. **Les interfaces** : Ensemble de types abstraits représentant et définissant les comportements des différentes familles de collections.
-2. **Les implémentations** : Héritant des interfaces, elles correspondent aux implémentations concrètes des collections que vous utiliserez en tant que développeurs.
-3. **Les algorithmes** : Ensemble de méthodes permettant de manipuler les collections comme des algorithmes de tri. Ces algorithmes sont dits polymorphiques, car peuvent être utilisés de la même manière quelle que soit la collection utilisée.
+2. **Les implémentations** : Classes concrètes héritant des interfaces, qui correspondent aux collections que vous utiliserez en tant que développeurs.
+3. **Les algorithmes** : Ensemble de méthodes permettant de manipuler les collections, comme des algorithmes de tri. Ces algorithmes sont dits polymorphiques, car ils peuvent être utilisés de la même manière quelle que soit la collection utilisée.
 
 Le Framework Collections forme alors une hiérarchie de classes qui est la suivante :
 
@@ -55,30 +55,30 @@ L'interface Collection se sépare ensuite en trois familles distinctes :
 2. **Set** : Collection d'éléments non ordonnés n'acceptant pas les doublons.
 3. **Queue** : Collection qui stocke des éléments dans un certain ordre avant qu'ils ne soient extraits pour traitement.
 
-On remarque ensuite que chaque famille de collections comporte de nombreuses implémentations que ce soit l'**ArrayList** pour l'interface List, le **HashSet** pour l'interface Set ou la **HashMap** pour l'interface Map. Chaque famille de collection possède ses propres caractéristiques, méthodes et cas d'utilisation à respecter que nous détaillerons dans des articles spécifiques à chaque famille.
+On remarque ensuite que chaque famille de collections comporte de nombreuses implémentations, que ce soit l'**ArrayList** pour l'interface List, le **HashSet** pour l'interface Set ou la **HashMap** pour l'interface Map. Chaque famille de collection possède ses propres caractéristiques, méthodes et cas d'utilisation à respecter que nous détaillerons dans des articles spécifiques à chaque famille.
 
 ### Interface Collection
 
 L'interface **Collection** (à ne pas confondre avec la classe **Collections** qui propose des méthodes et algorithmes pour les collections) est l'interface définissant le comportement minimal de toutes les collections (hormis les Maps).
 
-Cette interface définit alors les méthodes les plus générales permettant la manipulation des collections : ajout et suppression d'éléments, vérification de la présence d'un élément dans la collection, parcours de la collection... Une interface Java ne peut pas définir de constructeurs, mais la Javadoc de Collection établit une convention : chaque implémentation devrait fournir deux constructeurs standards :
+Cette interface définit alors les méthodes les plus générales permettant la manipulation des collections : ajout et suppression d'éléments, vérification de la présence d'un élément dans la collection, parcours de la collection... Une interface Java ne peut pas définir de constructeurs, mais la Javadoc de Collection établit une convention selon laquelle chaque implémentation devrait fournir deux constructeurs standards :
 
 - Un constructeur par défaut qui initialise une collection vide.
-- Un constructeur prenant en paramètre une autre collection et qui copie tous les éléments pour créer une nouvelle collection.
+- Un constructeur qui prend en paramètre une autre collection et qui copie tous ses éléments pour créer une nouvelle collection.
 
 Cette interface propose différentes méthodes à ses implémentations telles que les suivantes :
 
 | Méthode                                   | Description                                                                                        |
 |-------------------------------------------|----------------------------------------------------------------------------------------------------|
-| boolean add(E e)                          | Ajout d'un élément de type E                                                                       |
+| boolean add(E e)                          | Ajoute un élément de type E                                                                        |
 | boolean addAll(Collection<? extends E> c) | Ajoute tous les éléments d'une autre collection du même type d'objets                              |
-| void clear()                              | Suppression de tous les éléments                                                                   |
+| void clear()                              | Supprime tous les éléments                                                                         |
 | boolean contains(Object o)                | Vérifie si un élément est présent                                                                  |
-| boolean containsAll(Collection<?> c)      | Vérifie si tous les éléments d'une autre collection sont présents.                                 |
+| boolean containsAll(Collection<?> c)      | Vérifie si tous les éléments d'une autre collection sont présents                                  |
 | boolean isEmpty()                         | Vérifie si la collection ne comporte aucun élément                                                 |
 | Iterator<E> iterator()                    | Retourne un itérateur pour parcourir les éléments de la collection                                 |
 | boolean remove(Object o)                  | Supprime un élément de la collection s'il est présent                                              |
-| boolean removeAll(Collection<?> c)        | Supprime tous les éléments d'une autre collection s'ils sont présents.                             |
+| boolean removeAll(Collection<?> c)        | Supprime tous les éléments d'une autre collection s'ils sont présents                              |
 | boolean retainAll(Collection<?> c)        | Filtre la collection et ne laisse que ceux également présents dans l'autre collection en paramètre |
 | int size()                                | Retourne le nombre d'éléments dans la collection                                                   |
 | Object[] toArray()                        | Retourne un tableau contenant tous les éléments de la collection                                   |
@@ -91,7 +91,7 @@ Toutes les familles de collections fournissent alors au minimum ces méthodes et
 
 ### Interface Iterator
 
-Parcourir un tableau en Java est relativement simple, il suffit d'itérer les éléments de la case 0 à la dernière case du tableau. Pour les collections, cela est un peu plus complexe, car on ne connait pas sa taille et son organisation. Ainsi, l'interface **Iterator** offre une solution pour parcourir facilement les éléments d'une collection qu'importe son implémentation.
+Parcourir un tableau en Java est relativement simple, il suffit d'itérer les éléments de la case 0 à la dernière case du tableau. Pour les collections, cela est un peu plus complexe, car on ne connait pas leur taille et leur organisation. Ainsi, l'interface **Iterator** offre une solution pour parcourir facilement les éléments d'une collection qu'importe son implémentation.
 
 Cette interface définit alors les méthodes suivantes :
 
@@ -121,9 +121,9 @@ Maintenant que nous avons vu les fondements de l'API Collection et ses interface
 
 - **Déclaration d'une collection par son interface**
 
-Une des règles primordiales des collections, qui est également une des bases du développement orienté objet en Java est la déclaration d'une variable par son interface. Je m'explique :
+Une des règles primordiales des collections, qui est également une des bases du développement orienté objet en Java, est la déclaration d'une variable par son interface. Je m'explique :
 
-Si vous souhaitez déclarer une **ArrayList**, il faut la déclarer par son interface à savoir **List**. Une déclaration correcte est donc la suivante :
+Si vous souhaitez déclarer une **ArrayList**, il faut la déclarer par son interface, à savoir **List**. Une déclaration correcte est donc la suivante :
 
 ```java
 List<String> maListe = new ArrayList<>();
@@ -148,23 +148,23 @@ La boucle *foreach* utilise de manière implicite un itérateur et les méthodes
 
 - **Utilisation de la diversité des collections**
 
-Il est souvent assez tentant de créer une *ArrayList* par défaut quand vous avez besoin d'une collection, car c'est celle la plus courante et la plus citée en exemple. Toutefois, il est vivement conseillé d'analyser le jeu de données que vous souhaitez stocker dans une collection, se demander l'utilisation que vous aurez de cette collection et se poser les bonnes questions :
+Il est souvent assez tentant de créer une *ArrayList* par défaut quand vous avez besoin d'une collection, car c'est la plus courante et la plus citée en exemple. Toutefois, il est vivement conseillé d'analyser le jeu de données que vous souhaitez stocker dans une collection, de se demander l'utilisation que vous aurez de cette collection et de se poser les bonnes questions :
 
-- Ma collection pourra-t-elle contenir des doublons ?
+- La collection pourra-t-elle contenir des doublons ?
 - L'ordre des éléments sera-t-il important ?
 - La collection doit-elle être *Thread Safe* ?
-- Avez-vous besoin d'accéder à des éléments dans la collection et comment (position, identifiant...) ?
+- Avez-vous besoin d'accéder à des éléments dans la collection, et comment (position, identifiant...) ?
 - ...
 
 En se posant les bonnes questions, il est possible de savoir exactement quelle collection utiliser pour répondre pleinement à vos besoins.
 
-À l'inverse, si vous êtes certain de connaitre le nombre d'éléments de votre jeu de données, que vous n'aurez pas de problèmes d'accès concurrentiel et que vous souhaitez juste stocker des éléments à des positions fixes et/ou parcourir de manière simple vos éléments, il est alors conseillé de se demander si l'utilisation d'une collection est vraiment nécessaire et utiliser un tableau traditionnel à la place.
+À l'inverse, si vous êtes certain de connaitre le nombre d'éléments de votre jeu de données, que vous n'aurez pas de problèmes d'accès concurrentiel et que vous souhaitez juste stocker des éléments à des positions fixes et/ou parcourir de manière simple vos éléments, il est alors conseillé de se demander si l'utilisation d'une collection est vraiment nécessaire et d'utiliser un tableau traditionnel à la place.
 
 
 
 ## Conclusion
 
-Pouvant paraitre au premier abord assez complexe et confus, l'API Collection se révèle finalement très structurée et comprendre son architecture et son implémentation permet alors de maîtriser pleinement les collections.
+Pouvant paraitre au premier abord assez complexe et confuse, l'API Collection se révèle finalement très structurée, et comprendre son architecture et son implémentation permet alors de maîtriser pleinement les collections.
 
 Le plus important est alors de retenir que cette API est construite sous une forme hiérarchique, grâce à des interfaces au sommet qui définissent des comportements et une structure pour chaque famille de collection, et que chaque implémentation est ainsi modelée par cette hiérarchie d'interfaces.
 
@@ -177,9 +177,9 @@ Pour aller plus loin dans la série :
 5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
 6. Utilisations avancées : [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %}) et [Java : Comment faire des group by]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
 
-### Pour aller plus loin
+## Voir aussi
 
- - [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %})
- - [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
- - [Collection - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Collection.html)
- - [Iterator - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Iterator.html)
+- [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %})
+- [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
+- [Collection - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Collection.html)
+- [Iterator - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Iterator.html)
