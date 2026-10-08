@@ -26,7 +26,7 @@ Dans cet article :
 - Des templates d'emails avec Jinja2
 - Exemples d'emails automatiques
 
-Pré-requis : Python 3, `smtplib` et `email` sont inclus dans la bibliothèque standard. Les exemples ont été testés avec Python 3.13, et avec Flask-Mail 0.10.0, python-dotenv 1.2.4 et Jinja2 3.1.6 pour les parties qui les utilisent.
+Pré-requis : Python 3. Les exemples ont été testés avec Python 3.13, et avec Flask-Mail 0.10.0, python-dotenv 1.2.4 et Jinja2 3.1.6 pour les parties qui les utilisent.
 
 ## Envoyer un email simple
 
@@ -53,7 +53,7 @@ with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
     print("Email envoyé avec succès !")
 ```
 
-Les en-têtes (`Subject`, `From`, `To`) s'affectent comme les clés d'un dictionnaire, et `set_content()` définit le corps du message en texte brut. Pour l'envoi, on se connecte au serveur SMTP de Gmail sur le port 587 : la connexion démarre en clair, `starttls()` la fait passer en TLS, puis `login()` s'authentifie et `send_message()` envoie le message. À la sortie du bloc `with`, la connexion est fermée proprement.
+Les en-têtes (`Subject`, `From`, `To`) s'affectent comme les clés d'un dictionnaire, et `set_content()` définit le corps du message en texte brut. Pour l'envoi, on se connecte au serveur SMTP de Gmail sur le port 587. La connexion démarre en clair, `starttls()` la fait passer en TLS, puis `login()` s'authentifie et `send_message()` envoie le message. À la sortie du bloc `with`, la connexion est fermée proprement.
 
 Attention au paramètre `context` de `starttls()` : sans lui, la connexion est bien chiffrée mais le certificat du serveur n'est pas vérifié, ce qui laisse la porte ouverte à une attaque de type *man-in-the-middle*. `ssl.create_default_context()` active cette vérification, c'est d'ailleurs ce que recommande la documentation de Python.
 
@@ -104,7 +104,7 @@ C'est aussi un bon moyen de voir à quoi ressemble un message HTML ou avec pièc
 
 Pour votre propre domaine, utilisez le serveur indiqué par votre hébergeur (`mail.mondomaine.com` par exemple), sur le port 587, ou 465 pour une connexion SSL directe (voir plus bas).
 
-Pour Gmail, il faut un mot de passe d'application : activez la validation en deux étapes dans [Compte Google > Sécurité](https://myaccount.google.com/security), puis générez un "mot de passe d'application" que vous utiliserez à la place de votre mot de passe habituel. Yahoo fonctionne aussi avec un mot de passe d'application. Chez Microsoft, c'est plus compliqué : depuis le 16 septembre 2024, les comptes Outlook.com et Hotmail n'acceptent plus de connexion par mot de passe pour les applications tierces, il faut passer par OAuth2, ce que `smtplib.login()` ne sait pas faire seul. Pour Office 365, Microsoft a annoncé la désactivation par défaut de l'authentification SMTP par mot de passe à partir de fin 2026. Plus généralement, les méthodes d'authentification acceptées varient d'un fournisseur à l'autre et évoluent : si la connexion est refusée, vérifiez la documentation de votre fournisseur.
+Pour Gmail, il faut un mot de passe d'application : activez la validation en deux étapes dans [Compte Google > Sécurité](https://myaccount.google.com/security), puis générez-en un, à utiliser à la place de votre mot de passe habituel. Yahoo fonctionne aussi avec un mot de passe d'application. Chez Microsoft, c'est plus compliqué. Depuis le 16 septembre 2024, les comptes Outlook.com et Hotmail n'acceptent plus de connexion par mot de passe pour les applications tierces : il faut passer par OAuth2, ce que `smtplib.login()` ne sait pas faire seul. Pour Office 365, Microsoft a annoncé la désactivation par défaut de l'authentification SMTP par mot de passe à partir de fin 2026. Plus généralement, les méthodes d'authentification acceptées varient d'un fournisseur à l'autre et évoluent : si la connexion est refusée, vérifiez la documentation de votre fournisseur.
 
 ## Envoyer un email HTML
 
@@ -176,7 +176,7 @@ destinataires = ['alice@example.com', 'bob@example.com', 'charlie@example.com']
 msg['To'] = ', '.join(destinataires)
 ```
 
-Pour un envoi à beaucoup de monde, espacez les envois : les fournisseurs limitent le nombre d'emails envoyés et peuvent bloquer un compte qui en envoie trop.
+Si vous écrivez à beaucoup de monde, espacez les envois : les fournisseurs limitent le nombre d'emails par compte, et un compte qui dépasse cette limite peut être bloqué.
 
 ## Ajouter des pièces jointes
 
@@ -291,7 +291,7 @@ except Exception as e:
 Le paramètre `timeout` évite de rester bloqué indéfiniment si le serveur ne répond pas. Les exceptions que vous rencontrerez le plus souvent :
 
 - `SMTPAuthenticationError` : identifiants incorrects
-- `SMTPRecipientsRefused` : le serveur a refusé tous les destinataires
+- `SMTPRecipientsRefused` : tous les destinataires refusés par le serveur
 - `SMTPServerDisconnected` : connexion perdue
 - `socket.gaierror` : serveur SMTP introuvable
 
@@ -394,7 +394,7 @@ if __name__ == '__main__':
     app.run(debug=True)
 ```
 
-`MAIL_DEFAULT_SENDER` sert d'expéditeur quand le `Message` n'en précise pas, et `body` et `html` jouent le même rôle que `set_content()` et `add_alternative()`. Attention, Flask-Mail 0.10.0 appelle `starttls()` sans contexte SSL : le certificat du serveur n'est donc pas vérifié. Si c'est un problème dans votre cas, passez par `smtplib` comme dans le reste de l'article.
+`MAIL_DEFAULT_SENDER` sert d'expéditeur quand le `Message` n'en précise pas. Les attributs `body` et `html` jouent le même rôle que `set_content()` et `add_alternative()`. Attention, Flask-Mail 0.10.0 appelle `starttls()` sans contexte SSL : le certificat du serveur n'est donc pas vérifié. Si c'est un problème dans votre cas, passez par `smtplib` comme dans le reste de l'article.
 
 ## Envoyer un email sans bloquer le programme
 
@@ -428,7 +428,7 @@ envoyer_email_async('destinataire@example.com', 'Test async', 'Message de test')
 print("L'envoi est en cours en arrière-plan...")
 ```
 
-Le message "L'envoi est en cours en arrière-plan..." s'affiche avant la confirmation d'envoi. Par contre, une exception levée dans le thread n'arrive pas jusqu'au programme principal : elle est seulement affichée sur la sortie d'erreur.
+La ligne "L'envoi est en cours en arrière-plan..." s'affiche avant la confirmation d'envoi. Par contre, une exception levée dans le thread n'arrive pas jusqu'au programme principal : elle est seulement affichée sur la sortie d'erreur.
 
 Dans un programme `asyncio`, on exécute la fonction d'envoi, qui est bloquante, dans un thread avec `run_in_executor()` :
 
@@ -587,7 +587,7 @@ while True:
     time.sleep(60)
 ```
 
-Le script doit tourner en permanence pour que l'envoi ait lieu. Sur un serveur Linux, une tâche cron qui lance le script une fois par jour est souvent plus simple, voir [Linux : Programmer une tâche avec cron]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %}).
+Le script doit tourner en permanence pour que l'envoi ait lieu. Sur un serveur Linux, une tâche cron qui lance l'envoi une fois par jour est souvent plus simple, voir [Linux : Programmer une tâche avec cron]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %}).
 
 ### Un email de confirmation d'inscription
 

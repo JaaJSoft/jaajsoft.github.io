@@ -29,7 +29,7 @@ Pré-requis : Python 3 et la bibliothèque requests (`pip install requests`). Si
 
 ## Pourquoi utiliser une session
 
-Les fonctions `requests.get()`, `requests.post()` et leurs cousines créent une session temporaire à chaque appel, puis la ferment : chaque requête ouvre sa propre connexion TCP, plus une négociation TLS en HTTPS.
+Les fonctions `requests.get()`, `requests.post()` et leurs cousines créent une session temporaire à chaque appel, puis la ferment : chaque requête ouvre sa propre connexion TCP, avec une nouvelle négociation TLS en HTTPS.
 
 Une session garde au contraire ses connexions ouvertes (*keep-alive*) et les réutilise tant qu'on interroge le même hôte. Elle conserve aussi les cookies renvoyés par le serveur :
 
@@ -96,7 +96,7 @@ with requests.Session() as s:
         print(c.name, c.value)
 ```
 
-Le cookie `locale` est envoyé à `example.com` et à ses sous-domaines, mais pas aux autres sites. C'est ce mécanisme qui permet de gérer une connexion par formulaire : après le `POST` sur la page de login, le cookie de session renvoyé par le site est rejoué automatiquement par les requêtes suivantes.
+Le cookie `locale` est envoyé à `example.com` et à ses sous-domaines, mais pas aux autres sites. C'est ce mécanisme qui permet de gérer une connexion par formulaire : après le `POST` sur la page de login, le cookie reçu du site est renvoyé automatiquement avec les requêtes suivantes.
 
 Attention, un cookie passé directement à une requête avec `s.get(url, cookies={...})` n'est envoyé qu'avec cette requête : il n'est pas ajouté à la session.
 
@@ -130,11 +130,11 @@ with requests.Session() as s:
 
 `total=3` autorise trois nouvelles tentatives, soit quatre requêtes au maximum. La première nouvelle tentative part tout de suite, puis l'attente double à chaque fois à partir de `2 * backoff_factor` : avec `0.5`, on attend donc 0 s, 1 s puis 2 s. Si la réponse contient un en-tête `Retry-After` (typiquement avec un code 429 ou 503), urllib3 attend le délai demandé par le serveur au lieu d'appliquer ce calcul.
 
-`status_forcelist` liste les codes HTTP qui déclenchent une nouvelle tentative. Les erreurs de connexion (serveur injoignable, connexion refusée) sont retentées quelle que soit la méthode, puisque la requête n'est jamais partie. Par défaut, urllib3 ne retente que les méthodes idempotentes (`GET`, `HEAD`, `PUT`, `DELETE`, `OPTIONS`, `TRACE`). En passant `allowed_methods`, on remplace cette liste : ici `PUT` et `DELETE` ne sont plus retentées, et `POST` l'est. N'ajoutez `POST` que si l'API supporte de recevoir deux fois la même requête sans créer deux fois la ressource.
+`status_forcelist` liste les codes HTTP qui déclenchent une nouvelle tentative. Les erreurs de connexion (serveur injoignable, connexion refusée) sont retentées quelle que soit la méthode, puisque la requête n'est jamais partie. Dans les autres cas, urllib3 ne retente par défaut que les méthodes idempotentes (`GET`, `HEAD`, `PUT`, `DELETE`, `OPTIONS`, `TRACE`). En passant `allowed_methods`, on remplace cette liste : ici `PUT` et `DELETE` ne sont plus retentées, et `POST` l'est. N'ajoutez `POST` que si l'API peut recevoir deux fois la même requête sans créer deux fois la ressource.
 
 Avec `raise_on_status=False`, une fois les tentatives épuisées, on récupère la dernière réponse (une 503 par exemple) et c'est `raise_for_status()` qui lève l'exception. Sans cette option, requests lève directement une `requests.exceptions.RetryError`.
 
-Le même adapter gère le pool de connexions : `pool_connections` est le nombre de pools gardés en mémoire (un par hôte) et `pool_maxsize` le nombre de connexions conservées dans chaque pool, 10 par défaut pour les deux. Comme le précise la documentation d'urllib3, garder plus d'une connexion par hôte ne sert qu'avec plusieurs threads.
+Le même `HTTPAdapter` gère le pool de connexions : `pool_connections` est le nombre de pools gardés en mémoire (un par hôte) et `pool_maxsize` le nombre de connexions conservées dans chaque pool, 10 par défaut pour les deux. Comme le précise la documentation d'urllib3, garder plus d'une connexion par hôte ne sert qu'avec plusieurs threads.
 
 ## Timeouts et proxies
 
@@ -153,7 +153,7 @@ with requests.Session() as s:
     r.raise_for_status()
 ```
 
-Le tuple `(3.05, 10)` laisse 3,05 secondes pour établir la connexion et 10 secondes au serveur pour répondre. La documentation de requests conseille un timeout de connexion un peu supérieur à un multiple de 3, la fenêtre de retransmission des paquets TCP. Le timeout de lecture est le temps d'attente maximum entre deux octets reçus du serveur, pas la durée totale de la requête.
+Le tuple `(3.05, 10)` laisse 3,05 secondes pour établir la connexion et 10 secondes au serveur pour répondre. La documentation de requests conseille un timeout de connexion un peu supérieur à un multiple de 3 secondes, la fenêtre de retransmission des paquets TCP par défaut. Le timeout de lecture est le temps d'attente maximum entre deux octets reçus du serveur, pas la durée totale de la requête.
 
 Attention aux proxies définis sur la session : s'il existe des variables d'environnement `HTTP_PROXY` ou `HTTPS_PROXY`, elles passent devant `s.proxies` (la documentation de requests le signale, voir l'issue [#2018](https://github.com/psf/requests/issues/2018)). Pour être sûr du proxy utilisé, passez `proxies=` à chaque requête, ou demandez à la session d'ignorer l'environnement avec `s.trust_env = False`. Elle ignore alors aussi le fichier `.netrc` et la variable `REQUESTS_CA_BUNDLE`.
 

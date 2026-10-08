@@ -13,15 +13,15 @@ author: Pierre Chopinet
 
 Écrire la configuration d'une application Python (clés d'API, identifiants de
 base de données, mode debug...) directement dans le code source pose vite
-problème. Les variables d'environnement permettent de séparer la configuration
-du code, et `python-dotenv` permet de les définir dans un fichier `.env`
-pendant le développement.
+problème. Les variables d'environnement séparent la configuration du code, et
+`python-dotenv` permet de les définir dans un fichier `.env` pendant le
+développement.
 <!--more-->
 
-On le retrouve dans tous les types de projets Python : API Flask ou FastAPI,
-script de traitement de données, application Django. Si vous avez déjà
-dockerisé une application, vous avez probablement manipulé des variables
-d'environnement : `python-dotenv` permet de travailler de la même manière en
+On retrouve `python-dotenv` dans tous les types de projets Python : API Flask
+ou FastAPI, script de traitement de données, application Django. Si vous avez
+déjà dockerisé une application, vous avez probablement manipulé des variables
+d'environnement : avec `python-dotenv`, vous travaillez de la même manière en
 développement local.
 
 Dans cet article :
@@ -57,7 +57,7 @@ développeur de l'équipe doit changer le fichier pour y mettre ses propres
 identifiants.
 
 On stocke plutôt ces valeurs dans des variables d'environnement. C'est l'un des
-principes de l'application [twelve-factor](https://12factor.net/fr/config) :
+principes de la méthodologie [twelve-factor](https://12factor.net/fr/config) :
 la configuration doit être séparée du code.
 
 ## Installation
@@ -92,17 +92,25 @@ API_KEY=sk-1234567890abcdef
 
 Quelques règles de syntaxe à connaître :
 
-- Les lignes commençant par `#` sont des commentaires, et les lignes vides sont ignorées
-- python-dotenv accepte des espaces autour du `=`, mais un shell les refuse : mieux vaut s'en passer
-- Les guillemets ne sont pas obligatoires, même si la valeur contient des espaces, mais ils gardent le fichier lisible par un shell : `APP_NAME="Mon Application"`
-- Les variables peuvent référencer d'autres variables : `DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`. Seule la forme avec accolades est interprétée, `$DB_USER` reste tel quel
+- les lignes vides et celles qui commencent par `#` (les commentaires) sont ignorées ;
+- python-dotenv accepte des espaces autour du `=`, mais un shell les refuse : mieux vaut s'en passer ;
+- les guillemets ne sont pas obligatoires, même si la valeur contient des espaces, mais ils gardent le fichier lisible par un shell (`APP_NAME="Mon Application"`).
+
+Une variable peut aussi faire référence à d'autres variables, avec la forme
+`${NOM}` :
+
+```
+DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+```
+
+Seule la forme avec accolades est interprétée : `$DB_USER` reste tel quel.
 
 ## Charger les variables dans Python
 
 ### Utilisation de base
 
-La fonction `load_dotenv()` charge les variables du fichier `.env` dans les
-variables d'environnement du processus. On y accède ensuite avec `os.getenv()` :
+La fonction `load_dotenv()` lit le fichier `.env` et ajoute ses variables à
+l'environnement du processus. On y accède ensuite avec `os.getenv()` :
 
 ```python
 import os
@@ -128,10 +136,9 @@ Mode debug : True
 ```
 
 `os.getenv()` accepte un second paramètre qui sert de valeur par défaut si la
-variable n'est pas définie. C'est utile pour les paramètres qui ont une valeur
-raisonnable par défaut. Notez aussi que les variables d'environnement sont
-toujours des chaînes de caractères : c'est à vous de les convertir, d'où le
-`int()` et la comparaison avec `"true"`.
+variable n'est pas définie, comme `"5432"` pour le port. Notez aussi que les
+variables d'environnement sont toujours des chaînes de caractères : c'est à
+vous de les convertir, d'où le `int()` et la comparaison avec `"true"`.
 
 Si le fichier `.env` n'existe pas, `load_dotenv()` ne lève pas d'erreur et
 retourne simplement `False`. C'est ce comportement silencieux qui permet au même
@@ -158,7 +165,7 @@ l'environnement global, par exemple dans des tests.
 ## Priorité des variables
 
 Par défaut, `load_dotenv()` ne remplace pas les variables d'environnement
-déjà définies. Si `DB_HOST` est déjà défini dans l'environnement système, la
+déjà définies. Si `DB_HOST` existe déjà dans l'environnement système, la
 valeur du `.env` est ignorée.
 
 ```python
@@ -167,7 +174,7 @@ load_dotenv()  # DB_HOST du .env ignoré si déjà défini dans l'environnement
 ```
 
 Ce comportement est voulu : en production, on définit les variables
-d'environnement directement (via Docker, systemd, le cloud provider...), et le
+d'environnement directement (via Docker, systemd, le fournisseur cloud...), et le
 fichier `.env` ne sert qu'en développement local.
 
 Pour forcer le remplacement des variables existantes, utilisez le paramètre
@@ -285,8 +292,8 @@ Ce qui affiche :
 Connexion à : postgresql://admin:motdepasse_secret@localhost:5432/mon_app
 ```
 
-Ce pattern de classe `Config` est très courant dans les projets Flask et
-FastAPI : toute la configuration est centralisée au même endroit. Pour une
+Une classe `Config` de ce genre est très courante dans les projets Flask et
+FastAPI : toute la configuration est regroupée au même endroit. Pour une
 variable obligatoire, comme le mot de passe, on peut utiliser
 `os.environ["DB_PASSWORD"]` à la place de `os.getenv()` : il lève une
 `KeyError` si la variable n'existe pas, et l'application s'arrête dès son
@@ -294,9 +301,9 @@ démarrage au lieu d'échouer plus tard.
 
 Pour aller plus loin, avec du typage strict et une validation automatique au
 démarrage, on peut utiliser [`pydantic-settings`](https://docs.pydantic.dev/latest/concepts/pydantic_settings/),
-souvent utilisé avec FastAPI. Pydantic se charge alors
-de convertir les types (un `int` reste un `int`, un `bool` reste un `bool`)
-et de lever une erreur explicite si une variable obligatoire est absente.
+souvent associé à FastAPI. Pydantic se charge alors
+de convertir chaque valeur dans le type déclaré (`int`, `bool`...) et de lever
+une erreur explicite si une variable obligatoire est absente.
 
 ## Protéger ses secrets avec .gitignore
 
@@ -357,13 +364,12 @@ services:
       - DB_NAME=mon_app
 ```
 
-Dans les deux cas, le code Python reste identique. En développement,
-`load_dotenv()` lit le `.env` et peuple l'environnement du processus. Dans le
-conteneur, c'est Docker qui lit le fichier au démarrage pour injecter les
-variables, et `load_dotenv()` ne trouve rien à charger (il retourne `False`
-silencieusement). Cela suppose que le `.env` ne soit pas copié dans l'image :
-avec un `COPY . .` dans le Dockerfile, ajoutez-le à votre `.dockerignore`.
-Dans tous les cas, `os.getenv("DB_HOST")` récupère la bonne valeur :
+Dans les deux cas, le code Python reste identique : dans le conteneur, les
+variables viennent de Docker, et `load_dotenv()` ne trouve rien à charger (il
+retourne `False` silencieusement). Cela suppose que le `.env` ne soit pas copié
+dans l'image : avec un `COPY . .` dans le Dockerfile, ajoutez-le à votre
+`.dockerignore`. En local comme dans le conteneur, `os.getenv("DB_HOST")`
+récupère la bonne valeur :
 
 ```python
 load_dotenv()  # En dev : charge le .env / En Docker : no-op, les variables sont déjà là

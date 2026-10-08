@@ -72,7 +72,7 @@ with requests.Session() as s:
     r2 = s.get("https://api.example.com/orders")
 ```
 
-requests n'attend pas que le serveur réponde 401 pour s'authentifier : l'en-tête part dès la première requête. Cet en-tête n'a rien de mystérieux, on peut le construire soi-même et on obtient exactement le même :
+requests n'attend pas que le serveur réponde 401 pour s'authentifier : l'en-tête part dès la première requête. Cet en-tête n'a rien de mystérieux, et on peut le construire soi-même à l'identique :
 
 ```python
 import base64, requests
@@ -101,7 +101,7 @@ resp = requests.get(
 print(resp.status_code)
 ```
 
-Le script affiche `200`. Contrairement à Basic, il faut deux allers-retours : la première requête reçoit une réponse 401 avec le *challenge* du serveur, puis requests la rejoue avec l'empreinte. Cette réponse 401 intermédiaire est visible dans `resp.history`.
+Le script affiche `200`. Contrairement à Basic, il faut deux allers-retours : la première requête reçoit une réponse 401 avec le *challenge* du serveur, puis requests la renvoie avec l'empreinte. Cette réponse 401 intermédiaire est visible dans `resp.history`.
 
 ## Bearer token
 
@@ -131,21 +131,21 @@ Quand le token expire, il faut en obtenir un nouveau (avec le *refresh token* pa
 
 Certaines API utilisent une clé statique, à transmettre dans un en-tête ou dans l'URL. Le nom de l'en-tête ou du paramètre dépend de l'API.
 
-En header :
+Dans un en-tête :
 
 ```python
 headers = {"X-API-Key": "ma_cle_api"}
 requests.get("https://api.example.com/data", headers=headers)
 ```
 
-En paramètre d'URL :
+Dans un paramètre d'URL :
 
 ```python
 params = {"api_key": "ma_cle_api"}
 requests.get("https://api.example.com/data", params=params)
 ```
 
-Préférez l'en-tête quand l'API le permet : une clé dans l'URL se retrouve dans les logs des serveurs et des proxys.
+Préférez l'en-tête quand l'API le permet : une clé dans l'URL se retrouve dans les logs des serveurs et des proxies.
 
 ## OAuth1 avec requests-oauthlib
 
@@ -242,7 +242,7 @@ resp = oauth.get("https://api.example.com/me")
 print(resp.json())
 ```
 
-Pour l'exemple, tout se passe dans le même script. Dans une vraie application web, la génération de l'URL et le *callback* sont deux requêtes HTTP différentes : gardez le `state` renvoyé par `authorization_url()` (dans la session de l'utilisateur par exemple), puis recréez la session dans la route de callback avec `OAuth2Session(client_id, redirect_uri=redirect_uri, state=state)`. `fetch_token()` vérifie que le `state` reçu est le bon, ce qui protège contre les attaques CSRF.
+Pour l'exemple, tout se passe dans le même script. Dans une vraie application web, la génération de l'URL et le *callback* sont deux requêtes HTTP différentes. Gardez le `state` renvoyé par `authorization_url()` (dans la session de l'utilisateur par exemple), puis, dans la route de *callback*, recréez la session OAuth2 avec `OAuth2Session(client_id, redirect_uri=redirect_uri, state=state)`. `fetch_token()` vérifie alors que le `state` reçu est le bon, ce qui protège contre les attaques CSRF.
 
 ### Rafraîchir automatiquement le token
 
@@ -291,7 +291,7 @@ La liste des *scopes* dépend du fournisseur : lisez sa documentation. Enfin, st
 
 Si vous ne passez pas de paramètre `auth`, requests cherche des identifiants pour l'hôte dans `~/.netrc` ou `~/_netrc`, ou dans le fichier indiqué par la variable d'environnement `NETRC`. Le `~` correspond à `$HOME` sous Linux et macOS, et à `%USERPROFILE%` sous Windows.
 
-Contenu d'exemple :
+Exemple de contenu :
 
 ```
 machine api.example.com

@@ -14,7 +14,7 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, nous allons ajouter un cache à une application Flask avec l'extension Flask-Caching, pour répondre plus vite et soulager la base de données ou les API appelées derrière. On commence par un cache en mémoire pour comprendre le fonctionnement, puis on passe à Redis pour la production.
+Dans ce tutoriel, nous allons ajouter un cache à une application Flask avec l'extension Flask-Caching, pour répondre plus vite et soulager la base de données ou les API appelées derrière. Nous commencerons par un cache en mémoire pour comprendre le fonctionnement, puis nous passerons à Redis pour la production.
 <!--more-->
 
 Dans cet article :
@@ -40,7 +40,7 @@ Les exemples de cet article ont été testés avec Flask 3.1.3 et Flask-Caching 
 
 Le backend `SimpleCache` garde les données en mémoire, dans le processus Python. Il ne demande aucune installation, ce qui en fait un bon point de départ pour voir comment fonctionne l'extension.
 
-Attention, avec Gunicorn et plusieurs *workers*, chaque *worker* est un processus séparé qui a son propre cache : une même page est calculée une fois par *worker*, et une invalidation faite par l'un d'eux ne touche pas les autres. Ce n'est pas gênant en développement, mais en production on lui préfère Redis.
+Attention, avec Gunicorn et plusieurs *workers*, chaque *worker* est un processus séparé qui a son propre cache : une même page est calculée une fois par *worker*, et une invalidation faite par l'un d'eux ne touche pas les autres. Ce n'est pas gênant en développement, mais en production on passe plutôt à Redis.
 
 ### Initialisation
 
@@ -55,7 +55,7 @@ app.config["CACHE_DEFAULT_TIMEOUT"] = 300  # 5 minutes
 cache = Cache(app)
 ```
 
-`CACHE_DEFAULT_TIMEOUT` est la durée de vie par défaut d'une entrée, en secondes. Chaque décorateur peut la changer avec son paramètre `timeout`.
+`CACHE_DEFAULT_TIMEOUT` est la durée de vie par défaut d'une entrée (son TTL), en secondes. Chaque décorateur peut la changer avec son paramètre `timeout`.
 
 ### Mettre en cache une route
 
@@ -115,7 +115,7 @@ Le premier appel à `/users/123/stats` prend deux secondes, les suivants sont im
 
 ## Une clé de cache par utilisateur
 
-Une page personnalisée ne doit pas être servie à tout le monde : si la clé de cache ne contient pas l'identité de l'utilisateur, le premier visiteur voit sa page et tous les suivants voient la même. On peut passer à `key_prefix` une fonction qui construit la clé, ici avec l'identifiant de l'utilisateur connecté.
+Une page personnalisée ne doit pas être servie à tout le monde : si la clé de cache ne contient pas l'identité de l'utilisateur, le premier visiteur voit sa page, et tous les suivants la voient aussi. On peut passer à `key_prefix` une fonction qui construit la clé, ici avec l'identifiant de l'utilisateur connecté.
 
 L'exemple s'appuie sur [Flask-Login](https://flask-login.readthedocs.io/) pour accéder à `current_user`. Il faut donc l'avoir installé (`pip install flask-login`) et configuré dans votre application.
 
@@ -131,7 +131,7 @@ def dashboard():
 
 L'utilisateur 123 obtient la clé `dashboard:123`, et les visiteurs non connectés partagent la clé `dashboard:anon`.
 
-Le même problème se pose quand la réponse dépend d'un en-tête, la langue par exemple : `query_string=True` ne regarde que l'URL, il faut donc ajouter la langue à la clé soi-même :
+Le même problème se pose quand la réponse dépend d'un en-tête, la langue par exemple. `query_string=True` ne regarde que l'URL, il faut donc ajouter la langue à la clé soi-même :
 
 ```python
 from flask import request
@@ -180,7 +180,7 @@ Tout vider :
 cache.clear()
 ```
 
-Le bon moment pour invalider est juste après l'écriture en base qui modifie la donnée : après un `POST /users/123`, on appelle `cache.delete_memoized(compute_stats, 123)`. Évitez de vider tout le cache à chaque modification, une invalidation ciblée suffit et évite de tout recalculer.
+Le bon moment pour invalider est juste après l'écriture en base qui modifie la donnée : après un `POST /users/123`, on appelle `cache.delete_memoized(compute_stats, 123)`. Évitez de vider tout le cache à chaque modification : une invalidation ciblée suffit, et on n'a pas à tout recalculer.
 
 ## Passer en production avec Redis
 
