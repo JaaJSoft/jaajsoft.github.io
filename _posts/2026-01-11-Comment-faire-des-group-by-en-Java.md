@@ -25,7 +25,7 @@ Dans cet article :
 - Construire un rapport par ville
 - Les clés null
 
-Pré-requis : connaître les bases des [Streams]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %}). Les exemples utilisent des records et `Stream.toList()`, ils demandent donc Java 16 ou plus récent. Ils ont été testés avec Java 21.
+Pré-requis : connaître les bases des [Streams]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %}). Les exemples utilisent des records et `Stream.toList()`, et demandent donc Java 16 ou plus récent. Ils ont été testés avec Java 21.
 
 ## Le jeu de données
 
@@ -46,7 +46,7 @@ List<Vente> ventes = List.of(
 
 ## Regrouper avec une boucle et une Map
 
-Avant les Streams, on parcourait la liste en rangeant chaque vente dans la liste de sa ville. `computeIfAbsent` crée la liste la première fois qu'une ville est rencontrée, et la retourne dans tous les cas :
+Avant les Streams, on parcourait les ventes en rangeant chacune dans la liste de sa ville. `computeIfAbsent` crée la liste la première fois qu'une ville est rencontrée, et la retourne dans tous les cas :
 
 ```java
 Map<String, List<Vente>> parVille = new HashMap<>();
@@ -77,7 +77,7 @@ for (Vente v : ventes) {
 System.out.println(compteParVille); // {Nantes=1, Lyon=2, Paris=3}
 ```
 
-L'ordre d'itération d'une `HashMap` n'est pas garanti : les villes pourraient sortir dans un autre ordre, ne basez aucune logique dessus.
+L'ordre d'itération d'une `HashMap` n'est pas garanti : les villes pourraient sortir dans un autre ordre. Ne basez aucune logique dessus.
 
 Le même principe permet de calculer le chiffre d'affaires de chaque ville :
 
@@ -374,7 +374,7 @@ Map<String, Long> grossesVentes = ventes.stream()
 System.out.println(grossesVentes); // {Nantes=0, Lyon=1, Paris=1}
 ```
 
-Avec un `filter` placé avant le regroupement, Nantes, dont la seule vente fait 12,50 euros, n'apparaîtrait pas du tout : on obtiendrait `{Lyon=1, Paris=1}`.
+Avec le même seuil dans un `filter` placé avant le regroupement, Nantes, dont la seule vente fait 12,50 euros, n'apparaîtrait pas du tout : on obtiendrait `{Lyon=1, Paris=1}`.
 
 Pour filtrer les groupes eux-mêmes, par exemple ne garder que les villes qui ont plusieurs ventes, il faut construire la map, puis repartir de ses entrées :
 

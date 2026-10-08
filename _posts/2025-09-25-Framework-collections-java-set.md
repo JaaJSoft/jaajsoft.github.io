@@ -56,11 +56,11 @@ Reste à savoir quand deux éléments sont "les mêmes". Pour `HashSet` et `Link
 | `CopyOnWriteArraySet`   | Tableau recopié à chaque écriture | Ordre d'insertion                   | Accepté                     | O(n)                        |
 | `ConcurrentSkipListSet` | Skip list                       | Trié                                | Refusé                      | O(log n) en moyenne         |
 
-`HashSet` est le choix par défaut. Il s'appuie en réalité sur une `HashMap`, dont les éléments du set sont les clés. `add`, `contains` et `remove` se font en temps constant, à condition que le `hashCode` des éléments répartisse bien les valeurs. En contrepartie, l'ordre de parcours n'est pas garanti, et rien ne dit qu'il restera le même au fil des ajouts.
+`HashSet` est le choix par défaut. Il s'appuie en réalité sur une `HashMap`, dont les éléments de l'ensemble sont les clés. `add`, `contains` et `remove` se font en temps constant, à condition que les `hashCode` des éléments soient bien répartis. En contrepartie, l'ordre de parcours n'est pas garanti, et rien ne dit qu'il restera le même au fil des ajouts.
 
 `LinkedHashSet` ajoute à la table de hachage une liste doublement chaînée qui relie les éléments dans leur ordre d'insertion. Les performances restent proches de celles d'un `HashSet` (un peu en dessous, puisqu'il faut maintenir la liste), avec un ordre de parcours prévisible. Ajouter à nouveau un élément déjà présent ne change pas sa place.
 
-`TreeSet` garde ses éléments triés dans un arbre rouge-noir (c'est en fait une `TreeMap` dont il utilise les clés), selon leur ordre naturel ou selon le `Comparator` passé au constructeur. Ses opérations se font en O(log n), et il implémente `NavigableSet`, qui permet de chercher par rapport à une valeur : `first()` et `last()`, `lower()`, `floor()`, `ceiling()` et `higher()` pour l'élément juste avant ou juste après, `headSet()`, `tailSet()` et `subSet()` pour une plage.
+`TreeSet` garde ses éléments triés selon leur ordre naturel ou selon le `Comparator` passé au constructeur. Il s'appuie sur une `TreeMap`, un arbre rouge-noir dont il utilise les clés. Ses opérations se font en O(log n). Il implémente aussi `NavigableSet`, qui permet de naviguer dans l'ordre de tri : `first()` et `last()` pour le premier et le dernier élément, `lower()`, `floor()`, `ceiling()` et `higher()` pour l'élément juste avant ou juste après une valeur, `headSet()`, `tailSet()` et `subSet()` pour une plage.
 
 ```java
 TreeSet<Integer> notes = new TreeSet<>(List.of(12, 5, 18, 9, 15));
@@ -150,15 +150,15 @@ System.out.println(byScore);
 // [User[username=alice, score=42], User[username=carl, score=10]]
 ```
 
-Dans ce set, `byScore.contains(new User("zoe", 42))` retourne même `true`. Pour éviter ces surprises, le comparateur d'un `TreeSet` doit être cohérent avec `equals` : il ne doit retourner 0 que pour des éléments égaux.
+Dans cet ensemble, `byScore.contains(new User("zoe", 42))` retourne même `true`. Pour éviter ces surprises, le comparateur d'un `TreeSet` doit être cohérent avec `equals` : il ne doit retourner 0 que pour des éléments égaux.
 
 ## Les éléments doivent avoir un equals et un hashCode cohérents
 
 Pour `HashSet` et `LinkedHashSet`, l'unicité repose sur `hashCode()` et `equals()`, ce qui impose deux règles.
 
-D'abord, si une classe redéfinit `equals`, elle doit redéfinir `hashCode` de façon compatible : deux objets égaux doivent avoir le même `hashCode`. Sinon, deux objets égaux peuvent être rangés dans deux cases différentes de la table de hachage, et le set les garde tous les deux.
+D'abord, si une classe redéfinit `equals`, elle doit redéfinir `hashCode` de façon compatible : deux objets égaux doivent avoir le même `hashCode`. Sinon, deux objets égaux peuvent être rangés dans deux cases différentes de la table de hachage, et l'ensemble les garde tous les deux.
 
-Ensuite, un élément ne doit pas être modifié d'une façon qui change son `hashCode` tant qu'il se trouve dans le set. Le set range chaque élément dans une case calculée à partir de son `hashCode` au moment de l'ajout : si le `hashCode` change ensuite, le set cherche l'élément au mauvais endroit.
+Ensuite, un élément ne doit pas être modifié d'une façon qui change son `hashCode` tant qu'il se trouve dans l'ensemble. Un `HashSet` range chaque élément dans une case calculée à partir de son `hashCode` au moment de l'ajout : si le `hashCode` change ensuite, l'élément est cherché dans la mauvaise case.
 
 ```java
 class Person {
@@ -217,7 +217,7 @@ Set<String> copie = Set.copyOf(List.of("ADMIN", "USER", "ADMIN")); // 2 élémen
 
 L'ordre de parcours de ces ensembles n'est pas spécifié, et en pratique il change d'une exécution à l'autre : lancé plusieurs fois de suite, `System.out.println(Set.of("ADMIN", "USER", "GUEST", "ROOT"))` affiche tantôt `[ADMIN, GUEST, ROOT, USER]`, tantôt `[USER, ROOT, GUEST, ADMIN]`.
 
-Pour exposer un set interne en lecture seule, `Collections.unmodifiableSet` retourne une vue non modifiable, comme `unmodifiableList` pour les listes :
+Pour exposer un ensemble interne en lecture seule, `Collections.unmodifiableSet` retourne une vue non modifiable, comme `unmodifiableList` pour les listes :
 
 ```java
 class Service {
@@ -230,12 +230,11 @@ class Service {
 
 ## Ensembles et threads
 
-Comme les listes, `HashSet`, `LinkedHashSet` et `TreeSet` ne sont pas synchronisés. Si plusieurs threads partagent un ensemble, on a le choix entre :
+Comme les listes, `HashSet`, `LinkedHashSet` et `TreeSet` ne sont pas synchronisés. Si plusieurs threads partagent un ensemble, on peut utiliser `Collections.synchronizedSet(new HashSet<>())`, qui synchronise chaque méthode. Les parcours doivent alors se faire dans un bloc `synchronized` sur l'ensemble, comme pour `synchronizedList`.
 
-- `Collections.synchronizedSet(new HashSet<>())`, qui synchronise chaque méthode. Comme pour `synchronizedList`, les parcours doivent se faire dans un bloc `synchronized` sur le set.
-- `ConcurrentHashMap.newKeySet()`, qui retourne un set adossé à une `ConcurrentHashMap`. C'est l'équivalent concurrent d'un `HashSet`, sans verrou global, mais il refuse les `null`.
-- `CopyOnWriteArraySet`, qui recopie son tableau interne à chaque modification. Comme ses éléments sont dans un simple tableau, `add` et `contains` le parcourent en entier : il est fait pour de petits ensembles, très souvent lus et rarement modifiés.
-- `ConcurrentSkipListSet`, l'équivalent concurrent d'un `TreeSet`. Attention, sa méthode `size()` n'est pas en temps constant : elle doit parcourir tous les éléments.
+`ConcurrentHashMap.newKeySet()` retourne un ensemble adossé à une `ConcurrentHashMap` : c'est l'équivalent concurrent d'un `HashSet`, sans verrou global, mais il refuse les `null`. De la même façon, `ConcurrentSkipListSet` est l'équivalent concurrent d'un `TreeSet`. Attention, sa méthode `size()` n'est pas en temps constant : elle doit parcourir tous les éléments.
+
+Enfin, `CopyOnWriteArraySet` recopie son tableau interne à chaque modification. Comme ses éléments sont dans un simple tableau, `add` et `contains` le parcourent en entier : il est fait pour de petits ensembles, très souvent lus et rarement modifiés.
 
 Dans la partie suivante, nous verrons les [files et les deques]({% post_url 2025-09-26-Framework-collections-java-queue %}), pour traiter des éléments dans leur ordre d'arrivée ou par priorité.
 

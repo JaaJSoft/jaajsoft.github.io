@@ -73,7 +73,7 @@ Les principales méthodes de l'interface (signatures simplifiées) :
 
 ## Parcourir une map
 
-Une map ne se parcourt pas directement : on parcourt l'une de ses trois vues, `keySet()` pour les clés, `values()` pour les valeurs ou `entrySet()` pour les paires clé/valeur. Quand on a besoin des deux, on parcourt `entrySet()` :
+Une map ne se parcourt pas directement : on parcourt l'une de ses trois vues, `keySet()` pour les clés, `values()` pour les valeurs ou `entrySet()` pour les paires clé/valeur. Quand on a besoin des clés et des valeurs, on passe par `entrySet()` :
 
 ```java
 Map<String, Integer> scores = new HashMap<>(Map.of("alice", 42, "bob", 8, "carl", 15));
@@ -172,19 +172,19 @@ Les autres méthodes suivent la même logique : `putIfAbsent` n'ajoute la valeur
 
 Quand le nombre d'entrées dépasse 75 % du nombre de cases (le facteur de charge par défaut, 0,75), la table double de taille et toutes les entrées sont redistribuées. Si vous connaissez à l'avance le nombre d'entrées, autant créer la map à la bonne taille, mais attention : le paramètre de `new HashMap<>(n)` est un nombre de cases, pas un nombre d'entrées. Pour 100 entrées, `new HashMap<>(100)` crée une table de 128 cases, qui passe à 256 cases au 97e ajout. Depuis Java 19, `HashMap.newHashMap(100)` calcule la bonne capacité à partir du nombre d'entrées attendu.
 
-`LinkedHashMap` ajoute à la table de hachage une liste doublement chaînée qui relie les entrées dans leur ordre d'insertion. Remettre une clé déjà présente avec `put` ne change pas sa place. Elle peut aussi suivre l'ordre d'accès, ce qui permet d'écrire un cache LRU en quelques lignes.
+`LinkedHashMap` ajoute à la table de hachage une liste doublement chaînée qui relie les entrées dans leur ordre d'insertion. Remettre une clé déjà présente avec `put` ne change pas sa place. Une `LinkedHashMap` peut aussi suivre l'ordre d'accès, ce qui permet d'écrire un cache LRU en quelques lignes.
 
 `TreeMap` garde ses entrées triées par clé dans un arbre rouge-noir, selon l'ordre naturel des clés ou selon le `Comparator` passé au constructeur. Ses opérations se font en O(log n), et elle permet de chercher par plage de clés.
 
 `EnumMap` est réservée aux clés d'un même `enum`. C'est un simple tableau indexé par la position de la constante dans l'enum, plus compact et en général plus rapide qu'une `HashMap`. L'article sur [les enums en Java]({% post_url 2026-04-13-Les-Enums-en-Java-bien-plus-que-des-constantes %}) montre comment l'utiliser.
 
-Deux implémentations plus spécialisées complètent la liste. `WeakHashMap` ne retient pas ses clés : quand une clé n'est plus référencée ailleurs dans le programme, le ramasse-miettes peut la libérer et son entrée disparaît de la map, ce qui permet d'associer des informations à des objets sans les empêcher d'être libérés. `IdentityHashMap` compare les clés avec `==` au lieu de `equals` : deux objets égaux mais distincts y sont deux clés différentes. Elle enfreint volontairement le contrat de `Map` et ne sert que dans des cas précis, comme la copie d'un graphe d'objets, où il faut retenir les objets déjà traités.
+Il existe aussi deux implémentations plus spécialisées. `WeakHashMap` ne retient pas ses clés : quand une clé n'est plus référencée ailleurs dans le programme, le ramasse-miettes peut la libérer, et son entrée disparaît de la map. On peut ainsi associer des informations à des objets sans les empêcher d'être libérés. `IdentityHashMap` compare les clés avec `==` au lieu de `equals` : deux objets égaux mais distincts y sont deux clés différentes. Elle enfreint volontairement le contrat de `Map` et ne sert que dans des cas précis, comme la copie d'un graphe d'objets, où il faut retenir les objets déjà traités.
 
-`ConcurrentHashMap` et `Hashtable`, faites pour les programmes multithreads, sont présentées plus bas avec les threads.
+`ConcurrentHashMap` et `Hashtable`, faites pour les programmes multithreads, sont présentées plus bas, dans la section sur les threads.
 
 ## Un cache LRU avec LinkedHashMap
 
-Un cache LRU (*Least Recently Used*) a une taille limitée, et quand il est plein, il supprime l'entrée qui n'a pas servi depuis le plus longtemps. `LinkedHashMap` fait presque tout le travail. Le troisième paramètre de son constructeur, `accessOrder`, lui fait suivre l'ordre d'accès plutôt que l'ordre d'insertion : chaque lecture ou écriture d'une entrée la place en dernière position. Et sa méthode `removeEldestEntry`, appelée après chaque ajout, supprime la première entrée (la plus ancienne) quand elle retourne `true` :
+Un cache LRU (*Least Recently Used*) a une taille limitée, et quand il est plein, il supprime l'entrée qui n'a pas servi depuis le plus longtemps. `LinkedHashMap` fait presque tout le travail. Le troisième paramètre de son constructeur, `accessOrder`, lui fait suivre l'ordre d'accès plutôt que l'ordre d'insertion : chaque lecture ou écriture d'une entrée la place en dernière position. Enfin, après chaque ajout, la map appelle sa méthode `removeEldestEntry` et supprime la première entrée (la plus ancienne) si cette méthode retourne `true` :
 
 ```java
 class LruCache<K, V> extends LinkedHashMap<K, V> {
@@ -215,7 +215,7 @@ System.out.println(cache.keySet()); // [a, c]
 
 ## Rechercher par plage avec TreeMap
 
-`TreeMap` implémente `NavigableMap`, qui permet de chercher par rapport à une clé : `firstKey()` et `lastKey()`, `lowerEntry()`, `floorKey()`, `ceilingEntry()` et les autres variantes pour la clé juste avant ou juste après une valeur, `headMap()`, `tailMap()` et `subMap()` pour une plage de clés.
+`TreeMap` implémente `NavigableMap`, qui permet de naviguer dans l'ordre des clés : `firstKey()` et `lastKey()` pour la première et la dernière clé, `lowerEntry()`, `floorKey()`, `ceilingEntry()` et leurs variantes pour la clé juste avant ou juste après une clé donnée, `headMap()`, `tailMap()` et `subMap()` pour une plage de clés.
 
 ```java
 NavigableMap<Integer, String> m = new TreeMap<>();
@@ -238,11 +238,11 @@ mentions.put(16, "très bien");
 System.out.println(mentions.floorEntry(13).getValue()); // assez bien
 ```
 
-`floorEntry(13)` retourne l'entrée dont la clé est la plus grande clé inférieure ou égale à 13, ici 12.
+`floorEntry(13)` retourne l'entrée de la plus grande clé inférieure ou égale à 13, ici 12.
 
 ## Les clés doivent être stables
 
-Les règles vues pour les éléments d'un `HashSet` dans [la partie sur les ensembles]({% post_url 2025-09-25-Framework-collections-java-set %}) s'appliquent aux clés d'une `HashMap` (un `HashSet` est d'ailleurs une `HashMap` dont on n'utilise que les clés). Les méthodes `equals` et `hashCode` des clés doivent être cohérentes entre elles, et une clé ne doit pas être modifiée tant qu'elle est dans la map : si son `hashCode` change, la map ne la retrouve plus. Les meilleures clés sont des objets immuables, comme `String`, `Integer`, `UUID` ou les records.
+Les règles vues pour les éléments d'un `HashSet` dans [la partie sur les ensembles]({% post_url 2025-09-25-Framework-collections-java-set %}) s'appliquent aux clés d'une `HashMap` (un `HashSet` s'appuie d'ailleurs sur une `HashMap` dont il n'utilise que les clés). Les méthodes `equals` et `hashCode` des clés doivent être cohérentes entre elles, et une clé ne doit pas être modifiée tant qu'elle est dans la map : si son `hashCode` change, la map ne la retrouve plus. Les meilleures clés sont des objets immuables, comme `String`, `Integer`, `UUID` ou les records.
 
 Attention aussi aux types numériques. `get` accepte n'importe quel `Object`, si bien que le code suivant compile, mais un `Integer` n'est jamais égal à un `Long`, même s'ils ont la même valeur :
 
@@ -255,15 +255,15 @@ System.out.println(clients.get(42L));  // Alice
 
 ## Maps et threads
 
-`HashMap`, `LinkedHashMap` et `TreeMap` ne sont pas synchronisées. Pour partager une map entre plusieurs threads, il faut utiliser `ConcurrentHashMap`. Ses lectures ne prennent pas de verrou, ses écritures ne bloquent pas toute la table, et ses méthodes `putIfAbsent`, `compute`, `computeIfAbsent`, `computeIfPresent` et `merge` sont atomiques : deux threads qui font un `merge` sur la même clé au même moment ne perdent pas de mise à jour. Ce n'est pas le cas des implémentations par défaut de ces méthodes dans l'interface `Map`, qui ne garantissent rien en cas d'accès concurrents.
+`HashMap`, `LinkedHashMap` et `TreeMap` ne sont pas synchronisées. Pour partager une map entre plusieurs threads, on utilise en général `ConcurrentHashMap`. Ses lectures ne prennent pas de verrou, ses écritures ne bloquent pas toute la table, et ses méthodes `putIfAbsent`, `compute`, `computeIfAbsent`, `computeIfPresent` et `merge` sont atomiques : deux threads qui font un `merge` sur la même clé au même moment ne perdent pas de mise à jour. Ce n'est pas le cas des implémentations par défaut de ces méthodes dans l'interface `Map`, qui ne garantissent rien en cas d'accès concurrents.
 
-`ConcurrentHashMap` refuse les clés et les valeurs `null` : un `get` qui retourne `null` signifie donc toujours que la clé est absente, sans qu'on ait besoin d'appeler `containsKey`, qu'un autre thread pourrait de toute façon contredire entre les deux appels.
+`ConcurrentHashMap` refuse les clés et les valeurs `null` : un `get` qui retourne `null` signifie donc toujours que la clé est absente. Pas besoin d'appeler `containsKey`, dont un autre thread pourrait de toute façon changer la réponse entre les deux appels.
 
 `Collections.synchronizedMap(new HashMap<>())` synchronise chaque méthode d'une map ordinaire, avec la même limite que `synchronizedList` : les parcours doivent se faire dans un bloc `synchronized` sur la map. Quant à `Hashtable`, présente depuis Java 1.0, c'est l'ancêtre synchronisé de `HashMap`. Sa documentation recommande d'utiliser `HashMap` à sa place si l'on n'a pas besoin de synchronisation, et `ConcurrentHashMap` sinon.
 
 ## Maps non modifiables
 
-Comme pour les listes et les ensembles, Java 9 a ajouté des fabriques qui créent des maps non modifiables :
+Comme pour les listes et les ensembles, des fabriques créent des maps non modifiables (`Map.of` et `Map.ofEntries` depuis Java 9, `Map.copyOf` depuis Java 10) :
 
 ```java
 // Map.of : jusqu'à 10 paires clé/valeur

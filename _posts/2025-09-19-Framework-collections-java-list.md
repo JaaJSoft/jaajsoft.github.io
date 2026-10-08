@@ -29,7 +29,7 @@ Une liste est une séquence ordonnée d'éléments : chaque élément a une posi
 public interface List<E> extends SequencedCollection<E> { /* ... */ }
 ```
 
-Jusqu'à Java 20, `List` héritait directement de `Collection`. Java 21 a intercalé entre les deux l'interface `SequencedCollection`, commune à toutes les collections dont les éléments ont un ordre défini, qui apporte `getFirst()`, `getLast()`, `addFirst()`, `addLast()`, `removeFirst()`, `removeLast()` et `reversed()`.
+Jusqu'à Java 20, `List` héritait directement de `Collection`. Java 21 a intercalé entre les deux l'interface `SequencedCollection`, commune à toutes les collections dont les éléments ont un ordre défini. Elle apporte `getFirst()`, `getLast()`, `addFirst()`, `addLast()`, `removeFirst()`, `removeLast()` et `reversed()`.
 
 En plus des méthodes de `Collection` vues dans la première partie, `List` propose des méthodes qui travaillent avec les positions :
 
@@ -51,7 +51,7 @@ En plus des méthodes de `Collection` vues dans la première partie, `List` prop
 
 `ArrayList` range ses éléments dans un tableau. L'accès à un élément par son index est donc immédiat, quelle que soit la taille de la liste. Quand le tableau est plein, la liste en alloue un plus grand et y recopie ses éléments : certains ajouts coûtent cher, mais un ajout en fin de liste reste en temps constant en moyenne (on parle de temps constant amorti). Par contre, insérer ou supprimer un élément au début ou au milieu oblige à décaler tous les éléments qui suivent.
 
-`LinkedList` est une liste doublement chaînée : chaque élément est rangé dans un nœud qui garde une référence vers le nœud précédent et vers le suivant. Ajouter ou retirer un élément à une extrémité est immédiat, et au milieu aussi, à condition d'y être déjà positionné avec un itérateur. En revanche, pour atteindre l'élément d'index `i`, la liste doit suivre les nœuds un par un depuis le début ou depuis la fin, selon le plus proche.
+`LinkedList` est une liste doublement chaînée : chaque élément est rangé dans un nœud qui garde une référence vers le nœud précédent et vers le suivant. Ajouter ou retirer un élément à une extrémité est immédiat, et au milieu aussi, à condition d'y être déjà positionné avec un itérateur. En revanche, pour atteindre l'élément d'index `i`, la liste doit suivre les nœuds un par un, en partant de l'extrémité la plus proche.
 
 | Opération                                    | `ArrayList` | `LinkedList` |
 |----------------------------------------------|-------------|--------------|
@@ -64,7 +64,7 @@ En plus des méthodes de `Collection` vues dans la première partie, `List` prop
 
 Pour `add(i, e)` et `remove(i)`, les deux listes sont en O(n), mais pas pour la même raison : `ArrayList` doit décaler les éléments, `LinkedList` doit parcourir ses nœuds jusqu'à l'index.
 
-Dans la grande majorité des cas, `ArrayList` est le bon choix. À complexité égale, elle va plus vite qu'une `LinkedList` (sa documentation le précise), et chaque nœud d'une `LinkedList` occupe bien plus de mémoire qu'une case de tableau. `LinkedList` ne se justifie que si l'on insère et supprime beaucoup en tête de liste ou à travers un itérateur, et même dans ce cas, mieux vaut mesurer avant de changer. Et si c'est une file qu'il vous faut, `ArrayDeque`, que nous verrons dans la partie 4, sera probablement plus rapide qu'une `LinkedList`.
+Dans la grande majorité des cas, `ArrayList` est le bon choix. À complexité égale, elle va plus vite qu'une `LinkedList` (sa documentation le précise), et chaque nœud d'une `LinkedList` occupe bien plus de mémoire qu'une case de tableau. `LinkedList` ne se justifie que si l'on insère et supprime beaucoup en tête de liste ou à travers un itérateur, et même dans ce cas, mieux vaut mesurer avant de changer. Et pour une file, `ArrayDeque` (que nous verrons dans la partie 4) sera probablement plus rapide qu'une `LinkedList`.
 
 ## Ajouter, lire et modifier des éléments
 
@@ -97,7 +97,7 @@ System.out.println(fruits.reversed()); // [prune, poire, pomme]
 
 `reversed()` ne copie pas la liste : elle retourne une vue qui la présente dans l'ordre inverse.
 
-Attention à `remove`, qui existe en deux versions : `remove(int index)` supprime l'élément à une position, `remove(Object o)` supprime la première occurrence d'un élément. Avec une liste de chaînes, aucune ambiguïté, mais avec une `List<Integer>`, passer un entier appelle la version avec l'index, car le compilateur préfère la méthode qui ne demande pas de conversion en `Integer` :
+Attention à `remove`, qui existe en deux versions : `remove(int index)` supprime l'élément à une position, `remove(Object o)` supprime la première occurrence d'un élément. Avec une liste de chaînes, il n'y a pas d'ambiguïté. Avec une `List<Integer>`, par contre, passer un entier appelle la version avec l'index, car le compilateur préfère la méthode qui ne demande pas de conversion en `Integer` :
 
 ```java
 List<Integer> nombres = new ArrayList<>(List.of(10, 20, 1, 30));
