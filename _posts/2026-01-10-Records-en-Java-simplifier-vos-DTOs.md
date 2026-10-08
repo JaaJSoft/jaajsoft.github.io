@@ -9,7 +9,7 @@ tags:
 author: Pierre Chopinet
 ---
 
-Un DTO en Java, c'est souvent un constructeur, des _getters_, `equals()`, `hashCode()` et `toString()` : une trentaine de lignes pour trois champs. Les records, arrivés en preview avec Java 14 et finalisés en Java 16, génèrent tout ça à partir d'une seule ligne. Dans ce tutoriel, nous allons voir comment les écrire, les personnaliser, et les utiliser avec Spring Boot et Jackson.
+Un DTO en Java, c'est souvent un constructeur, des _getters_, `equals()`, `hashCode()` et `toString()` : une trentaine de lignes pour trois champs. Les records, arrivés en preview avec Java 14 et finalisés en Java 16, génèrent tout ça à partir d'une seule ligne. Dans ce tutoriel, nous allons voir comment les écrire, les personnaliser et les utiliser avec Spring Boot et Jackson.
 <!--more-->
 
 Dans cet article :
@@ -26,7 +26,7 @@ Pré-requis : Java 16 ou plus récent, Java 21 pour les exemples avec pattern ma
 
 ## Qu'est-ce qu'un record ?
 
-Un record est une classe déclarée avec le mot-clé `record` au lieu de `class`. Il sert à transporter des données qui ne changent pas : le corps d'une requête ou d'une réponse d'API, une valeur métier comme un email ou un montant, le résultat d'une requête, un événement...
+Un record est une classe déclarée avec le mot-clé `record` au lieu de `class`. Il sert à transporter des données qui ne changent pas : le corps d'une requête ou d'une réponse d'API, une valeur métier comme un email ou un montant, une ligne lue en base de données, un événement...
 
 Voici un DTO écrit à l'ancienne, avant Java 16 :
 
@@ -76,7 +76,7 @@ public record UserDTO(Long id, String name, String email) {}
 
 À partir de cette ligne, le compilateur génère :
 - un constructeur qui prend tous les composants, appelé constructeur canonique
-- un accesseur par composant : `id()`, `name()` et `email()`, sans préfixe `get`
+- un accesseur par composant (`id()`, `name()` et `email()`), sans préfixe `get`
 - `equals()`, `hashCode()` et `toString()`, calculés à partir de tous les composants
 
 La classe est implicitement `final` et chaque composant devient un champ `private final`.
@@ -108,7 +108,7 @@ System.out.println(p1.equals(p3));  // false
 
 Comme `hashCode()` suit la même règle, un record fait une bonne clé de `HashMap`, par exemple pour [regrouper des données selon plusieurs critères]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %}).
 
-Il n'y a pas de setter et les champs sont `final`, on ne peut donc pas modifier un record après sa création :
+Il n'y a pas de setter et les champs sont `final`. On ne peut donc pas modifier un record après sa création :
 
 ```java
 public record Product(String sku, double price) {}
@@ -117,7 +117,7 @@ Product p = new Product("ABC-123", 99.99);
 // p.price = 50.0; // ne compile pas : le champ est private et final
 ```
 
-Attention, cette immutabilité est superficielle (la Javadoc de `java.lang.Record` parle de *shallowly immutable*). Si un composant est une `ArrayList`, le record garde la même référence, mais le contenu de la liste peut toujours changer. On verra juste après comment faire une copie défensive.
+Attention, cette immuabilité est superficielle (la Javadoc de `java.lang.Record` parle de *shallowly immutable*). Si un composant est une `ArrayList`, le record garde la même référence, mais le contenu de la liste peut toujours changer. On verra juste après comment faire une copie défensive.
 
 ## Personnaliser un record
 
@@ -140,7 +140,7 @@ Email e1 = new Email("user@example.com");  // OK
 Email e2 = new Email("invalide");          // IllegalArgumentException
 ```
 
-L'affectation des champs est ajoutée automatiquement à la fin du constructeur compact. Écrire `this.address = ...` dedans est même refusé par le compilateur (`cannot assign a value to final variable address`). Par contre, on peut réaffecter le paramètre avant cette affectation, pour faire une copie défensive :
+Cette affectation est ajoutée automatiquement à la fin du constructeur compact. Écrire `this.address = ...` dedans est même refusé par le compilateur (`cannot assign a value to final variable address`). Par contre, on peut réaffecter le paramètre avant que le champ soit initialisé, par exemple pour faire une copie défensive :
 
 ```java
 public record Team(String name, List<String> members) {
@@ -152,7 +152,7 @@ public record Team(String name, List<String> members) {
 
 Avec cette copie, modifier la liste passée au constructeur n'a plus d'effet sur le record, et `team.members().add("Eve")` lance une `UnsupportedOperationException`.
 
-Ou pour normaliser une valeur, ici un arrondi au dixième :
+La même technique sert à normaliser une valeur, ici avec un arrondi au dixième :
 
 ```java
 public record Temperature(double celsius) {
@@ -244,7 +244,7 @@ static void printCity(Person person) {
 }
 ```
 
-`printCity(p)` affiche `Alice habite à Paris`. Attention, le pattern imbriqué `Address(...)` ne correspond pas à une adresse `null` : avec `new Person("Bob", null)`, ce `switch` lance une `MatchException`. Depuis Java 22, les composants inutilisés comme `street` et `zip` peuvent être remplacés par `_`. Tout ça est détaillé dans l'article sur le [pattern matching en Java]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %}).
+`printCity(p)` affiche `Alice habite à Paris`. Attention, le pattern imbriqué `Address(...)` ne correspond pas à une adresse `null` : avec `new Person("Bob", null)`, ce `switch` lance une `MatchException`. Depuis Java 22, les composants inutilisés comme `street` et `zip` peuvent être remplacés par `_`. Les record patterns sont détaillés dans l'article sur le [pattern matching en Java]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %}).
 
 ## Records et collections
 
@@ -315,7 +315,7 @@ public record CreateUserRequest(
 ) {}
 ```
 
-Pour qu'elles soient vérifiées, il faut l'annotation `@Valid` sur le paramètre du contrôleur, comme dans l'exemple précédent, et la dépendance `spring-boot-starter-validation`, qui n'est pas incluse dans `spring-boot-starter-web`.
+Pour qu'elles soient vérifiées, il faut l'annotation `@Valid` sur le paramètre du contrôleur, comme dans l'exemple précédent. Il faut aussi la dépendance `spring-boot-starter-validation`, qui n'est pas incluse dans `spring-boot-starter-web`.
 
 ### Renommer un champ JSON
 
@@ -340,19 +340,19 @@ Testé avec Jackson 2.22.3 et 3.2.3. Spring Boot 4 utilise Jackson 3, dont les a
 ## Ce qu'un record ne peut pas faire
 
 Un record ne peut pas :
-- hériter d'une autre classe (il hérite déjà de `java.lang.Record`), mais il peut implémenter des interfaces
-- déclarer des champs d'instance en plus de ses composants (erreur `field declaration must be static`)
-- être `abstract` ou être étendu, puisqu'il est implicitement `final`
+- hériter d'une autre classe (il hérite déjà de `java.lang.Record`)
+- déclarer de champs d'instance en plus de ses composants (erreur `field declaration must be static`)
+- être `abstract` ni être étendu, puisqu'il est implicitement `final`
 
-Il peut par contre avoir des champs et des méthodes statiques, être générique (`record Pair<T, U>(T first, U second) {}`), et être déclaré dans une classe ou même directement dans une méthode.
+Il peut par contre implémenter des interfaces, avoir des champs et des méthodes statiques, être générique (`record Pair<T, U>(T first, U second) {}`) et être déclaré dans une classe ou même directement dans une méthode.
 
 Un record ne peut pas non plus servir d'entité JPA. La Javadoc de `@Entity` (Jakarta Persistence 3.2) est explicite : une entité doit être une classe non `final` avec un constructeur sans paramètre, et un record ne peut pas être désigné comme entité. Cette même version accepte par contre un record comme `@Embeddable`. Pour les entités, on garde donc des classes classiques, et les records servent aux DTOs qu'on en tire.
 
 ## Records ou Lombok ?
 
-Lombok répond au même problème avec des annotations : `@Value` génère une classe immuable avec ses getters, `equals()`, `hashCode()` et `toString()`, et `@Data` fait la même chose pour une classe modifiable, setters compris.
+Lombok répond au même problème avec des annotations : `@Value` rend une classe immuable et génère ses getters, `equals()`, `hashCode()` et `toString()`. `@Data` fait la même chose pour une classe modifiable, setters compris.
 
-La différence, c'est qu'un record fait partie du langage : pas de dépendance ni d'annotation processor à configurer, et le compilateur connaît sa structure, ce qui permet les record patterns (une classe annotée avec `@Value` ne peut pas être déstructurée dans un `switch`). Attention si vous migrez de l'un à l'autre : les accesseurs d'un record s'appellent `name()`, pas `getName()`.
+La différence, c'est qu'un record fait partie du langage : pas de dépendance ni d'annotation processor à configurer. Le compilateur connaît aussi sa structure, ce qui permet les record patterns (une classe annotée avec `@Value` ne peut pas être déstructurée dans un `switch`). Attention si vous migrez de l'un à l'autre : les accesseurs d'un record s'appellent `name()`, pas `getName()`.
 
 Sur Java 16 ou plus, je vous conseille les records pour les DTOs et les valeurs immuables, et Lombok là où un record ne convient pas, comme les entités JPA. Les deux ne s'excluent pas : `@Builder` de Lombok fonctionne aussi sur un record (testé avec Lombok 1.18.46).
 

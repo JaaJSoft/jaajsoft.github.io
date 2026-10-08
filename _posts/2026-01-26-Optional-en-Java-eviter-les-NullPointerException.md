@@ -123,7 +123,7 @@ String name = Optional.ofNullable(getName())
     .orElseGet(() -> fetchDefaultName()); // appelé seulement si absent
 ```
 
-La différence compte quand la valeur par défaut coûte quelque chose à calculer. L'argument de `orElse()` est évalué avant l'appel, donc même quand l'`Optional` contient une valeur. Avec une méthode qui affiche un message :
+La différence compte quand la valeur par défaut coûte quelque chose à calculer. L'argument d'`orElse()` est évalué avant l'appel, donc même quand l'`Optional` contient une valeur. Avec une méthode qui affiche un message :
 
 ```java
 static String fetchDefaultName() {
@@ -159,7 +159,7 @@ Sans argument (Java 10+), `orElseThrow()` lance une `NoSuchElementException`.
 
 ## Transformer avec map et flatMap
 
-`map()` applique une fonction à la valeur si elle est présente, et renvoie un `Optional` du résultat :
+`map()` applique une fonction à la valeur si elle est présente, et renvoie le résultat dans un `Optional` :
 
 ```java
 Optional<String> name = Optional.of("alice");
@@ -180,9 +180,9 @@ Optional<String> email = user
     .map(String::toLowerCase);
 ```
 
-Si `user` est vide, ou si `getAddress()` ou `getEmail()` renvoie `null`, on obtient `Optional.empty` : quand la fonction passée à `map()` renvoie `null`, `map()` renvoie un `Optional` vide.
+Si `user` est vide, ou si `getAddress()` ou `getEmail()` renvoie `null`, on obtient `Optional.empty` : quand la fonction passée à `map()` renvoie `null`, le résultat est un `Optional` vide.
 
-Ce modèle convient quand les getters renvoient directement l'objet, éventuellement `null`. Si un getter renvoie lui-même un `Optional`, `map()` produit un `Optional` dans un `Optional` :
+Cette chaîne de `map()` convient quand les getters renvoient directement l'objet, éventuellement `null`. Si un getter renvoie lui-même un `Optional`, `map()` produit un `Optional` dans un `Optional` :
 
 ```java
 Optional<User> user = findUser(id); // retourne Optional<User>
@@ -191,7 +191,7 @@ Optional<User> user = findUser(id); // retourne Optional<User>
 Optional<Optional<Address>> address = user.map(User::getOptionalAddress);
 ```
 
-C'est le rôle de `flatMap()`, qui aplatit le résultat :
+C'est là qu'intervient `flatMap()`, qui aplatit le résultat :
 
 ```java
 Optional<Address> address = user.flatMap(User::getOptionalAddress);
@@ -313,7 +313,7 @@ Les streams sont présentés en détail dans l'[introduction aux Streams en Java
 
 ## Où ne pas utiliser Optional
 
-La Javadoc d'`Optional` le dit clairement : il est prévu avant tout comme type de retour de méthode, quand l'absence de résultat est un cas normal et que `null` risquerait de provoquer des erreurs. Ailleurs, il complique le code plus qu'il ne l'aide.
+La Javadoc d'`Optional` le dit clairement : il est prévu avant tout comme type de retour de méthode, quand l'absence de résultat est un cas normal et que `null` risquerait de provoquer des erreurs. Ailleurs, il complique le code plus qu'il ne le simplifie.
 
 ### En paramètre de méthode
 
@@ -453,7 +453,7 @@ public class UserService {
 
 ## Et les performances ?
 
-`Optional` n'est pas gratuit : `Optional.of()` alloue un objet à chaque appel. Pour une API, la lisibilité compte plus que cette allocation, mais dans une boucle exécutée des millions de fois, un simple test de `null` reste une option raisonnable. Pour les types primitifs, `OptionalInt`, `OptionalLong` et `OptionalDouble` évitent en plus le _boxing_.
+`Optional` n'est pas gratuit : `Optional.of()` alloue un objet à chaque appel. Pour une API, la lisibilité compte plus que cette allocation, mais dans une boucle exécutée des millions de fois, un simple test de `null` reste une option raisonnable. Pour les types primitifs, `OptionalInt`, `OptionalLong` et `OptionalDouble` évitent au moins le _boxing_ de la valeur.
 
 ## Voir aussi
 

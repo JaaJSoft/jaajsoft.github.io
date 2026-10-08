@@ -1,14 +1,14 @@
 ---
 layout: article
 title: "Pattern matching en Java moderne"
-description: "Le pattern matching en Java : instanceof, switch et record patterns de Java 21, cas du null, ordre des case, switch exhaustifs avec sealed et types primitifs."
+description: "Le pattern matching en Java : instanceof, switch et record patterns de Java 21, null, ordre des case, switch exhaustifs, classes scellées, types primitifs."
 tags:
   - java
   - pattern-matching
 author: Pierre Chopinet
 ---
 
-Tester le type d'un objet, le caster, puis lire ses champs : en Java, cette suite d'opérations a longtemps demandé beaucoup de code. Avec le pattern matching, complété en Java 21, tout ça se fait directement dans un `instanceof` ou dans un `switch`, records et classes `sealed` compris.
+Tester le type d'un objet, le caster, puis lire ses champs : en Java, cette suite d'opérations a longtemps demandé beaucoup de code. Avec le pattern matching, complété en Java 21, tout ça se fait directement dans un `instanceof` ou dans un `switch`, y compris avec les records et les classes scellées.
 <!--more-->
 
 Dans cet article :
@@ -17,7 +17,7 @@ Dans cet article :
 - Le cas de null
 - L'ordre des case
 - Les record patterns
-- Switch exhaustifs avec les classes sealed
+- Switch exhaustifs avec les classes scellées
 - Les types primitifs
 
 Pré-requis : Java 21 ou plus récent pour le `switch` et les record patterns (avant Java 21, ils n'existaient qu'en preview). Le pattern matching pour `instanceof` fonctionne dès Java 16.
@@ -103,7 +103,7 @@ Les `case` sont testés dans l'ordre et le premier qui correspond l'emporte : la
 
 Le `default` n'est pas là pour décorer. Un `switch` qui utilise des patterns doit être exhaustif, même quand il est utilisé comme instruction et pas comme expression. Sur un `Object`, sans `default`, la compilation échoue avec `the switch expression does not cover all possible input values` (ou `the switch statement ...` pour une instruction).
 
-Gardez les conditions `when` courtes et sans effet de bord. Si une garde commence à déborder sur plusieurs lignes, une méthode avec un nom explicite sera plus lisible.
+Les conditions `when` gagnent à rester courtes et sans effet de bord. Si une garde commence à déborder sur plusieurs lignes, une méthode avec un nom explicite sera plus lisible.
 
 ## Le cas de null
 
@@ -153,7 +153,7 @@ Si on inverse les deux premiers `case`, la version avec `when` ne peut plus jama
 
 ## Les record patterns
 
-Un `case` (ou un `instanceof`) peut aussi déstructurer un record. Le pattern `Point(int x, int y)` vérifie le type et récupère directement les composants, sans passer par les accesseurs :
+Un `case` (ou un `instanceof`) peut aussi déstructurer un record. Le pattern `Point(int x, int y)` vérifie le type et récupère directement les composants, sans avoir à appeler les accesseurs :
 
 ```java
 record Point(int x, int y) {}
@@ -224,9 +224,9 @@ static String axe(Object o) {
 
 Ici, `axe(new Point(0, 5))` renvoie `"sur l'axe vertical"` et `axe(new Point(1, 5))` renvoie `"un point"`.
 
-## Switch exhaustifs avec les classes sealed
+## Switch exhaustifs avec les classes scellées
 
-Sur un `Object`, le `default` est obligatoire puisque le compilateur ne peut pas connaître tous les types possibles. Avec une interface `sealed`, il les connaît : la liste des sous-types autorisés est fermée (le sujet est détaillé dans l'article sur [les sealed classes]({% post_url 2026-01-14-Sealed-classes-en-Java %})).
+Sur un `Object`, le compilateur ne peut pas connaître tous les types possibles, d'où le `default` des exemples précédents. Avec une interface scellée, il les connaît : la liste des sous-types autorisés est fermée (le sujet est détaillé dans l'article sur [les classes scellées]({% post_url 2026-01-14-Sealed-classes-en-Java %})).
 
 ```java
 sealed interface Shape permits Circle, Rectangle, Triangle {}
@@ -255,9 +255,9 @@ L'intérêt de se passer du `default` apparaît le jour où on ajoute un sous-ty
 
 ## Les types primitifs
 
-En Java 21, les patterns de type ne s'appliquent qu'aux types référence. Un `case int i` dans un `switch` sur un `int` est refusé (`unexpected type`), on continue donc d'utiliser des constantes (`case 1, 2, 3 -> ...`). Les record patterns, eux, déstructurent sans problème des composants primitifs, comme `Point(int x, int y)` plus haut.
+En Java 21, les patterns de type ne s'appliquent qu'aux types référence. Un `case int i` dans un `switch` sur un `int` est refusé (`unexpected type`). On continue donc d'utiliser des constantes (`case 1, 2, 3 -> ...`). Les record patterns, eux, déstructurent sans problème des composants primitifs, comme `Point(int x, int y)` plus haut.
 
-Les patterns sur les types primitifs (`case int i when i < 0`, `instanceof int`) sont arrivés en preview avec Java 23 (JEP 455) et le sont toujours en Java 25 : il faut `--enable-preview` pour s'en servir.
+Les patterns sur les types primitifs (`case int i when i < 0`, `instanceof int`) sont en preview depuis Java 23 (JEP 455), et le sont encore en Java 25 : il faut `--enable-preview` pour s'en servir.
 
 ## Voir aussi
 

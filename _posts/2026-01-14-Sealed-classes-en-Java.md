@@ -9,19 +9,19 @@ tags:
 author: Pierre Chopinet
 ---
 
-Les sealed classes (classes scellées), finalisées en Java 17, fixent la liste exacte des classes qui ont le droit d'étendre une classe ou d'implémenter une interface. En échange, le compilateur peut vérifier qu'un `switch` traite tous les cas. Dans ce tutoriel, nous allons voir comment les déclarer et comment les combiner avec les records et le pattern matching.
+Les classes scellées (*sealed classes*), finalisées en Java 17, fixent la liste exacte des types qui ont le droit d'étendre une classe ou d'implémenter une interface. En échange, le compilateur peut vérifier qu'un `switch` traite tous les cas. Dans ce tutoriel, nous allons voir comment les déclarer et comment les combiner avec les records et le pattern matching.
 <!--more-->
 
 Dans cet article :
 - Pourquoi sceller une hiérarchie
 - Déclarer une classe scellée
 - Les sous-types : final, sealed ou non-sealed
-- Sealed classes et records
+- Classes scellées et records
 - Switch exhaustifs sans default
 - Modéliser des types algébriques
 - Une machine à états
 - Les règles à respecter
-- Sealed classes ou enum ?
+- Classes scellées ou enum ?
 
 Pré-requis : Java 17 ou plus récent, Java 21 pour les exemples avec `switch` et pattern matching.
 
@@ -42,7 +42,7 @@ public class Hexagon implements Shape {
 
 Le compilateur ne peut donc pas vérifier qu'un `switch` ou une suite de `if/else` sur une `Shape` couvre tous les cas, et l'auteur de l'interface ne peut pas la faire évoluer sans risquer de casser des implémentations qu'il n'a jamais vues.
 
-Avant Java 17, les moyens de limiter l'héritage n'étaient pas satisfaisants. Une classe `final` ne peut pas être étendue du tout : il n'y a plus de hiérarchie. Une interface sans le mot-clé `public` n'est visible que dans son package, elle devient donc inutilisable par le reste du code, et rien n'empêche quelqu'un d'ajouter une classe dans ce même package.
+Avant Java 17, les moyens de limiter l'héritage n'étaient pas satisfaisants. Une classe `final` ne peut pas être étendue du tout : il n'y a plus de hiérarchie. Une interface sans le mot-clé `public` n'est visible que dans son package. Elle devient donc inutilisable par le reste du code, et rien n'empêche quelqu'un d'ajouter une classe dans ce même package.
 
 ## Déclarer une classe scellée
 
@@ -119,11 +119,11 @@ public non-sealed class Boat implements Vehicle {}
 public class Sailboat extends Boat {} // OK, hiérarchie ouverte
 ```
 
-Sans l'un des trois, le compilateur refuse le sous-type avec `sealed, non-sealed or final modifiers expected`. Avec `non-sealed`, n'importe qui peut étendre `Boat`, mais `Vehicle` reste scellée : ses sous-types directs sont toujours `Car`, `Bike` et `Boat`.
+Sans aucun des trois, le compilateur refuse le sous-type avec `sealed, non-sealed or final modifiers expected`. Avec `non-sealed`, n'importe qui peut étendre `Boat`, mais `Vehicle` reste scellée : ses sous-types directs sont toujours `Car`, `Bike` et `Boat`.
 
-## Sealed classes et records
+## Classes scellées et records
 
-Les records, disponibles depuis Java 16, sont implicitement `final`. Ils font donc des sous-types tout trouvés pour une hiérarchie scellée, sans rien à ajouter :
+Les records, disponibles depuis Java 16, sont implicitement `final`. Ils font donc des sous-types tout trouvés pour une hiérarchie scellée, sans modificateur à ajouter :
 
 ```java
 public sealed interface Result<T> permits Success, Failure {}
@@ -132,7 +132,7 @@ public record Success<T>(T value) implements Result<T> {}
 public record Failure<T>(String message, Throwable cause) implements Result<T> {}
 ```
 
-Utilisation :
+Un `switch` traite ensuite les deux cas :
 
 ```java
 public static <T> void handleResult(Result<T> result) {
@@ -148,7 +148,7 @@ public static <T> void handleResult(Result<T> result) {
 
 ## Switch exhaustifs sans default
 
-Le gros intérêt d'une hiérarchie scellée apparaît dans les `switch` (Java 21). Le compilateur connaît tous les sous-types, il peut donc vérifier que chacun est traité, sans `default` :
+Le gros intérêt d'une hiérarchie scellée apparaît dans les `switch` (Java 21). Comme le compilateur connaît tous les sous-types, il peut vérifier que chacun est traité, sans `default` :
 
 ```java
 public sealed interface Payment permits CreditCard, Cash, BankTransfer {}
@@ -168,9 +168,9 @@ public static void processPayment(Payment payment) {
 
 Le jour où on ajoute un `record PayPal(String email)` à la liste `permits`, ce `switch` ne compile plus : `the switch statement does not cover all possible input values`. Le compilateur pointe ainsi chaque `switch` à compléter, alors qu'avec un `default` l'oubli serait passé inaperçu.
 
-Ce contrôle a lieu à la compilation. Si la hiérarchie vient d'une bibliothèque qui ajoute un sous-type, et que le code contenant le `switch` n'est pas recompilé, l'exécution lance une `MatchException` quand le nouveau type arrive dans le `switch`. C'est le comportement prévu, décrit dans la Javadoc de `MatchException`.
+Ce contrôle a lieu à la compilation. Si la hiérarchie vient d'une bibliothèque qui ajoute un sous-type, et que le code contenant le `switch` n'est pas recompilé, une `MatchException` est lancée à l'exécution quand le nouveau type arrive dans le `switch`. C'est le comportement prévu, décrit dans la Javadoc de `MatchException`.
 
-### Déconstruire les records dans le switch
+### Déstructurer les records dans le switch
 
 Avec les record patterns de Java 21, on récupère directement les composants dans le `case` :
 
@@ -339,7 +339,7 @@ public final class Circle implements Shape {}
 
 Sans module nommé, ce découpage en deux packages est refusé : `class Shape in unnamed module cannot extend a sealed class in a different package`.
 
-## Sealed classes ou enum ?
+## Classes scellées ou enum ?
 
 Un enum est lui aussi une liste fermée, et un `switch` sur un enum peut également se passer de `default`. La différence : chaque constante d'un enum est une instance unique, créée une fois pour toutes, alors qu'un sous-type d'une classe scellée peut avoir autant d'instances que nécessaire, chacune avec ses propres données. Pour une liste de valeurs fixes (jours de la semaine, statuts), un [enum]({% post_url 2026-04-13-Les-Enums-en-Java-bien-plus-que-des-constantes %}) suffit. Dès que chaque cas transporte des données différentes, comme `Circle(double radius)` et `Rectangle(double width, double height)`, une interface scellée avec des records est plus adaptée.
 
