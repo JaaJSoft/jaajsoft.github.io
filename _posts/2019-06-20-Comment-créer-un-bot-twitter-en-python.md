@@ -20,7 +20,7 @@ Exemple de bot : [CryptageBot](https://twitter.com/cryptagebot)
 
 ## Installation
 
-Pour commencer, il vous faut un interpréteur python en version 3, dans mon cas, j'utiliserai python 3.5.
+Pour commencer, il vous faut un interpréteur python en version 3. Dans mon cas, j'utiliserai python 3.5.
 
 Je recommande d'utiliser linux pour ce tutoriel, mais cela peut fonctionner sous Windows. Si vous êtes sur Windows, vous pouvez aussi utiliser le Windows Subsystem for Linux ([wsl](https://docs.microsoft.com/en-us/windows/wsl/install-win10)) pour avoir un linux dans votre Windows.
 
@@ -34,7 +34,7 @@ Depuis un terminal, installation de python3 :
 sudo apt install python3
 ```
 
-Vous aurez ensuite besoin de pip le gestionnaire de librairie de python, il est souvent préinstallé avec python, mais dans le doute :
+Vous aurez ensuite besoin de pip, le gestionnaire de librairies de python. Il est souvent préinstallé avec python, mais dans le doute :
 
 ```bash
 sudo apt install python3-pip
@@ -56,13 +56,13 @@ Et voilà, vous avez tout ce qu'il faut pour créer un bot sur Ubuntu.
 
 ### Windows
 
-Sur Windows, ça se complique un peu, commencez par télécharger python3 pour windows [ici](https://www.python.org/downloads/) et installez-le.
+Sur Windows, ça se complique un peu : commencez par télécharger python3 pour windows [ici](https://www.python.org/downloads/) et installez-le.
 
 Déplacez-vous dans le dossier où vous avez installé python et faites :
 
-`shift + click droit -> ouvrir une fenêtre powershell` (sur windows 7 pour les réfractaires au changement ça doit être cmd)
+`shift + clic droit -> ouvrir une fenêtre powershell` (sur windows 7, pour les réfractaires au changement, ça doit être cmd)
 
-Vous êtes normalement devant un terminal, dans ce terminal powershell :
+Vous êtes normalement devant un terminal powershell, dans lequel il suffit de faire :
 
 ```powershell
 .\python.exe -m pip install tweepy
@@ -72,13 +72,13 @@ Et voilà, vous êtes prêt.
 
 ### MacOS
 
-N'ayant pas de Mac, je ne peux pas tester l'installation, mais il faut aussi utiliser [PIP](https://pypi.org/project/pip/), pour installer la librairie tweepy.
+N'ayant pas de Mac, je ne peux pas tester l'installation, mais il faut aussi utiliser [pip](https://pypi.org/project/pip/) pour installer la librairie tweepy.
 
 ## Création d'une application twitter
 
-Il faut déjà créer un compte twitter, pour cela il vous faut une adresse mail spécialement pour ce bot, par exemple "example@gmail.com"
+Il faut déjà créer un compte twitter. Pour cela, il vous faut une adresse mail spécialement pour ce bot, par exemple "example@gmail.com".
 
-Une fois le compte créé et que vous êtes connecté avec, allez sur :
+Une fois que le compte est créé et que vous êtes connecté avec, allez sur :
 
 [https://developer.twitter.com](https://developer.twitter.com)
 
@@ -86,13 +86,13 @@ Pour pouvoir créer des applications, il faut avoir un compte twitter _developer
 
 ![2019-06-20_twitter_apply](/assets/images/2019-06-20_twitter_apply.png){: width="235" height="51"}
 
-Cliquez sur "create new app"
+Cliquez sur "create new app".
 
 Remplissez les informations demandées en anglais. Pour le website, mettez le lien vers le profil twitter de votre bot.
 
 La validation du compte développeur peut prendre plusieurs jours.
 
-Une fois le mode développeur activé. Aller sur votre nom en haut et puis sur [apps](https://developer.twitter.com/en/apps).
+Une fois le mode développeur activé, allez sur votre nom en haut et puis sur [apps](https://developer.twitter.com/en/apps).
 
 ![Screenshot_20190620_222031](/assets/images/Screenshot_20190620_222031.png){: width="1317" height="76"}
 
@@ -104,7 +104,7 @@ Remplissez les informations sur votre bot.
 
 Pour les liens demandés, vous pouvez mettre un lien vers le profil twitter de votre bot.
 
-Une fois l'application créée. Dans le detail de l'application, allez dans Keys and Access Tokens, en bas de la page, cliquez sur "Create my access token"
+Une fois l'application créée, dans le détail de l'application, allez dans Keys and Access Tokens. En bas de la page, cliquez sur "Create my access token".
 
 Sur cette page, notez votre :
 
@@ -119,7 +119,7 @@ Vous aurez besoin de tout ça pour vous connecter à l'api twitter.
 
 ### Authentification
 
-Pour commencer, il faut pouvoir se connecter à l'api twitter, pour ça créons une petite fonction nommée "auth", qui va se connecter à l'api.
+Pour commencer, il faut pouvoir se connecter à l'api twitter. Pour ça, créons une petite fonction nommée "auth".
 
 ```python
 import tweepy
@@ -145,7 +145,7 @@ def auth():
 
 Avec cette fonction, vous pouvez maintenant vous connecter à twitter depuis python !
 
-Faites attention avec vos clés et tokens "secret", ils ne doivent surtout pas être publics, ou quelqu'un pourrait usurper l'identité de votre bot. Vous pouvez aussi stocker vos clés dans un fichier et lire ce fichier dans votre fonction auth.
+Faites attention à vos clés et tokens "secret" : ils ne doivent surtout pas être publics, ou quelqu'un pourrait usurper l'identité de votre bot. Vous pouvez aussi stocker vos clés dans un fichier et lire ce fichier dans votre fonction auth.
 
 ### Envoi d'un simple tweet
 
@@ -159,11 +159,11 @@ api, auth = auth.auth()
 api.update_status(status="bonjour depuis python")
 ```
 
-Et voila, un tweet depuis python.
+Et voilà, un tweet depuis python.
 
 ### Un stream twitter
 
-Un stream twitter est une fonctionnalité de l'api twitter, qui permet de recevoir en temps réel, les tweets postés contenant des mots en particulier. Dans mon bot par exemple, j'utilise un stream pour récupérer les tweets contenant "crypter" et/ou "cryptage".
+Un stream twitter est une fonctionnalité de l'api twitter, qui permet de recevoir en temps réel les tweets postés contenant des mots en particulier. Dans mon bot par exemple, j'utilise un stream pour récupérer les tweets contenant "crypter" et/ou "cryptage".
 
 Le code :
 
@@ -196,9 +196,9 @@ twitterStream = Stream(auth, listener())
 twitterStream.filter(track=["saucisse"]) # pour traquer plusieurs mots, faire ["A","B"]
 ```
 
-Ce stream pour le moment, affiche juste les tweets contenant vos mots clés, mais il affiche aussi les retweets, On va régler ça en testant si le tweet contient le mot RT au début.
+Pour le moment, ce stream affiche juste les tweets contenant vos mots-clés, mais il affiche aussi les retweets. On va régler ça en testant si le tweet contient le mot RT au début.
 
-Pour cela, on a besoin d'une fonction, qui va tester la présence d'un mot dans une phrase :
+Pour cela, on a besoin d'une fonction qui va tester la présence d'un mot dans une phrase :
 
 ```python
 def contains_word(string, word):
@@ -262,9 +262,9 @@ twitterStream = Stream(auth, listener())
 twitterStream.filter(track=["saucisse"])
 ```
 
-Notez que cette version peut planter de temps en temps, pour régler ce problème, vous pouvez mettre en place une gestion des exceptions pour gérer les soucis que vous rencontrez. Une autre solution, est de faire un script bash, qui teste si le programme a planté et si oui, le relance.
+Notez que cette version peut planter de temps en temps. Pour régler ce problème, vous pouvez mettre en place une gestion des exceptions pour traiter les soucis que vous rencontrez. Une autre solution est de faire un script bash qui teste si le programme a planté et, si oui, le relance.
 
-Par exemple une petite fonction bash présente dans mon projet [Automation Scripts](https://github.com/pchopinet/Automation-Scripts) :
+Par exemple, une petite fonction bash présente dans mon projet [Automation Scripts](https://github.com/pchopinet/Automation-Scripts) :
 
 ```bash
 sys-process-test(){
@@ -275,7 +275,7 @@ sys-process-test(){
 
 Cette fonction renvoie 0 si aucun programme avec le nom passé en paramètre n'est lancé.
 
-On crée un script qui teste le bon fonctionnement du bot et on le lance régulièrement via un [crontab](https://doc.ubuntu-fr.org/cron)
+On crée un script qui teste le bon fonctionnement du bot et on le lance régulièrement via un [crontab](https://doc.ubuntu-fr.org/cron).
 
 Il est aussi possible de mettre en place un conteneur docker pour facilement relancer le bot. Je pense traiter ce sujet dans un article sur la mise en production d'une application python.
 
@@ -287,13 +287,13 @@ Sous un linux, nous allons utiliser :
 nohup
 ```
 
-Cette commande sous linux permet de lancer un programme, de façon qu'il ne soit pas dépendant du terminal avec lequel le programme a été lancé. Comme ça si on ferme le terminal, le programme continue son exécution.
+Cette commande sous linux permet de lancer un programme, de façon qu'il ne soit pas dépendant du terminal avec lequel le programme a été lancé. Comme ça, si on ferme le terminal, le programme continue son exécution.
 
 ```bash
 nohup python3 bot.py &
 ```
 
-Et voilà, votre bot fonctionne, et ne s'arrêtera pas quand vous fermerez votre console.
+Et voilà, votre bot fonctionne et ne s'arrêtera pas quand vous fermerez votre console.
 
 Notez que pour tester le bon fonctionnement du programme, vous pouvez juste faire :
 
@@ -303,7 +303,7 @@ python3 bot.py
 
 ## Pour aller plus loin
 
-Notre bot reste basique, il y a de nombreuses façons de l'améliorer par exemple des filtres plus complexes, une analyse du tweet pour faire des réponses dynamiques, etc.
+Notre bot reste basique : il y a de nombreuses façons de l'améliorer, par exemple des filtres plus complexes, une analyse du tweet pour faire des réponses dynamiques, etc.
 
 Lire la doc tweepy : [http://tweepy.readthedocs.io/]( http://tweepy.readthedocs.io/)
 
