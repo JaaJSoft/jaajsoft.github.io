@@ -43,7 +43,9 @@ message = f"Bonjour {nom}, vous avez {age} ans."
 print(message)  # Bonjour Alice, vous avez 30 ans.
 ```
 
-Les trois versions donnent la même chaîne. Avec `%`, il faut indiquer le type de chaque valeur (`%s`, `%d`...) et fournir exactement le bon nombre d'arguments, sinon on obtient une `TypeError`. Avec `format()`, les valeurs sont listées à la fin, loin de l'endroit où elles apparaissent. La f-string se lit dans l'ordre, et elle est aussi plus rapide : mesurée avec `timeit` sous Python 3.13, elle prend environ deux fois moins de temps que les deux autres sur cet exemple. Python la transforme dès la compilation en une suite d'opérations simples (on peut le voir avec le module `dis`), alors que `%` et `format()` analysent la chaîne de format à chaque exécution.
+Les trois versions donnent la même chaîne. Avec `%`, il faut indiquer le type de chaque valeur (`%s`, `%d`...) et fournir exactement le bon nombre d'arguments, sinon on obtient une `TypeError`. Avec `format()`, les valeurs sont listées à la fin, loin de l'endroit où elles apparaissent. La f-string, elle, se lit dans l'ordre.
+
+Elle est aussi plus rapide : mesurée avec `timeit` sous Python 3.13, elle prend environ deux fois moins de temps que `format()` et un tiers de moins que `%` sur cet exemple. Python la transforme dès la compilation en une suite d'opérations simples (on peut le voir avec le module `dis`), alors que `%` et `format()` analysent la chaîne de format à chaque exécution.
 
 Le préfixe fonctionne aussi avec les triples guillemets, pour un message sur plusieurs lignes :
 
@@ -164,11 +166,11 @@ print(f"{nombre:.9n}")  # 1 234 567,89
 
 Sur un float, `n` se comporte comme le format `g` : six chiffres significatifs par défaut, d'où la notation scientifique pour `1234567.89`. Il faut donc préciser le nombre de chiffres significatifs voulus, ici 9.
 
-Avec la locale française de la glibc (testé avec la version 2.39, sous Ubuntu), le séparateur de milliers est une espace fine insécable (U+202F) et non une espace classique : à garder en tête si vous comparez ou découpez la chaîne obtenue. Si la locale n'est pas installée sur la machine, `setlocale` lève une exception `locale.Error: unsupported locale setting`. Sous Windows, elle peut s'appeler `'French_France.1252'` au lieu de `'fr_FR.UTF-8'`.
+Avec la locale française de la glibc (testé avec la version 2.39, sous Ubuntu), le séparateur de milliers est une espace fine insécable (U+202F) et non une espace classique : à garder en tête si vous comparez ou découpez la chaîne obtenue. Si la locale n'est pas installée sur la machine, `setlocale` lève une exception `locale.Error: unsupported locale setting`. Sous Windows, la locale française peut s'appeler `'French_France.1252'` au lieu de `'fr_FR.UTF-8'`.
 
 ### Pourcentages, notation scientifique et bases
 
-Le format `%` multiplie la valeur par 100 et ajoute le signe pourcent :
+Le format `%` multiplie la valeur par 100 et ajoute le signe pour cent :
 
 ```python
 taux = 0.1547
@@ -304,7 +306,7 @@ print(f"Format court : {moment:%d/%m/%Y %H:%M}")
 # Format court : 09/02/2026 14:30
 ```
 
-Avec `datetime.now()`, c'est la même chose avec la date et l'heure courantes. Pratique par exemple pour horodater un message : `print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {message}")`.
+Le principe est le même avec `datetime.now()`, ce qui est pratique pour horodater un message : `print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {message}")`.
 
 Les noms des jours et des mois dépendent de la locale, et tant qu'on n'a pas appelé `setlocale`, Python les affiche en anglais. Pour les avoir en français :
 
@@ -363,7 +365,7 @@ calculer_total(12.5, 3)
 # prix=12.5, quantite=3, total=37.5
 ```
 
-La valeur est affichée avec `repr()`, une chaîne apparaît donc entre guillemets : `f"{nom=}"` donne `nom='Alice'`. Les espaces sont conservés tels quels, `f"{x = }"` affiche `x = 10`.
+La valeur est affichée avec `repr()`, si bien qu'une chaîne apparaît entre guillemets : `f"{nom=}"` donne `nom='Alice'`. Les espaces autour du `=` sont conservés tels quels : `f"{x = }"` affiche `x = 10`.
 
 ## Backslashes et guillemets avant Python 3.12
 

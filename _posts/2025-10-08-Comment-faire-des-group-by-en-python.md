@@ -290,7 +290,7 @@ Paris         4      2      3
 
 ## Quand les données ne tiennent pas en mémoire
 
-`defaultdict(list)` et pandas chargent toutes les lignes en mémoire. `Counter` et les dictionnaires d'accumulateurs, eux, peuvent consommer les lignes une par une, depuis un fichier lu ligne par ligne par exemple : ils ne gardent qu'une entrée par clé, et tiennent donc tant que le nombre de clés distinctes reste raisonnable. `itertools.groupby` va encore plus loin sur une source déjà triée, puisqu'il n'a besoin que du groupe en cours.
+`defaultdict(list)` et pandas chargent toutes les lignes en mémoire. `Counter` et les dictionnaires d'accumulateurs, eux, peuvent consommer les lignes au fil de l'eau, par exemple depuis un fichier lu ligne par ligne : ils ne gardent qu'une entrée par clé, et tiennent donc en mémoire tant que le nombre de clés distinctes reste raisonnable. `itertools.groupby` va encore plus loin sur une source déjà triée, puisqu'il n'a besoin que du groupe en cours.
 
 Au-delà, il faut changer d'approche : charger les données dans une base SQLite (module `sqlite3`) et faire un vrai `GROUP BY`, lire le fichier par morceaux avec pandas (`read_csv` avec le paramètre `chunksize`) en cumulant les résultats de chaque morceau, ou trier le fichier sur disque avant de le parcourir avec `itertools.groupby`.
 

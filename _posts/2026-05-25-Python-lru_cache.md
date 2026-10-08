@@ -91,7 +91,7 @@ Le deuxième appel avec l'argument `4` renvoie le résultat depuis le cache, san
 
 ## Le principe du cache LRU
 
-LRU signifie *Least Recently Used*, "le moins récemment utilisé". Le cache a une taille maximale, 128 entrées par défaut, et quand elle est atteinte, l'entrée qui n'a pas servi depuis le plus longtemps est supprimée pour faire de la place. Si les appels se concentrent sur un petit nombre d'arguments fréquents, ce sont eux qui restent en mémoire.
+LRU signifie *Least Recently Used*, "le moins récemment utilisé". Le cache a une taille maximale, 128 entrées par défaut. Quand elle est atteinte, l'entrée qui n'a pas servi depuis le plus longtemps est supprimée pour faire de la place. Si les appels se concentrent sur un petit nombre d'arguments fréquents, ce sont eux qui restent en mémoire.
 
 La taille se règle avec le paramètre `maxsize` :
 
@@ -101,7 +101,7 @@ def ma_fonction(x):
     ...
 ```
 
-Avec `maxsize=None`, il n'y a plus de limite : le cache ne fait que grossir, à réserver aux cas où le nombre d'arguments possibles est borné. Avec `maxsize=0`, le cache est désactivé, ce qui peut servir à comparer les performances avec et sans.
+Avec `maxsize=None`, il n'y a plus de limite et le cache ne fait que grossir (c'est le comportement de `@cache`, présenté plus bas). Avec `maxsize=0`, le cache est désactivé, ce qui peut servir à comparer les performances avec et sans.
 
 Le second paramètre, `typed`, concerne les arguments égaux mais de types différents. Par défaut (`typed=False`), ils sont en général considérés comme le même appel :
 
@@ -225,13 +225,13 @@ class Calculateur:
         return x * 2
 ```
 
-Le cache, partagé par toutes les instances de la classe, garde une référence vers chaque instance utilisée. Une instance ne peut donc pas être libérée tant que son entrée n'est pas sortie du cache ou que le cache n'a pas été vidé, et avec `@cache` ou `maxsize=None`, cela n'arrive jamais : un programme qui crée beaucoup d'instances voit sa mémoire grossir.
+Le cache, partagé par toutes les instances de la classe, garde une référence vers chaque instance utilisée. Une instance ne peut donc pas être libérée tant que son entrée n'est pas sortie du cache ou que le cache n'a pas été vidé. Avec `@cache` ou `maxsize=None`, aucune entrée ne sort d'elle-même du cache : un programme qui crée beaucoup d'instances voit sa mémoire grossir.
 
 Si la valeur ne dépend que de l'instance, `@cached_property` est plus adapté. Sinon, on peut sortir la méthode de la classe pour en faire une fonction qui reçoit seulement les attributs dont elle a besoin, et mettre le cache sur cette fonction.
 
 ## Les fonctions async
 
-`@lru_cache` ne fonctionne pas avec une fonction `async` : il met en cache l'objet coroutine renvoyé par l'appel, pas son résultat. Or une coroutine ne peut être attendue qu'une seule fois, le deuxième `await` avec le même argument lève donc `RuntimeError: cannot reuse already awaited coroutine`.
+`@lru_cache` ne fonctionne pas avec une fonction `async` : il met en cache l'objet coroutine renvoyé par l'appel, pas son résultat. Or une coroutine ne peut être attendue qu'une seule fois. Le deuxième `await` avec le même argument lève donc `RuntimeError: cannot reuse already awaited coroutine`.
 
 ```python
 @lru_cache
@@ -249,7 +249,7 @@ Au sein d'un même processus, le cache est thread-safe : sa structure reste coh�
 
 ## Quelles fonctions mettre en cache
 
-Le cache ne convient qu'aux fonctions dont le résultat dépend uniquement de leurs arguments. Une fonction qui a des effets de bord (écriture en base, envoi d'un email, modification d'un fichier) ne serait exécutée qu'au premier appel, et une fonction qui dépend de l'heure ou du hasard renverrait toujours la même valeur. Attention aussi aux fonctions qui renvoient un objet modifiable, une liste par exemple : c'est le même objet qui est renvoyé à chaque appel, et le modifier modifie aussi la valeur en cache.
+Le cache ne convient qu'aux fonctions dont le résultat dépend uniquement de leurs arguments. Une fonction qui a des effets de bord (écriture en base, envoi d'un email, modification d'un fichier) ne serait exécutée qu'au premier appel, et une fonction qui dépend de l'heure ou du hasard renverrait toujours la même valeur. Attention aussi aux fonctions qui renvoient un objet modifiable, une liste par exemple : c'est le même objet qui est renvoyé à chaque appel, et toute modification de cet objet change aussi la valeur en cache.
 
 Voici trois situations où le cache est utile.
 
@@ -298,7 +298,7 @@ def compile_regex(pattern):
     return re.compile(pattern)
 ```
 
-Pour les expressions régulières, le module `re` applique d'ailleurs déjà ce principe : `re.compile` et les fonctions comme `re.search` gardent en cache les derniers motifs compilés (jusqu'à 512 en Python 3.13, valeur de la constante privée `re._MAXCACHE`). Appeler `re.compile` plusieurs fois avec le même motif coûte donc peu, et un `@lru_cache` comme celui-ci n'apporte quelque chose que si votre programme utilise plus de motifs différents que ce cache interne, partagé avec tout le reste du programme, ne peut en garder.
+Pour les expressions régulières, le module `re` applique d'ailleurs déjà ce principe : `re.compile` et les fonctions comme `re.search` gardent en cache les derniers motifs compilés (jusqu'à 512 en Python 3.13, valeur de la constante privée `re._MAXCACHE`). Appeler `re.compile` plusieurs fois avec le même motif coûte donc peu. Un `@lru_cache` comme celui-ci n'apporte quelque chose que si vous utilisez plus de motifs différents que ce cache interne ne peut en garder, sachant qu'il est partagé avec tout le reste du programme.
 
 ## Voir aussi
 

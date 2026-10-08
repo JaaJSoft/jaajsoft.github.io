@@ -9,7 +9,7 @@ tags:
 author: Pierre Chopinet
 ---
 
-Python 3.10 (octobre 2021) a introduit l'instruction `match`, qui ressemble au `switch` d'autres langages mais va plus loin : en plus de comparer des valeurs, elle sait déstructurer des listes, des dictionnaires ou des objets, et en extraire les champs dans la même ligne.
+Python 3.10 (octobre 2021) a introduit l'instruction `match`, qui ressemble au `switch` d'autres langages mais va plus loin : en plus de comparer des valeurs, elle sait déstructurer des listes, des dictionnaires ou des objets, et en extraire les champs en une seule ligne.
 <!--more-->
 
 Si vous avez déjà croisé le pattern matching en [Java]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %}), en Rust ou en OCaml, c'est la même idée : remplacer des chaînes de `if/elif` par des motifs qui décrivent la forme des données attendues.
@@ -63,7 +63,7 @@ def decrire(message):
             return "message inconnu"
 ```
 
-Chaque `case` décrit la forme du message attendu et extrait les champs dont on a besoin, sans `.get()` ni variables intermédiaires. Seule différence avec la première version : un message `echo` sans champ `data` tombe maintenant dans le cas par défaut, puisque le motif exige la présence de la clé.
+Chaque `case` décrit la forme du message attendu et extrait les champs dont on a besoin, sans `.get()` ni variables intermédiaires. Le comportement change un peu par rapport à la première version : un message `echo` sans champ `data`, ou un message `error` sans `code` ou sans `message`, tombe maintenant dans le cas par défaut, puisque le motif exige la présence des clés.
 
 ## Comparer des valeurs
 
@@ -106,7 +106,7 @@ def categorie_http(code):
 print(categorie_http(404))  # erreur client
 ```
 
-Notez que `match` est une instruction et non une expression : contrairement aux expressions `switch` de Java ou au `match` de Rust, il ne renvoie pas de valeur. On ne peut donc pas écrire `resultat = match x: ...`, d'où le `return` dans chaque `case` et le `match` placé dans une fonction, comme dans tous les exemples de cet article.
+Notez que `match` est une instruction et non une expression : contrairement aux expressions `switch` de Java ou au `match` de Rust, il ne renvoie pas de valeur. On ne peut donc pas écrire `resultat = match x: ...`, d'où le `return` dans chaque `case` et le `match` placé dans une fonction, comme dans la plupart des exemples de cet article.
 
 ## Capturer une valeur
 
@@ -219,7 +219,7 @@ print(quadrant(Point(-2, -5)))  # Q3
 
 Deux syntaxes sont possibles. La forme positionnelle, `Point(0, 0)`, s'appuie sur l'attribut `__match_args__` que `@dataclass` génère à partir de l'ordre des champs. La forme par mot-clé, `Point(x=0, y=_)`, est plus explicite et continue de fonctionner si l'ordre des attributs change : c'est celle à privilégier pour une classe qui a plus de deux ou trois attributs.
 
-Avec une classe classique, la forme par mot-clé fonctionne directement. Pour la forme positionnelle, il faut définir `__match_args__` soi-même, sinon Python lève une erreur `TypeError: Utilisateur() accepts 0 positional sub-patterns (2 given)` :
+Avec une classe ordinaire, la forme par mot-clé fonctionne directement. Pour la forme positionnelle, il faut définir `__match_args__` soi-même :
 
 ```python
 class Utilisateur:
@@ -239,6 +239,8 @@ def saluer(u):
 print(saluer(Utilisateur("Alice", "admin")))   # Bonjour Alice (admin)
 print(saluer(Utilisateur("Bob", "viewer")))    # Bonjour Bob
 ```
+
+Sans `__match_args__`, le motif `Utilisateur(nom, "admin")` provoquerait une erreur `TypeError: Utilisateur() accepts 0 positional sub-patterns (2 given)`.
 
 ## Imbriquer les motifs
 
@@ -433,7 +435,7 @@ print(evaluer(expression))  # 20
 
 ## Quand préférer un `if`
 
-`match` est intéressant quand il faut à la fois vérifier la forme des données et en extraire des valeurs : documents JSON, messages, arbres, hiérarchies de dataclasses ou d'Enum. Pour comparer une variable à deux ou trois valeurs, un `if/elif` reste plus lisible, de même quand les conditions sont des expressions qui ne rentrent pas dans un motif. Si vos `case` se contentent d'appeler une méthode différente selon le type de l'objet, le polymorphisme classique (une méthode redéfinie dans chaque classe) est souvent plus adapté. Enfin, `match` n'existe pas avant Python 3.10 : à éviter si votre code doit tourner sur une version plus ancienne.
+`match` est intéressant quand il faut à la fois vérifier la forme des données et en extraire des valeurs : documents JSON, messages, arbres, hiérarchies de dataclasses ou d'Enum. Pour comparer une variable à deux ou trois valeurs, ou quand les conditions sont des expressions qui ne rentrent pas dans un motif, un `if/elif` reste plus lisible. Si vos `case` se contentent d'appeler une méthode différente selon le type de l'objet, le polymorphisme classique (une méthode redéfinie dans chaque classe) est souvent plus adapté. Enfin, `match` n'existe pas avant Python 3.10 : à éviter si votre code doit tourner sur une version plus ancienne.
 
 ## Voir aussi
 

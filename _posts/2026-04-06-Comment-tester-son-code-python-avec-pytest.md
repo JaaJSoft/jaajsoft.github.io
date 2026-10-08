@@ -10,9 +10,9 @@ author: Pierre Chopinet
 ---
 
 Des tests automatisés permettent de vérifier que son code fait ce qu'on attend,
-et qu'il continue à le faire après chaque modification. Dans ce tutoriel, vous
-allez apprendre à écrire et exécuter des tests en Python avec pytest, le
-framework de test le plus populaire de l'écosystème Python.
+et qu'il continue à le faire après chaque modification. En Python, le framework
+de test le plus populaire est pytest, et c'est lui que nous allons utiliser dans
+ce tutoriel.
 <!--more-->
 
 pytest se distingue par sa simplicité d'utilisation : pas besoin de classes,
@@ -20,13 +20,13 @@ pas de boilerplate, il suffit d'écrire des fonctions dont le nom commence par
 `test_` et d'utiliser le mot-clé `assert` de Python. Il propose aussi des
 fixtures, le paramétrage des tests et de nombreux plugins.
 
-L'objectif de ce tutoriel est d'apprendre comment :
+L'objectif de ce tutoriel est d'apprendre à :
 
-- Écrire et exécuter des tests avec pytest
-- Organiser ses fichiers de test dans un projet
-- Utiliser les fixtures pour préparer des données de test
-- Paramétrer ses tests pour couvrir plusieurs cas
-- Vérifier qu'une fonction lève bien une exception
+- écrire et exécuter des tests avec pytest
+- organiser ses fichiers de test dans un projet
+- utiliser les fixtures pour préparer des données de test
+- paramétrer ses tests pour couvrir plusieurs cas
+- vérifier qu'une fonction lève bien une exception
 
 ## Installation
 
@@ -70,7 +70,7 @@ def test_addition():
     assert addition(1, 2) == 3
 ```
 
-C'est tout. Pas de classe à hériter, pas de méthode spéciale à appeler. On
+C'est tout. Pas de classe dont hériter, pas de méthode spéciale à appeler. On
 importe la fonction, on l'appelle, et on vérifie le résultat avec `assert`.
 
 Pour lancer le test :
@@ -264,15 +264,15 @@ test_calcul.py::test_addition[0.1-0.2-attendu4] PASSED                   [100%]
 Notez l'utilisation de `pytest.approx(0.3)` pour le dernier cas. En raison de
 la représentation des nombres en virgule flottante, `0.1 + 0.2` ne donne pas
 exactement `0.3` en Python, mais `0.30000000000000004`. `pytest.approx` compare
-avec une petite tolérance. C'est aussi pour ça que le dernier identifiant
-affiche `attendu4` : pour un objet comme `approx`, pytest construit l'identifiant
-à partir du nom du paramètre et de l'indice du cas, plutôt qu'à partir de la
-valeur.
+avec une petite tolérance. C'est aussi à cause de `approx` que le dernier
+identifiant affiche `attendu4` : pour un objet comme celui-ci, pytest construit
+l'identifiant à partir du nom du paramètre et de l'indice du cas, plutôt qu'à
+partir de la valeur.
 
 ## Tester les exceptions
 
 Parfois, on veut vérifier qu'une fonction lève bien une exception dans certains
-cas. Par exemple, si on a une fonction de division :
+cas. Prenons par exemple une fonction de division :
 
 ```python
 def division(a, b):
@@ -296,16 +296,15 @@ def test_division_normale():
 ```
 
 Le `with pytest.raises(ValueError)` vérifie que le bloc lève bien une
-`ValueError`. Le paramètre `match` est optionnel et permet de vérifier que le
-message de l'exception correspond au pattern donné (c'est une expression
-régulière).
+`ValueError`. Le paramètre `match` est optionnel : il s'assure en plus que le
+message de l'exception correspond à l'expression régulière donnée.
 
 ## Fichier conftest.py
 
 Quand on a des fixtures utilisées par plusieurs fichiers de test, on peut les
 placer dans un fichier spécial appelé `conftest.py`. pytest le découvre
 automatiquement et rend les fixtures disponibles pour tous les tests du même
-dossier (et ses sous-dossiers).
+dossier et de ses sous-dossiers.
 
 ```text
 tests/

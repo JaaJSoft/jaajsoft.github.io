@@ -10,7 +10,7 @@ tags:
 author: Pierre Chopinet
 ---
 
-Un décorateur permet d'ajouter un comportement à une fonction (afficher un log, mesurer sa durée, vérifier des droits...) sans toucher à son code. Si vous avez déjà écrit `@staticmethod`, `@property` ou `@app.route("/")` avec Flask, vous en avez déjà utilisé : nous allons voir comment ils fonctionnent, puis comment écrire les vôtres.
+Un décorateur permet d'ajouter un comportement à une fonction (afficher un log, mesurer sa durée, vérifier des droits...) sans toucher à son code. Si vous avez déjà écrit `@staticmethod`, `@property` ou `@app.route("/")` avec Flask, vous en avez utilisé. Nous allons voir comment ils fonctionnent, puis comment écrire les vôtres.
 <!--more-->
 
 Dans cet article :
@@ -146,7 +146,7 @@ print(dire_bonjour.__name__)  # dire_bonjour
 print(dire_bonjour.__doc__)   # Salue une personne par son nom.
 ```
 
-`wraps` ajoute aussi un attribut `__wrapped__` qui pointe vers la fonction d'origine : `dire_bonjour.__wrapped__("Alice")` l'appelle sans passer par le décorateur. Prenez l'habitude de le mettre dans tous vos décorateurs, c'est ce que font les exemples suivants.
+`wraps` ajoute aussi un attribut `__wrapped__` qui pointe vers la fonction d'origine : `dire_bonjour.__wrapped__("Alice")` l'appelle sans passer par le décorateur. Prenez l'habitude de mettre `@wraps(func)` dans tous vos décorateurs, comme dans les exemples suivants.
 
 ## Mesurer le temps d'exécution
 
@@ -305,7 +305,7 @@ Ici, le `wrapper` attend l'utilisateur en premier argument : ce décorateur ne s
 
 ## Empiler des décorateurs
 
-On peut appliquer plusieurs décorateurs à une même fonction. Ils sont appliqués de bas en haut, en commençant par le plus proche de la fonction :
+On peut empiler plusieurs décorateurs sur une même fonction. Ils sont appliqués de bas en haut, en commençant par le plus proche de la fonction :
 
 ```python
 @timer
