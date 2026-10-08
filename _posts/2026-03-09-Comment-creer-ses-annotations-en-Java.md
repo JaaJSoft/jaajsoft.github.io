@@ -25,7 +25,7 @@ Pré-requis : Java 16 ou plus récent pour certains exemples (`instanceof` avec 
 
 ## Déclarer une annotation
 
-Une annotation est une métadonnée attachée au code : elle ne change rien au comportement du programme tant que personne ne la lit. Celles que l'on croise le plus souvent sont lues par le compilateur :
+Une annotation est une métadonnée attachée au code : elle ne change rien au comportement du programme tant que personne ne la lit. Celles du JDK que l'on croise le plus souvent sont lues par le compilateur :
 
 ```java
 @Override  // Vérifie que la méthode redéfinit bien une méthode parente
@@ -95,22 +95,22 @@ public @interface NotEmpty {}
 
 Les valeurs possibles de `ElementType` :
 
-| Valeur             | Cible                                               |
-|--------------------|-----------------------------------------------------|
-| `TYPE`             | Classe, interface (annotations comprises), enum, record |
-| `FIELD`            | Champ, y compris les constantes d'un enum           |
-| `METHOD`           | Méthode                                             |
-| `PARAMETER`        | Paramètre de méthode                                |
-| `CONSTRUCTOR`      | Constructeur                                        |
-| `LOCAL_VARIABLE`   | Variable locale                                     |
-| `ANNOTATION_TYPE`  | Déclaration d'une autre annotation                  |
-| `PACKAGE`          | Déclaration de package                              |
-| `TYPE_PARAMETER`   | Paramètre de type générique (Java 8+)               |
-| `TYPE_USE`         | Utilisation d'un type (Java 8+)                     |
-| `MODULE`           | Déclaration de module (Java 9+)                     |
-| `RECORD_COMPONENT` | Composant de record (Java 16+)                      |
+| Valeur             | Cible                                                    |
+|--------------------|----------------------------------------------------------|
+| `TYPE`             | Classe, interface (annotations comprises), enum ou record |
+| `FIELD`            | Champ (constantes d'enum comprises)                      |
+| `METHOD`           | Méthode                                                  |
+| `PARAMETER`        | Paramètre de méthode                                     |
+| `CONSTRUCTOR`      | Constructeur                                             |
+| `LOCAL_VARIABLE`   | Variable locale                                          |
+| `ANNOTATION_TYPE`  | Annotation                                               |
+| `PACKAGE`          | Package                                                  |
+| `TYPE_PARAMETER`   | Paramètre de type générique (Java 8+)                    |
+| `TYPE_USE`         | Utilisation d'un type (Java 8+)                          |
+| `MODULE`           | Module (Java 9+)                                         |
+| `RECORD_COMPONENT` | Composant de record (Java 16+)                           |
 
-Sans `@Target`, l'annotation peut être placée sur n'importe quelle déclaration. Avec, le compilateur refuse tout autre emplacement avec l'erreur `annotation interface not applicable to this kind of declaration`. `ANNOTATION_TYPE` sert à écrire des méta-annotations : c'est avec `@Target(ElementType.ANNOTATION_TYPE)` que sont déclarées `@Retention` et `@Target` elles-mêmes dans le JDK.
+Sans `@Target`, l'annotation peut être placée sur n'importe quelle déclaration. Avec `@Target`, tout emplacement non prévu provoque l'erreur de compilation `annotation interface not applicable to this kind of declaration`. `ANNOTATION_TYPE` sert à écrire des méta-annotations : c'est avec `@Target(ElementType.ANNOTATION_TYPE)` que sont déclarées `@Retention` et `@Target` elles-mêmes dans le JDK.
 
 ### @Documented
 
@@ -192,7 +192,7 @@ USER
 
 ## Les paramètres d'une annotation
 
-Une annotation peut déclarer des éléments, qui s'écrivent comme des méthodes sans paramètre, avec une valeur par défaut optionnelle :
+Les paramètres d'une annotation s'appellent des éléments. Ils se déclarent comme des méthodes sans paramètre, avec une valeur par défaut optionnelle :
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -215,13 +215,15 @@ Un élément sans valeur par défaut est obligatoire : `@RateLimit` tout seul ne
 
 Le type d'un élément est limité à :
 - un type primitif (`int`, `long`, `double`, `boolean`...)
-- `String`
-- `Class<?>` ou `Class<? extends T>`
+- la classe `String`
+- la classe `Class` (`Class<?>` ou `Class<? extends T>`)
 - un enum
 - une autre annotation
 - un tableau d'un des types précédents
 
-Un `Integer` ou une `List<String>` donnent l'erreur `invalid type for annotation interface element`. Les valeurs doivent en plus être des constantes connues à la compilation, ce qui exclut `null` : `String value() default null;` ne compile pas (`element value must be a constant expression`). On utilise à la place une valeur conventionnelle, comme la chaîne vide dans l'exemple `@JsonField` plus bas.
+Un élément de type `Integer` ou `List<String>` provoque l'erreur `invalid type for annotation interface element`. Les valeurs doivent en plus être des constantes connues à la compilation, ce qui exclut `null` : `String value() default null;` ne compile pas (`element value must be a constant expression`). On utilise à la place une valeur conventionnelle, comme la chaîne vide dans l'exemple `@JsonField` plus bas.
+
+Voici une annotation qui combine plusieurs des types autorisés :
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -235,7 +237,7 @@ public @interface Entity {
 }
 ```
 
-Quand l'annotation n'a qu'un élément nommé `value`, son nom peut être omis à l'utilisation : `@Column("user_name")` revient à écrire `@Column(value = "user_name")`. Ça fonctionne aussi si les autres éléments ont une valeur par défaut :
+Quand l'annotation n'a qu'un seul élément et qu'il s'appelle `value`, on peut omettre `value =` à l'utilisation : `@Column("user_name")` revient à écrire `@Column(value = "user_name")`. Ça fonctionne aussi quand les autres éléments ont une valeur par défaut :
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -273,7 +275,7 @@ System.out.println(saveMethod.isAnnotationPresent(Transactional.class));  // tru
 System.out.println(findMethod.isAnnotationPresent(Transactional.class));  // false
 ```
 
-`getAnnotation()` renvoie l'annotation elle-même, ce qui donne accès à ses paramètres :
+`getAnnotation()` renvoie l'annotation elle-même, ce qui donne accès à la valeur de ses éléments :
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -311,7 +313,7 @@ List<Method> transactionalMethods = findAnnotatedMethods(UserService.class, Tran
 transactionalMethods.forEach(m -> System.out.println(m.getName()));  // save
 ```
 
-Attention, `getDeclaredMethods()` ne renvoie pas les méthodes dans un ordre garanti. Avec deux méthodes annotées, `save` puis `delete`, Java 21 renvoie ici `delete` en premier et Java 25 `save`. Si l'ordre compte, il faut trier le résultat.
+Attention, `getDeclaredMethods()` ne renvoie pas les méthodes dans un ordre garanti. Avec une deuxième méthode annotée, `delete`, déclarée après `save`, Java 21 renvoie ici `delete` en premier et Java 25 `save`. Si l'ordre compte, il faut trier le résultat.
 
 Les champs se lisent de la même façon. Voici une sérialisation très simplifiée, qui ne garde que les champs annotés `@JsonField` et permet de renommer la clé :
 
@@ -365,7 +367,7 @@ System.out.println(serialize(new User("Alice", "alice@mail.com", 30)));
 
 `setAccessible(true)` permet de lire les champs `private`. Les champs sortent ici dans l'ordre de leur déclaration, mais comme pour les méthodes, la Javadoc de `getDeclaredFields()` ne le garantit pas.
 
-Ces appels de réflexion ont un coût. Ce n'est pas gênant pour du code exécuté une fois au démarrage, mais si la lecture des annotations se fait à chaque appel, mieux vaut garder le résultat de côté, par exemple dans une `Map` par classe.
+Ces appels de réflexion ont un coût. Ce n'est pas gênant pour du code exécuté une fois au démarrage, mais si la lecture des annotations se fait à chaque appel, mieux vaut garder le résultat de côté, par exemple dans une `Map` indexée par classe.
 
 ## Un mini-framework de validation
 
@@ -487,7 +489,7 @@ age : Valeur hors limites [18-120]
 
 ## Tracer les appels avec un proxy
 
-Un proxy dynamique (`java.lang.reflect.Proxy`) intercepte tous les appels faits à travers une interface. Combiné à une annotation, il permet d'ajouter un comportement aux seules méthodes annotées. Ici, `@Audited` écrit une ligne de log à chaque appel :
+Un proxy dynamique (`java.lang.reflect.Proxy`) intercepte tous les appels faits à travers une interface. Combiné à une annotation, il permet d'ajouter un comportement aux seules méthodes annotées. Ici, le proxy écrit une ligne de log à chaque appel d'une méthode annotée `@Audited` :
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -650,7 +652,7 @@ public class BuilderProcessor extends AbstractProcessor {
 }
 ```
 
-La rétention `SOURCE` suffit pour `@Builder` : le processeur travaille sur le code source, l'annotation n'a pas besoin d'aller plus loin. `@SupportedAnnotationTypes` indique l'annotation traitée, et `process()` renvoie `true` pour la réclamer : les autres processeurs ne la recevront pas.
+La rétention `SOURCE` suffit pour `@Builder` : le processeur travaille sur le code source, l'annotation n'a pas besoin d'aller plus loin. `@SupportedAnnotationTypes` indique l'annotation traitée. En renvoyant `true`, `process()` se l'approprie : les autres processeurs ne la recevront pas.
 
 Pour la version de Java supportée, on trouve souvent `@SupportedSourceVersion(SourceVersion.RELEASE_17)`. Le problème, c'est que `javac` affiche alors un avertissement dès qu'on compile pour une version plus récente : `Supported source version 'RELEASE_17' from annotation processor 'com.example.BuilderProcessor' less than -source '21'`. Redéfinir `getSupportedSourceVersion()` pour renvoyer `SourceVersion.latestSupported()` évite ce message.
 
@@ -692,7 +694,7 @@ public class Vide {
 
 Attention à l'option `-processorpath`. Jusqu'à Java 22, `javac` exécutait aussi les processeurs trouvés sur le simple classpath (Java 21 affiche une note qui annonce que ça va changer). Depuis Java 23, ce n'est plus le cas : sans `-processorpath` (ou `--processor-path`), `-processor` ou `-proc:full`, le processeur est ignoré, sans aucun message.
 
-Avec Maven, le processeur se déclare dans `annotationProcessorPaths` (testé avec le `maven-compiler-plugin` 3.13.0). Il doit aussi être déclaré comme dépendance, en scope `provided`, pour que `@Builder` soit visible dans le code :
+Avec Maven, le processeur se déclare dans `annotationProcessorPaths` (testé avec le `maven-compiler-plugin` 3.13.0) :
 
 ```xml
 <plugin>
@@ -710,6 +712,8 @@ Avec Maven, le processeur se déclare dans `annotationProcessorPaths` (testé av
   </configuration>
 </plugin>
 ```
+
+Il doit aussi être déclaré comme dépendance, en scope `provided`, pour que `@Builder` soit visible dans le code.
 
 Voilà, vous savez maintenant déclarer vos annotations et les exploiter, à l'exécution comme à la compilation.
 

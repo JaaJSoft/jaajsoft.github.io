@@ -10,7 +10,7 @@ tags:
   - functional
 ---
 
-L'API Stream, arrivée avec Java 8, permet d'enchaîner des traitements sur une collection (filtrer, transformer, trier, agréger) sans écrire la boucle soi-même. Dans ce tutoriel, nous allons voir comment créer un Stream, les opérations que l'on utilise le plus, et les quelques comportements qui surprennent la première fois.
+L'API Stream, arrivée avec Java 8, permet d'enchaîner des traitements sur une collection (filtrer, transformer, trier, agréger) sans écrire la boucle soi-même. Dans ce tutoriel, nous allons voir comment créer un Stream, puis les opérations les plus utilisées et les quelques comportements qui surprennent la première fois.
 <!--more-->
 
 Dans cet article :
@@ -41,6 +41,8 @@ System.out.println(resultat); // [ALICE, CHARLIE, DAVID]
 ```
 
 On garde les noms de plus de 3 caractères, on les met en majuscules, puis on les trie. Avec une boucle, il aurait fallu une liste intermédiaire, un `if` et un appel à `sort`.
+
+Un Stream ne rend pas pour autant le code plus rapide. Sur une petite collection et un traitement simple, une boucle `for` fait aussi bien, voire un peu mieux. L'intérêt des Streams est la lisibilité quand plusieurs traitements s'enchaînent.
 
 La source n'est pas modifiée : `noms` contient toujours ses cinq prénoms, le résultat est une nouvelle liste. Un Stream peut aussi être infini (on le verra avec `Stream.generate()`), et surtout, il est paresseux.
 
@@ -87,8 +89,6 @@ stream.forEach(System.out::println); // IllegalStateException
 ```
 
 Le message est explicite : `stream has already been operated upon or closed`. Pour refaire un traitement, on crée un nouveau Stream à partir de la source.
-
-Enfin, un Stream ne rend pas le code plus rapide. Sur une petite collection et un traitement simple, une boucle `for` fait aussi bien, voire un peu mieux. L'intérêt des Streams est la lisibilité quand plusieurs traitements s'enchaînent.
 
 ## Créer un Stream
 
@@ -271,7 +271,7 @@ List<String> inverse = noms.stream()
 // [Charlie, Bob, Alice]
 ```
 
-Pour trier, `sorted()` doit d'abord récupérer tous les éléments. Sur un Stream infini, il attend donc indéfiniment, jusqu'au `OutOfMemoryError`. L'ordre des opérations compte :
+Pour trier, `sorted()` doit d'abord récupérer tous les éléments. Sur un Stream infini, il attend donc indéfiniment, jusqu'à l'`OutOfMemoryError`. L'ordre des opérations compte :
 
 ```java
 // À éviter : sorted sur un Stream infini
@@ -417,7 +417,7 @@ Map<Character, String> parInitiale = noms.stream()
 // {A=Alice, Amy, B=Bob}
 ```
 
-### toList() : le raccourci de Java 16
+### toList() : obtenir une liste directement
 
 Depuis Java 16, `toList()` remplace `collect(Collectors.toList())` dans la plupart des cas :
 
@@ -435,7 +435,7 @@ List<String> liste = noms.stream()
 
 Les deux ne sont pas tout à fait équivalents. La liste renvoyée par `toList()` est non modifiable : un `add()` lève une `UnsupportedOperationException`. Celle de `Collectors.toList()` est aujourd'hui une `ArrayList`, mais sa Javadoc ne garantit rien sur son type ni sur le fait qu'elle soit modifiable. Si vous avez besoin d'une liste modifiable, demandez-la explicitement avec `Collectors.toCollection(ArrayList::new)`.
 
-### Les Collectors utiles
+### D'autres Collectors : joindre, compter, grouper
 
 ```java
 List<String> noms = List.of("Alice", "Bob", "Charlie", "Alice");
@@ -466,7 +466,7 @@ Map<Boolean, List<String>> partition = noms.stream()
 // {false=[Bob], true=[Alice, Charlie, Alice]}
 ```
 
-`groupingBy()` mériterait un article à lui seul, ça tombe bien, il y en a un : [Java : Comment faire des group by]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %}).
+`groupingBy()` mériterait un article à lui seul. Ça tombe bien, il y en a un : [Java : Comment faire des group by]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %}).
 
 ### forEach() : exécuter une action
 
@@ -489,7 +489,7 @@ noms.stream()
     .forEach(n -> noms.remove(n));
 ```
 
-On s'attendrait à une `ConcurrentModificationException`, mais ce code lève une `NullPointerException`, alors qu'`Alice` et `Charlie` ont déjà été supprimées de la liste. Le Stream continue de lire le tableau interne de l'`ArrayList` jusqu'à sa taille de départ : après les suppressions, il tombe sur une case vide, et le filtre reçoit `null`. Sans ce `null`, on aurait eu une `ConcurrentModificationException` à la fin du parcours. La documentation du package `java.util.stream` prévient d'ailleurs que modifier la source pendant l'exécution d'un pipeline peut provoquer des exceptions ou des résultats faux.
+On s'attendrait à une `ConcurrentModificationException`, mais ce code lève une `NullPointerException`, une fois `Alice` et `Charlie` supprimées de la liste. Le Stream continue de lire le tableau interne de l'`ArrayList` jusqu'à sa taille de départ : après les suppressions, il tombe sur une case vide, et le filtre reçoit `null`. Sans ce `null`, on aurait eu une `ConcurrentModificationException` à la fin du parcours. La documentation du package `java.util.stream` prévient d'ailleurs que modifier la source pendant l'exécution d'un pipeline peut provoquer des exceptions ou des résultats faux.
 
 Pour supprimer des éléments d'une collection selon une condition, il y a plus simple :
 
@@ -522,9 +522,9 @@ Optional<Integer> max = nombres.stream()
 // Optional[5]
 ```
 
-Sans valeur initiale, le Stream peut être vide, d'où l'`Optional`. Pour concaténer des chaînes, `Collectors.joining()` est plus adapté que `reduce()`.
+Sans valeur initiale, il n'y a pas de résultat quand le Stream est vide, d'où l'`Optional`. Pour concaténer des chaînes, `Collectors.joining()` est plus adapté que `reduce()`.
 
-### count(), min() et max()
+### count(), min() et max() : compter et trouver les extrêmes
 
 ```java
 List<Integer> nombres = List.of(3, 1, 4, 1, 5, 9, 2, 6);
@@ -534,7 +534,7 @@ Optional<Integer> min = nombres.stream().min(Integer::compare); // Optional[1]
 Optional<Integer> max = nombres.stream().max(Integer::compare); // Optional[9]
 ```
 
-### findFirst() et findAny()
+### findFirst() et findAny() : récupérer un élément
 
 ```java
 List<String> noms = List.of("Alice", "Bob", "Charlie");
@@ -550,7 +550,7 @@ Optional<String> nimporte = noms.stream()
 // Optional[Alice] (non déterministe en parallèle)
 ```
 
-### anyMatch(), allMatch() et noneMatch()
+### anyMatch(), allMatch() et noneMatch() : tester une condition
 
 ```java
 List<Integer> nombres = List.of(2, 4, 6, 8);
@@ -616,7 +616,7 @@ List<Integer> liste = IntStream.rangeClosed(1, 5)
 
 ## Traiter une liste de produits
 
-Pour finir, voici un exemple plus proche d'un vrai traitement, sur une liste de produits :
+Voici maintenant un exemple plus proche d'un vrai traitement, sur une liste de produits :
 
 ```java
 record Produit(String nom, String categorie, double prix, int stock) {}
@@ -674,7 +674,7 @@ Valeur totale du stock : 88294.90 EUR
 {Livres=39.99666666666667, Électronique=364.99}
 ```
 
-Un dictionnaire nom -> prix des produits en stock, et le produit le moins cher :
+Une `Map` nom -> prix des produits en stock, et le produit le moins cher :
 
 ```java
 Map<String, Double> catalogue = produits.stream()
@@ -706,7 +706,7 @@ Stream<Integer> parallel = nombres.parallelStream();
 Stream<Integer> parallel2 = nombres.stream().parallel();
 ```
 
-Ce n'est pas toujours plus rapide : découper le travail et rassembler les résultats a un coût. Un Stream parallèle devient intéressant quand il y a beaucoup d'éléments (des dizaines de milliers au moins), que le traitement de chaque élément coûte cher, que la source se découpe bien (une `ArrayList`, un tableau, un `IntStream.range()`), et que le traitement n'a pas d'effet de bord. Compter les nombres premiers jusqu'à 10 millions est un bon candidat :
+Ce n'est pas toujours plus rapide : découper le travail et rassembler les résultats a un coût. Un Stream parallèle devient intéressant quand il y a beaucoup d'éléments (des dizaines de milliers au moins) et que le traitement de chaque élément coûte cher. Il faut aussi que la source se découpe bien (une `ArrayList`, un tableau, un `IntStream.range()`), et que le traitement n'ait pas d'effet de bord. Compter les nombres premiers jusqu'à 10 millions est un bon candidat :
 
 ```java
 static boolean estPremier(int n) {

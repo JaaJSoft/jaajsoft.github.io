@@ -130,9 +130,9 @@ public static String describe(Season season) {
 }
 ```
 
-Si on oublie `WINTER`, la compilation échoue avec `the switch expression does not cover all possible input values`. C'est un vrai avantage le jour où on ajoute une constante : le compilateur indique tous les `switch` à compléter.
+Si on oublie `WINTER`, la compilation échoue avec `the switch expression does not cover all possible input values`. C'est un vrai avantage le jour où on ajoute une constante : le compilateur indique toutes les switch expressions à compléter.
 
-Attention, cette vérification ne concerne que les switch expressions. Un `switch` utilisé comme instruction (qui ne renvoie pas de valeur), avec des `case X:` ou des `case X ->`, peut ignorer des constantes sans que le compilateur ne dise rien : pour `WINTER`, il ne fait simplement rien.
+Attention, ce n'est pas le cas d'un `switch` utilisé comme instruction (qui ne renvoie pas de valeur). Avec des `case X:` ou des `case X ->`, il peut ignorer des constantes sans aucune erreur de compilation : pour `WINTER`, il ne fait simplement rien.
 
 ## Ajouter des champs et un constructeur
 
@@ -191,7 +191,7 @@ Poids sur URANUS : 665.4 N
 Poids sur NEPTUNE : 836.9 N
 ```
 
-Le constructeur d'un enum est toujours privé, même sans le mot-clé `private` : seules les constantes déclarées dans l'enum peuvent l'appeler. Les champs sont en général `final`. Une constante est partagée par toute l'application, la modifier reviendrait à modifier une variable globale.
+Le constructeur d'un enum est toujours privé, même sans le mot-clé `private` : seules les constantes déclarées dans l'enum peuvent l'appeler. Les champs sont en général `final`, car une constante est partagée par toute l'application : modifier ses champs reviendrait à modifier une variable globale.
 
 ## Implémenter une interface
 

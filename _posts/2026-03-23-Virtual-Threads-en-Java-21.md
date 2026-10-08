@@ -10,7 +10,7 @@ tags:
   - performance
 ---
 
-Dans un serveur Java classique, chaque requête occupe un thread du début à la fin, y compris pendant qu'elle attend la base de données. Ces threads coûtent cher, on les limite donc avec un pool, et c'est souvent ce pool qui fixe le nombre de requêtes traitées en même temps. Les virtual threads, finalisés en Java 21, permettent de garder ce code bloquant tout simple tout en ayant un thread par tâche, même avec des dizaines de milliers de tâches.
+Dans un serveur Java classique, chaque requête occupe un thread du début à la fin, y compris pendant qu'elle attend la base de données. Ces threads coûtent cher, on les limite donc avec un pool, et c'est souvent ce pool qui fixe le nombre de requêtes traitées en même temps. Les virtual threads, finalisés en Java 21, permettent de continuer à écrire du code bloquant tout simple, avec un thread par tâche, même quand il y en a des dizaines de milliers.
 <!--more-->
 
 Dans cet article :
@@ -28,7 +28,7 @@ Pré-requis : Java 21 ou plus récent. Les virtual threads ont été en preview 
 
 ## Un thread par requête
 
-Dans le modèle *thread-per-request*, chaque requête HTTP occupe un thread pendant toute sa durée, y compris quand elle attend une réponse du réseau ou de la base de données :
+Dans le modèle *thread-per-request*, chaque requête garde son thread jusqu'à la réponse. Avec un pool de threads, cela donne :
 
 ```java
 // Modèle classique : un platform thread par requête
@@ -51,7 +51,7 @@ Un thread Java classique, qu'on appelle maintenant *platform thread*, est une en
 
 Les threads de ce test ont une pile presque vide, alors qu'un thread qui traverse toutes les couches d'un framework web en utilise beaucoup plus. Avec des platform threads, on se limite donc en général à quelques centaines ou quelques milliers de threads. Et ce n'est pas le processeur qui plafonne : pendant les entrées/sorties, il n'a rien à faire.
 
-Avant Java 21, pour dépasser cette limite, il fallait passer à la programmation asynchrone (`CompletableFuture`, Reactor, RxJava) ou à un framework à boucle d'événements (Netty, Vert.x). C'est très efficace, mais le code ne s'écrit plus du tout de la même façon, et les piles d'appels deviennent difficiles à lire quand il faut déboguer. Les virtual threads gardent le code bloquant habituel, sans le coût des platform threads.
+Avant Java 21, pour dépasser cette limite, il fallait passer à la programmation asynchrone (`CompletableFuture`, Reactor, RxJava) ou à un framework à boucle d'événements (Netty, Vert.x). C'est très efficace, mais le code ne s'écrit plus du tout de la même façon, et les piles d'appels deviennent difficiles à lire quand il faut déboguer. Avec les virtual threads, on garde le code bloquant habituel, sans le coût des platform threads.
 
 ## Le fonctionnement des virtual threads
 
@@ -72,14 +72,14 @@ Le plus direct est `Thread.startVirtualThread` :
 
 ```java
 Thread vt = Thread.startVirtualThread(() -> {
-    System.out.println("Je tourne sur un Virtual Thread : " + Thread.currentThread());
+    System.out.println("Je tourne sur un virtual thread : " + Thread.currentThread());
 });
 
 vt.join();  // Attendre la fin
 ```
 
 ```
-Je tourne sur un Virtual Thread : VirtualThread[#19]/runnable@ForkJoinPool-1-worker-1
+Je tourne sur un virtual thread : VirtualThread[#19]/runnable@ForkJoinPool-1-worker-1
 ```
 
 Le `toString()` indique le carrier sur lequel le virtual thread est monté (`ForkJoinPool-1-worker-1`). Le `join()` n'est pas là que pour l'exemple : les virtual threads sont toujours des threads démons, la JVM n'attend pas qu'ils se terminent pour s'arrêter.
@@ -91,14 +91,14 @@ Thread vt = Thread.ofVirtual()
     .name("worker-", 0)  // Nommage avec compteur : worker-0, worker-1...
     .uncaughtExceptionHandler((t, e) -> System.err.println(t.getName() + " : " + e))
     .start(() -> {
-        System.out.println("Virtual Thread nommé : " + Thread.currentThread().getName());
+        System.out.println("Virtual thread nommé : " + Thread.currentThread().getName());
     });
 
 vt.join();
 ```
 
 ```
-Virtual Thread nommé : worker-0
+Virtual thread nommé : worker-0
 ```
 
 En pratique, on passe surtout par un `ExecutorService`. `Executors.newVirtualThreadPerTaskExecutor()` crée un nouveau virtual thread pour chaque tâche soumise :
@@ -123,7 +123,7 @@ try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
 }
 ```
 
-Le `try` avec ressource attend la fin de toutes les tâches à la fermeture de l'executor (`ExecutorService` est `AutoCloseable` depuis Java 19). Ces 10 000 tâches dorment chacune une seconde, et le programme se termine en 1,1 s environ sur la VM de test, car un virtual thread endormi ne bloque aucun carrier. Avec `Executors.newFixedThreadPool(200)`, il faut 50 s : les tâches passent 200 par 200. Avec `Executors.newCachedThreadPool()`, qui crée un platform thread par tâche, il faut 4,8 s, passées surtout à créer les 10 000 threads.
+Le `try` avec ressource attend la fin de toutes les tâches à la fermeture de l'executor (`ExecutorService` est `AutoCloseable` depuis Java 19). Ces 10 000 tâches dorment chacune une seconde, et le programme se termine en 1,1 s environ sur la VM de test, car un virtual thread endormi ne bloque aucun carrier. Avec `Executors.newFixedThreadPool(200)`, il faut 50 s : les tâches passent 200 par 200. Avec `Executors.newCachedThreadPool()`, qui crée un nouveau platform thread dès qu'aucun n'est libre, il faut 4,8 s, passées surtout à créer puis à arrêter environ 6 000 threads.
 
 Enfin, pour du code existant qui attend une `ThreadFactory`, `Thread.ofVirtual().factory()` en fournit une :
 
@@ -202,7 +202,7 @@ ProductInfo fetchProductInfo(String productId) throws Exception {
 
 Avec un `callApi` qui simule un appel de 200 ms, la méthode répond en 260 ms environ, au lieu de 800 ms pour quatre appels à la suite. Créer quatre threads à chaque appel ne pose aucun problème avec des virtual threads, alors qu'avec des platform threads, il faudrait partager un pool et le dimensionner avec soin.
 
-Par contre, ce code a un défaut : si l'appel du prix échoue, `priceFuture.get()` lève une exception, mais les autres appels continuent de tourner, et la fermeture de l'executor attend qu'ils se terminent. C'est ce que règle la *structured concurrency* (`StructuredTaskScope`), qui interrompt les autres sous-tâches dès que l'une d'elles échoue. Elle n'est qu'en preview dans Java 21 (JEP 453), et l'est toujours dans Java 25, avec une API qui a beaucoup changé entre-temps : à réserver aux essais, avec l'option `--enable-preview`.
+Par contre, ce code a un défaut : si l'appel du prix échoue, `priceFuture.get()` lève une exception, mais les autres appels continuent de tourner, et la fermeture de l'executor attend qu'ils se terminent. C'est ce que règle la *structured concurrency* (`StructuredTaskScope`), qui interrompt les autres sous-tâches dès que l'une d'elles échoue. Elle n'est qu'en preview dans Java 21 (JEP 453) et l'est toujours dans Java 25, avec une API qui a beaucoup changé entre-temps. Elle est donc à réserver aux essais, avec l'option `--enable-preview`.
 
 ## Migrer du code existant
 
@@ -243,7 +243,7 @@ String interrogerBase(String requete) throws InterruptedException {
 }
 ```
 
-Toutes les applications ne gagnent pas à migrer : ce sont les traitements qui attendent beaucoup, avec beaucoup de concurrence (serveur web, appels HTTP, accès aux bases de données), qui en profitent.
+Toutes les applications ne gagnent pas à migrer : ce sont les traitements qui attendent beaucoup, avec de nombreuses tâches simultanées (serveur web, appels HTTP, accès aux bases de données), qui en profitent.
 
 ### Spring Boot
 
@@ -264,7 +264,7 @@ Le code bloquant habituel fonctionne sans modification sur un virtual thread : `
 
 En Java 21, un virtual thread ne peut pas être démonté de son carrier dans deux cas : quand il exécute du code dans un bloc ou une méthode `synchronized`, et quand il exécute une méthode native (JNI) ou une fonction étrangère (FFM). On dit qu'il est épinglé (*pinned*). S'il se bloque à ce moment-là, il bloque aussi son carrier, qui ne peut plus faire tourner d'autres virtual threads.
 
-Le programme suivant le met en évidence. Il lance deux fois plus de tâches que de processeurs, chaque tâche dort une seconde en tenant un verrou, d'abord avec `synchronized`, puis avec un `ReentrantLock`. Chaque tâche a son propre verrou, elles ne s'attendent donc jamais entre elles :
+Le programme suivant le met en évidence. Il lance deux fois plus de tâches que de processeurs, et chaque tâche dort une seconde en tenant un verrou. La mesure est faite une première fois avec `synchronized`, puis avec un `ReentrantLock`. Chaque tâche a son propre verrou, elles ne s'attendent donc jamais entre elles :
 
 ```java
 import java.time.Duration;
@@ -344,7 +344,7 @@ synchronized : 8 tâches en 1020 ms
 ReentrantLock : 8 tâches en 1002 ms
 ```
 
-La propriété `jdk.tracePinnedThreads` a été supprimée avec ce changement : Java 24 et les versions suivantes l'ignorent, sans message. L'événement JFR, lui, est toujours là. L'épinglage n'a d'ailleurs pas complètement disparu : un virtual thread qui exécute du code natif garde son carrier, et un appel natif bloquant (`usleep` appelé via l'API FFM, par exemple) bloque toujours le carrier avec Java 25. Sur Java 21 (LTS), les conseils de cette section restent donc valables.
+La propriété `jdk.tracePinnedThreads` a été supprimée avec ce changement : Java 24 et les versions suivantes l'ignorent, sans message. L'événement JFR, lui, est toujours là. L'épinglage n'a d'ailleurs pas complètement disparu : un virtual thread qui exécute du code natif garde son carrier, et un appel natif bloquant (`usleep` appelé via l'API FFM, par exemple) bloque toujours le carrier avec Java 25. Sur Java 21 (LTS), qui n'inclut pas la JEP 491, les conseils de cette section restent valables.
 
 ## Les ThreadLocal
 
@@ -373,12 +373,12 @@ Attention, les `ScopedValue` ne sont qu'en preview dans Java 21 (JEP 446) : il f
 
 ## Les tâches de calcul
 
-Les virtual threads sont faits pour les tâches qui passent leur temps à attendre, la Javadoc de `Thread` précise d'ailleurs qu'ils ne sont pas prévus pour les calculs longs. Une tâche de calcul ne se bloque jamais : son virtual thread occupe son carrier du début à la fin, et n'apporte rien par rapport à un platform thread. Comme le planificateur ne fait pas de partage de temps, une telle tâche peut même retarder les autres. Avec un seul carrier (`-Djdk.virtualThreadScheduler.parallelism=1`), un calcul de 2 secondes empêche toute autre tâche de démarrer pendant ces 2 secondes.
+Les virtual threads sont faits pour les tâches qui passent leur temps à attendre. La Javadoc de `Thread` précise d'ailleurs qu'ils ne sont pas prévus pour les calculs longs. Une tâche de calcul ne se bloque jamais : son virtual thread occupe son carrier du début à la fin, et n'apporte rien par rapport à un platform thread. Comme le planificateur ne fait pas de partage de temps, une telle tâche peut même retarder les autres. Avec un seul carrier (`-Djdk.virtualThreadScheduler.parallelism=1`), un calcul de 2 secondes empêche toute autre tâche de démarrer pendant ces 2 secondes.
 
 Pour ce type de travail, on garde un pool de platform threads dimensionné sur le nombre de processeurs :
 
 ```java
-// À éviter : calcul CPU-bound, le Virtual Thread ne se bloque jamais
+// À éviter : calcul CPU-bound, le virtual thread ne se bloque jamais
 try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
     executor.submit(() -> computeFibonacci(1_000_000));  // Monopolise un carrier
 }
