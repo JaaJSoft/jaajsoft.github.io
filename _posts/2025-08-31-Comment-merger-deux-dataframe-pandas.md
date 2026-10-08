@@ -116,12 +116,12 @@ Attention, sans `on` ni `left_on`/`right_on`, pandas joint sur toutes les colonn
 
 Le paramètre `how` choisit le type de jointure :
 
-- `inner` (par défaut) : uniquement les clés présentes des deux côtés
-- `left` : toutes les lignes de gauche, complétées quand une correspondance existe
-- `right` : toutes les lignes de droite
-- `outer` : toutes les clés des deux tables
-- `cross` : le produit cartésien, chaque ligne de gauche avec chaque ligne de droite
-- `left_anti` et `right_anti` : les lignes d'un côté qui n'ont pas de correspondance de l'autre (nouveau dans pandas 3.0, nous y revenons plus bas)
+- `inner` (par défaut) : seulement les lignes dont la clé existe des deux côtés
+- `left` : toutes les lignes de gauche, complétées quand une correspondance existe à droite
+- `right` : toutes les lignes de droite, complétées quand une correspondance existe à gauche
+- `outer` : toutes les lignes des deux tables
+- `cross` : chaque ligne de gauche associée à chaque ligne de droite (le produit cartésien)
+- `left_anti` et `right_anti` : seulement les lignes d'un côté qui n'ont pas de correspondance de l'autre (nouveau dans pandas 3.0, nous y revenons plus bas)
 
 ```python
 left = pd.merge(clients, commandes, how="left", left_on="client_id", right_on="id_client")
@@ -230,7 +230,7 @@ print(res[["nom", "ville_client", "commande_id", "ville_livraison"]])
 2    Bob        Paris          103           Paris
 ```
 
-Sans le paramètre `suffixes`, on aurait eu `ville_x` et `ville_y`, beaucoup moins parlant. Si l'une des deux colonnes ne sert pas, le plus simple est de la retirer avant la jointure : sur de grosses tables, ne garder que les colonnes utiles (`commandes[["id_client", "montant"]]`) allège aussi le résultat.
+Sans le paramètre `suffixes`, on aurait eu `ville_x` et `ville_y`, des noms beaucoup moins parlants. Si l'une des deux colonnes ne sert pas, le plus simple est de la retirer avant la jointure : sur de grosses tables, ne garder que les colonnes utiles (`commandes[["id_client", "montant"]]`) allège aussi le résultat.
 
 ## Retrouver les lignes sans correspondance
 
@@ -286,7 +286,7 @@ Le paramètre `validate` vérifie le type de relation entre les deux tables avan
 - `"one_to_one"` ou `"1:1"` : les clés doivent être uniques des deux côtés
 - `"one_to_many"` ou `"1:m"` : les clés doivent être uniques à gauche
 - `"many_to_one"` ou `"m:1"` : les clés doivent être uniques à droite
-- `"many_to_many"` ou `"m:m"` : aucune vérification
+- `"many_to_many"` ou `"m:m"` : les clés peuvent se répéter des deux côtés, rien n'est vérifié
 
 Un client peut avoir plusieurs commandes, on attend donc une relation *one-to-many* :
 
@@ -340,7 +340,7 @@ client_id
 2            Bob  Paris          103     99.9
 ```
 
-`DataFrame.join` est un raccourci qui appelle `merge` en interne, avec deux différences à connaître. Sa jointure par défaut est `left` et non `inner`. Et il n'ajoute pas de suffixe par défaut : si les deux tables ont une colonne en commun, il lève l'erreur `columns overlap but no suffix specified` tant qu'on ne lui passe pas `lsuffix` ou `rsuffix`. Avec le paramètre `on`, il joint une colonne de la table de gauche sur l'index de la table de droite.
+`DataFrame.join` est un raccourci qui appelle `merge` en interne, avec deux différences à connaître. Il fait une jointure `left` par défaut, et non `inner`. Et il n'ajoute aucun suffixe : si les deux tables ont une colonne en commun, il lève l'erreur `columns overlap but no suffix specified` tant qu'on ne lui passe pas `lsuffix` ou `rsuffix`. Avec le paramètre `on`, il joint une colonne de la table de gauche sur l'index de la table de droite.
 
 ## Les clés en double
 

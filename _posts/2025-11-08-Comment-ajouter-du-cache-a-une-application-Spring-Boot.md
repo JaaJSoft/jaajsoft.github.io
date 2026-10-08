@@ -13,7 +13,7 @@ tags:
 author: Pierre Chopinet
 ---
 
-Quand une méthode coûte cher (un appel à une API lente, une grosse requête SQL) et qu'elle renvoie souvent le même résultat pour les mêmes paramètres, la mettre en cache évite de refaire le travail à chaque appel. Spring propose pour ça une abstraction de cache à base d'annotations, que Spring Boot configure tout seul avec Caffeine, Redis et d'autres moteurs. Nous allons voir comment la mettre en place, la configurer, et invalider les données au bon moment.
+Quand une méthode coûte cher (un appel à une API lente, une grosse requête SQL) et qu'elle renvoie souvent le même résultat pour les mêmes paramètres, la mettre en cache évite de refaire le travail à chaque appel. Spring propose pour ça une abstraction de cache à base d'annotations, que Spring Boot configure tout seul avec Caffeine, Redis et d'autres moteurs. Nous allons voir comment la mettre en place, la configurer et invalider les données au bon moment.
 <!--more-->
 
 Dans cet article :
@@ -28,7 +28,7 @@ Dans cet article :
 - Tester le cache
 - Suivre le cache avec Actuator
 
-Pré-requis : Java 17 ou plus récent et Spring Boot 3 ou 4. Les exemples ont été testés avec Spring Boot 3.5.16 et Spring Boot 4.1.1 (Java 21), les différences de la version 4 sont signalées au fil de l'article.
+Pré-requis : Java 17 ou plus récent et Spring Boot 3 ou 4. Les exemples ont été testés avec Spring Boot 3.5.16 et Spring Boot 4.1.1 (Java 21). Les différences de la version 4 sont signalées au fil de l'article.
 
 ## Les dépendances
 
@@ -149,7 +149,7 @@ public Price updatePrice(Price p) { return repo.save(p); }
 public void clearAllCaches() {}
 ```
 
-`condition` est évaluée avant l'appel : si elle est fausse, le cache est complètement ignoré. `unless` est évaluée après, sur le résultat (`#result`), et empêche seulement la mise en cache. Sans ce `unless`, un résultat `null` est mis en cache comme les autres avec Caffeine, et les appels suivants renvoient ce `null` sans réessayer. Au passage, `#p.id` fonctionne aussi sur un record.
+`condition` est évaluée avant l'appel : si elle est fausse, le cache est complètement ignoré. `unless` est évaluée après, sur le résultat (`#result`), et empêche seulement la mise en cache. Sans ce `unless`, Caffeine met en cache un résultat `null` comme les autres, et les appels suivants renvoient ce `null` sans réessayer. Au passage, `#p.id` fonctionne aussi sur un record.
 
 Pour que SpEL connaisse les noms des paramètres (`#productId`, `#p`...), le code doit être compilé avec l'option `-parameters` de `javac`. Le parent Maven de Spring Boot et son plugin Gradle l'activent. Sans elle, il faut désigner les paramètres par leur position : `#p0` ou `#a0` pour le premier.
 
@@ -166,7 +166,7 @@ public BigDecimal getPriceWithTax(String productId) {
 }
 ```
 
-Si cette méthode est dans `PriceService`, chaque appel à `getPriceWithTax` rappelle l'API lente, alors que `getPrice` est annotée avec `@Cacheable`. Le plus simple est de placer la méthode mise en cache dans un autre bean, injecté là où on en a besoin. Pour la même raison, le cache n'est pas encore actif dans une méthode `@PostConstruct`.
+Si cette méthode est dans `PriceService`, chaque appel à `getPriceWithTax` rappelle l'API lente, alors que `getPrice` est annotée avec `@Cacheable`. Le plus simple est de placer la méthode mise en cache dans un autre bean, injecté là où on en a besoin. De même, il ne faut pas compter sur le cache dans une méthode `@PostConstruct` : le proxy n'est pas encore complètement initialisé à ce moment-là.
 
 ## Configurer Caffeine
 
@@ -271,7 +271,9 @@ public class RedisCacheConfig {
 }
 ```
 
-`RedisSerializer.json()` renvoie le sérialiseur JSON de Spring Data Redis, basé sur Jackson. Jackson n'est pas inclus dans le starter Redis : il est déjà présent dans une application web (`spring-boot-starter-web`), sinon on ajoute `spring-boot-starter-json`. Beaucoup d'exemples utilisent directement `new GenericJackson2JsonRedisSerializer()` : ça fonctionne avec Spring Boot 3, mais cette classe est dépréciée dans Spring Data Redis 4 (Spring Boot 4), qui passe à Jackson 3. Comme Spring Boot 4 n'embarque plus Jackson 2 par défaut, l'application ne démarre même pas (`NoClassDefFoundError: com/fasterxml/jackson/databind/...`). `RedisSerializer.json()` choisit la bonne implémentation dans les deux versions.
+`RedisSerializer.json()` renvoie le sérialiseur JSON de Spring Data Redis, basé sur Jackson. Jackson n'est pas inclus dans le starter Redis : il est déjà présent dans une application web (`spring-boot-starter-web`), sinon on ajoute `spring-boot-starter-json`.
+
+Beaucoup d'exemples utilisent directement `new GenericJackson2JsonRedisSerializer()`. Ça fonctionne avec Spring Boot 3, mais cette classe est dépréciée dans Spring Data Redis 4 (Spring Boot 4), qui passe à Jackson 3. Et comme Spring Boot 4 n'embarque plus Jackson 2 par défaut, l'application ne démarre même pas avec cette classe (`NoClassDefFoundError: com/fasterxml/jackson/databind/...`). `RedisSerializer.json()`, lui, renvoie la bonne implémentation dans les deux versions.
 
 Les clés sont préfixées par le nom du cache suivi de `::`. Après un appel à `getPrice("A-42")`, on retrouve l'entrée dans Redis :
 
@@ -284,9 +286,9 @@ $ redis-cli TTL "prices::A-42"
 
 La durée de vie de 15 minutes du cache `prices` s'applique bien (900 secondes au moment de l'écriture). Le JSON contient le nom de la classe (`@class`), dont Jackson se sert pour recréer le bon objet à la lecture. La documentation de Spring Data Redis prévient que ce mécanisme est dangereux avec des données venant d'une source non fiable : ce Redis doit rester réservé à vos applications. Pensez aussi qu'une entrée écrite par une ancienne version de l'application peut ne plus se relire si la classe a changé entre deux déploiements.
 
-Comme pour Caffeine, ce bean remplace l'auto-configuration : `spring.cache.cache-names` et `spring.cache.redis.*` ne sont plus pris en compte. Ici, le cache `products` garde 5 minutes, et tout autre cache prend les 10 minutes de `defaultConfig`. Pour seulement ajuster le `RedisCacheManager` créé par Spring Boot, il existe aussi un bean `RedisCacheManagerBuilderCustomizer`.
+Comme pour Caffeine, ce bean remplace l'auto-configuration : `spring.cache.cache-names` et `spring.cache.redis.*` ne sont plus pris en compte. Ici, le cache `products` garde ses entrées 5 minutes, et tout autre cache prend les 10 minutes de `defaultConfig`. Pour seulement ajuster le `RedisCacheManager` créé par Spring Boot, on peut plutôt déclarer un bean `RedisCacheManagerBuilderCustomizer`.
 
-Avec Spring Boot 4, les écritures dans le cache Redis sont en plus asynchrones par défaut : une valeur mise en cache ou supprimée peut n'être visible dans Redis qu'un court instant après l'appel. Pour un cache qui a besoin d'écritures immédiates, on construit le gestionnaire avec `RedisCacheManager.builder(RedisCacheWriter.create(cf, writer -> writer.immediateWrites()))`.
+Avec Spring Boot 4, les écritures dans le cache Redis sont en plus asynchrones par défaut : une valeur mise en cache ou supprimée peut n'être visible dans Redis qu'un court instant après l'appel. Pour un cache qui a besoin d'écritures immédiates, on crée le `RedisCacheManager` avec `RedisCacheManager.builder(RedisCacheWriter.create(cf, writer -> writer.immediateWrites()))`.
 
 ## Invalider le cache après une écriture
 
@@ -348,7 +350,7 @@ class PriceServiceTest {
 }
 ```
 
-Ce test vérifie que le résultat est rangé sous la clé attendue. Pour vérifier en plus que l'appel coûteux n'a lieu qu'une fois, on remplace le bean qui fait cet appel par un mock avec `@MockitoBean`, et on compte ses appels avec `verify(api, times(1))`.
+Ce test vérifie que le résultat est rangé sous la clé attendue. Pour s'assurer en plus que l'appel coûteux n'a lieu qu'une fois, on remplace le bean qui fait cet appel (le client de l'API lente) par un mock avec `@MockitoBean`, et on contrôle ses appels avec `verify(api, times(1))`.
 
 Attention, Spring réutilise le même contexte, et donc les mêmes caches, entre les tests qui ont la même configuration. Pour que chaque test parte d'un cache vide :
 
@@ -383,7 +385,7 @@ management:
         include: "health,metrics"
 ```
 
-Après trois appels à `getPrice("A-42")`, le premier qui rate le cache et deux qui le trouvent, on interroge la métrique `cache.gets` en filtrant sur le cache `prices` et les succès (`hit`) :
+Après trois appels à `getPrice("A-42")`, soit un échec (*miss*) puis deux succès (*hit*), on interroge la métrique `cache.gets` en filtrant sur le cache `prices` et sur les succès :
 
 ```bash
 curl -s "http://localhost:8080/actuator/metrics/cache.gets?tag=cache:prices&tag=result:hit" | jq '.measurements'
@@ -398,7 +400,7 @@ curl -s "http://localhost:8080/actuator/metrics/cache.gets?tag=cache:prices&tag=
 ]
 ```
 
-Avec `result:miss`, on obtient 1. Le rapport entre les deux donne le taux de succès du cache. On trouve aussi `cache.size` et `cache.evictions`.
+Avec `result:miss`, on obtient 1. Le taux de succès du cache est le nombre de succès divisé par le nombre total d'appels, ici 2 sur 3. On trouve aussi les métriques `cache.size` et `cache.evictions`.
 
 Ces compteurs ont besoin des statistiques du moteur. Sans `recordStats` dans la spécification Caffeine, seule `cache.size` est publiée, et Micrometer le signale au démarrage par un avertissement `The cache 'prices' is not recording statistics`. Avec Redis, il faut ajouter `spring.cache.redis.enable-statistics: true`, ou appeler `enableStatistics()` sur le builder si on déclare son propre `RedisCacheManager`. Enfin, seuls les caches qui existent au démarrage sont suivis : un cache créé à la volée au premier appel n'apparaît pas dans les métriques. C'est une raison de plus de lister ses caches dans `cache-names`.
 

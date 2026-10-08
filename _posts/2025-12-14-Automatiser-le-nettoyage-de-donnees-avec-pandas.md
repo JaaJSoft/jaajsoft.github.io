@@ -84,7 +84,7 @@ date_embauche        str
 dtype: object
 ```
 
-Depuis pandas 3, une colonne qui ne contient que du texte a le type `str` (c'était `object` avant), et ses valeurs manquantes valent toujours `NaN`. Les colonnes `age` et `salaire`, qui mélangent nombres et chaînes, restent en `object`, d'où les `None` dans l'affichage précédent. Quant à `id`, il est passé en `float64` à cause de sa valeur manquante.
+Depuis pandas 3, une colonne qui ne contient que du texte a le type `str` (c'était `object` avant), et un `None` y est converti en `NaN`. Les colonnes `age` et `salaire`, qui mélangent nombres et chaînes, restent en `object`, d'où les `None` dans l'affichage précédent. Quant à `id`, il est passé en `float64` à cause de sa valeur manquante.
 
 ## Repérer les valeurs manquantes
 
@@ -174,7 +174,7 @@ print(df[["nom", "ville"]])
 
 `str.lower()`, `str.upper()` et `str.title()` existent aussi. Attention, `capitalize()` passe en minuscules tout ce qui suit la première lettre : "St-Etienne" devient "St-etienne".
 
-Pour corriger les fautes de frappe et les variantes d'écriture, que la casse ne règle pas, on passe un dictionnaire de correspondance à `replace` :
+Pour corriger les fautes de frappe et les variantes d'écriture, qu'un changement de casse ne règle pas, on passe un dictionnaire de correspondance à `replace` :
 
 ```python
 # Corriger les variantes que capitalize() ne règle pas
@@ -263,7 +263,7 @@ Name: age, dtype: Int64
 
 Un simple `astype(int)` échoue dès qu'il reste un `NaN` (`IntCastingNaNError: Cannot convert non-finite values (NA or inf) to integer`).
 
-Enfin, une colonne texte qui ne contient que quelques valeurs différentes, comme `ville`, peut passer en `category` avec `astype("category")` : chaque valeur distincte n'est stockée qu'une fois, ce qui économise de la mémoire sur de gros volumes. Par contre, on ne peut plus y écrire une valeur qui ne fait pas partie des catégories (un `fillna("Inconnu")` lève une `TypeError`), c'est donc une conversion à faire à la fin du nettoyage.
+Enfin, une colonne texte qui ne contient que quelques valeurs différentes, comme `ville`, peut passer en `category` avec `astype("category")` : chaque valeur distincte n'est stockée qu'une fois, ce qui économise de la mémoire sur de gros volumes. Par contre, on ne peut plus y écrire une valeur qui ne fait pas partie des catégories : un `fillna("Inconnu")` lève une `TypeError`. C'est donc une conversion à faire à la fin du nettoyage.
 
 ## Supprimer les doublons
 
@@ -284,7 +284,7 @@ print(df[df.duplicated(subset=["id"], keep=False)])
 2  2.0  Bob  30.0   Lyon  60000.0    2019-06-20
 ```
 
-Aucune ligne n'est entièrement identique, puisque les deux lignes de Bob n'ont pas la même ville. Sur la colonne `id`, en revanche, on les retrouve bien : avec `keep=False`, `duplicated` marque toutes les occurrences, ce qui permet de les afficher avant de décider laquelle garder. C'est aussi pour ça qu'on nettoie le texte avant de chercher les doublons : `Paris` et `paris` suffisent à rendre deux lignes différentes.
+Aucune ligne n'est entièrement identique, puisque les deux lignes de Bob n'ont pas la même ville. Sur la colonne `id`, en revanche, on les retrouve bien : avec `keep=False`, `duplicated` marque toutes les occurrences, ce qui permet de les afficher avant de décider laquelle garder. Le texte a d'ailleurs été nettoyé avant cette étape, car `Paris` et `paris` suffisent à rendre deux lignes différentes.
 
 ```python
 # Supprimer les doublons sur l'id (garder la première occurrence)
@@ -438,7 +438,7 @@ Erreurs de validation:
 - Ages invalides détectés
 ```
 
-Grace n'a toujours pas d'identifiant, et l'âge de -5 ans est encore là, puisque le filtre des règles métier a été appliqué à `df_clean` et non à `df`. Les tests peuvent aussi croiser plusieurs colonnes, par exemple pour repérer un salaire incohérent avec l'âge : `df[(df["age"] < 25) & (df["salaire"] > 100000)]`.
+Grace n'a toujours pas d'identifiant, et l'âge de -5 ans est encore là, puisque le filtre des règles métier a été appliqué à `df_clean` et non à `df`. Les vérifications peuvent aussi croiser plusieurs colonnes, par exemple pour repérer un salaire incohérent avec l'âge : `df[(df["age"] < 25) & (df["salaire"] > 100000)]`.
 
 Pour avoir une vue d'ensemble, une petite fonction de rapport affiche le nombre de lignes, les valeurs manquantes, les doublons, les types et les statistiques descriptives :
 
@@ -526,13 +526,13 @@ print(df_clean)
 5  7.0    Frank  28.0  Marseille  90000.0    2020-12-01
 ```
 
-On obtient 6 employés, sans doublon, avec des noms et des villes homogènes. Grace a été écartée faute d'identifiant, comme la ligne sans nom et celle qui avait un âge négatif. Seule la date d'embauche de Diane reste manquante.
+On obtient 6 employés, sans doublon, avec des noms et des villes homogènes. Outre la deuxième ligne de Bob, trois lignes ont été écartées : celle de Grace, qui n'avait pas d'identifiant, celle qui n'avait ni nom ni ville, et celle qui avait un âge négatif. Seule la date d'embauche de Diane reste manquante.
 
 L'ordre des étapes compte. Les doublons sont supprimés avant l'imputation, pour que les lignes en double ne comptent pas deux fois dans la médiane. Et l'imputation se fait avant le filtre des bornes : une comparaison avec `NaN` renvoie toujours `False`, le filtre éliminerait donc les lignes incomplètes avant qu'on ait pu les compléter.
 
 ## Journaliser et sauvegarder
 
-Quand le nettoyage tourne automatiquement, il est utile de garder une trace de ce qu'il a fait. Le module `logging` s'en charge :
+Quand le nettoyage tourne automatiquement, il est utile de garder une trace de ce qu'il a fait. Le module `logging` s'en charge, ici sur une version réduite du nettoyage :
 
 ```python
 import logging
