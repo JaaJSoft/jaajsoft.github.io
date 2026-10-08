@@ -31,7 +31,7 @@ Dans cet article :
 
 ## Installation
 
-`sed` est présent sur toutes les distributions Linux, dans sa version GNU. Sur macOS, la version installée est celle de BSD, qui diffère sur quelques points (voir plus bas). On peut y installer GNU sed avec Homebrew (`brew install gnu-sed`), il est alors disponible sous le nom `gsed`. Sous Windows, le plus simple est de passer par WSL ou Git Bash.
+`sed` est présent sur toutes les distributions Linux, le plus souvent dans sa version GNU (Alpine utilise celle de BusyBox). Sur macOS, la version installée est celle de BSD, qui diffère sur quelques points (voir plus bas). Homebrew permet d'y installer GNU sed (`brew install gnu-sed`), qui est alors disponible sous le nom `gsed`. Sous Windows, le plus simple est de passer par WSL ou Git Bash.
 
 Les exemples de cet article ont été testés avec GNU sed 4.9 :
 
@@ -87,7 +87,7 @@ log_level = info
 api_url = http://example.com/api
 ```
 
-Sans option, `s` ne remplace que la première occurrence de chaque ligne. Les *flags* placés après le dernier `/` changent ce comportement :
+Tel quel, `s` ne remplace que la première occurrence de chaque ligne. Les *flags* placés après le dernier `/` changent ce comportement :
 
 ```bash
 echo "foo foo foo" | sed 's/foo/bar/'     # bar foo foo
@@ -184,7 +184,7 @@ timeout = 30' app.conf
 
 Attention aussi, tout ce qui suit `a`, `i` ou `c` fait partie du texte : on ne peut pas enchaîner une autre commande avec un `;` derrière, il faut un autre `-e`.
 
-Pour insérer le contenu d'un fichier, on utilise `r`. La commande ajoute le fichier après la ligne visée, sans supprimer cette ligne. Pour vraiment remplacer la ligne 5 par le contenu de `insert.txt`, on combine `r` et `d` :
+La commande `r` insère le contenu d'un fichier après la ligne visée, sans supprimer cette ligne. Pour vraiment remplacer la ligne 5 par le contenu de `insert.txt`, on combine `r` et `d` :
 
 ```bash
 seq 6 > six.txt
@@ -206,7 +206,7 @@ Les deux `-e` ne sont pas là par hasard : le nom de fichier de `r` va jusqu'à 
 
 ## Afficher seulement certaines lignes
 
-Par défaut, sed affiche toutes les lignes. L'option `-n` désactive cet affichage, et la commande `p` affiche explicitement les lignes voulues :
+Par défaut, sed écrit toutes les lignes sur la sortie. L'option `-n` désactive ce comportement, et la commande `p` affiche explicitement les lignes voulues :
 
 ```bash
 sed -n '5p' fichier.txt          # La ligne 5
@@ -215,7 +215,7 @@ sed -n '$p' fichier.txt          # La dernière ligne
 sed -n '/error/p' fichier.txt    # Les lignes qui contiennent "error", comme grep
 ```
 
-Combiné à `s`, le flag `p` n'affiche que les lignes où un remplacement a eu lieu, ce qui permet de vérifier ce qu'une substitution va toucher :
+Avec `-n`, le flag `p` de la commande `s` n'affiche que les lignes où un remplacement a eu lieu, ce qui permet de vérifier ce qu'une substitution va toucher :
 
 ```bash
 sed -n 's/localhost/127.0.0.1/p' app.conf
@@ -284,7 +284,7 @@ echo "Jean Dupont" | sed -E 's/(\w+) (\w+)/\2 \1/'
 Dupont Jean
 ```
 
-Attention au point, qui remplace n'importe quel caractère. Pour remplacer la version `1.5`, il faut l'échapper, sinon `105` est remplacé aussi :
+Attention au point, qui correspond à n'importe quel caractère. Pour remplacer la version `1.5`, il faut échapper le point, sinon `105` est remplacé aussi :
 
 ```bash
 echo "version 1.5 et 105" | sed 's/1.5/2.0/g'     # version 2.0 et 2.0
@@ -293,7 +293,7 @@ echo "version 1.5 et 105" | sed 's/1\.5/2.0/g'    # version 2.0 et 105
 
 Si vous mettez au point vos regex sur un site comme regex101, gardez en tête que ses moteurs (PCRE, JavaScript...) ne sont pas ceux de sed. Par exemple, `\d` ne désigne pas un chiffre dans sed : `sed -E 's/\d+/X/g'` ne renvoie aucune erreur et ne remplace rien. Il faut écrire `[0-9]` ou `[[:digit:]]`. Les *lookarounds* (`(?=...)`) ne sont pas disponibles non plus.
 
-Pour extraire une valeur, on combine `-n`, un groupe qui capture la valeur et le flag `p`. Il faut alors se méfier du `.*` en début de motif, qui est gourmand : il avale le plus de caractères possible. Avec cette tentative d'extraction d'une adresse email :
+Pour extraire une valeur, on combine `-n`, un groupe qui capture la valeur et le flag `p`. Il faut alors se méfier du `.*` en début de motif, qui est gourmand : il avale le plus de caractères possible. Prenons cette tentative d'extraction d'une adresse email :
 
 ```bash
 echo "Contact : alice.martin@example.com" | sed -nE 's/.*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}).*/\1/p'
@@ -326,7 +326,7 @@ sed -i.bak 's/8080/9090/' app.conf      # Modifie app.conf et garde l'original d
 
 Comme il n'y a pas de retour en arrière possible sans sauvegarde, je vous conseille de toujours lancer la commande une première fois sans `-i` pour vérifier le résultat.
 
-Attention à deux pièges, décrits dans le manuel de GNU sed. Le suffixe de `-i` étant collé à l'option, `sed -iE '...'` ne veut pas dire `-i -E` : sed crée une sauvegarde nommée `app.confE`. Écrivez plutôt `sed -E -i` ou `sed -Ei`. Et `-n` avec `-i` vide le fichier si le script ne contient pas de `p` : `sed -ni 's/8080/9090/' app.conf` laisse un fichier vide.
+Attention à deux pièges, décrits dans le manuel de GNU sed. Le suffixe de `-i` étant collé à l'option, `sed -iE '...' app.conf` ne veut pas dire `-i -E` : sed crée une sauvegarde nommée `app.confE`. Écrivez plutôt `sed -E -i` ou `sed -Ei`. Et `-n` avec `-i` vide le fichier si le script ne contient pas de `p` : `sed -ni 's/8080/9090/' app.conf` laisse un fichier vide.
 
 Pour modifier plusieurs fichiers d'un coup, on combine sed avec `find`. Ici, on remplace `http://` par `https://` dans tous les fichiers `.txt` de l'arborescence :
 
@@ -334,18 +334,18 @@ Pour modifier plusieurs fichiers d'un coup, on combine sed avec `find`. Ici, on 
 find . -name "*.txt" -exec sed -i 's|http://|https://|g' {} +
 ```
 
-Avec [ripgrep]({% post_url 2026-02-16-Chercher-dans-le-code-rapidement-avec-ripgrep %}), `rg -l motif` liste les fichiers qui contiennent un motif, et `xargs` les passe à sed : `rg -l 'old_function' | xargs sed -i 's/old_function/new_function/g'`.
+Avec [ripgrep]({% post_url 2026-02-16-Chercher-dans-le-code-rapidement-avec-ripgrep %}), `rg -l motif` liste les fichiers qui contiennent le motif, et `xargs` les passe à sed : `rg -l 'old_function' | xargs sed -i 's/old_function/new_function/g'`.
 
 ## Nettoyer un fichier
 
-Supprimer les lignes vides, et celles qui ne contiennent que des espaces ou des tabulations :
+La première commande supprime les lignes vides, la seconde aussi celles qui ne contiennent que des espaces ou des tabulations :
 
 ```bash
 sed '/^$/d' fichier.txt
 sed '/^[[:space:]]*$/d' fichier.txt
 ```
 
-Supprimer les espaces et tabulations en début et en fin de ligne :
+Pour enlever les espaces et les tabulations en début et en fin de ligne :
 
 ```bash
 sed 's/^[[:space:]]*//; s/[[:space:]]*$//' fichier.txt
@@ -353,7 +353,7 @@ sed 's/^[[:space:]]*//; s/[[:space:]]*$//' fichier.txt
 
 On voit souvent `[ \t]` à la place de `[[:space:]]`. Cela fonctionne avec GNU sed, mais reconnaître `\t` dans des crochets est une extension GNU : `[[:space:]]` ou `[[:blank:]]` sont portables.
 
-Supprimer les commentaires, en ligne entière ou en fin de ligne :
+Les commentaires se suppriment avec `d` quand ils occupent toute la ligne, ou avec `s` en fin de ligne :
 
 ```bash
 sed '/^#/d' fichier.txt
@@ -391,26 +391,26 @@ printf 'un\ndeux\ntrois\n' | sed ':a;N;$!ba;s/\n/ /g'
 un deux trois
 ```
 
-`:a` définit une étiquette, `N` ajoute la ligne suivante, `$!ba` revient à l'étiquette tant qu'on n'est pas sur la dernière ligne, puis `s/\n/ /g` remplace tous les retours à la ligne accumulés. `paste -sd ' ' fichier.txt` donne le même résultat. `tr '\n' ' '` remplace aussi le dernier retour à la ligne, et la sortie se termine alors par une espace au lieu d'un saut de ligne.
+`:a` définit une étiquette, `N` ajoute la ligne suivante, `$!ba` revient à l'étiquette tant qu'on n'est pas sur la dernière ligne, puis `s/\n/ /g` remplace tous les retours à la ligne accumulés. `paste -sd ' ' fichier.txt` donne le même résultat. Avec `tr '\n' ' '`, le dernier retour à la ligne est remplacé lui aussi : la sortie se termine par une espace.
 
 À l'inverse, `sed G` ajoute une ligne vide après chaque ligne, ce qui double l'interligne d'un fichier.
 
 ## GNU sed et BSD sed
 
-Le sed de macOS est la version BSD. La différence la plus gênante concerne `-i` : BSD sed exige un suffixe de sauvegarde, éventuellement vide.
+Entre GNU sed et le sed BSD de macOS, la différence la plus gênante concerne `-i` : BSD sed exige un suffixe de sauvegarde, éventuellement vide.
 
 ```bash
 sed -i '' 's/foo/bar/g' fichier.txt     # BSD sed (macOS)
 sed -i 's/foo/bar/g' fichier.txt        # GNU sed (Linux)
 ```
 
-La forme BSD ne fonctionne pas avec GNU sed, qui prend `''` pour le script et `s/foo/bar/g` pour un nom de fichier (`sed: can't read s/foo/bar/g: No such file or directory`). Pour un script qui doit tourner sur les deux, le plus simple est d'utiliser un suffixe collé (`-i.bak`), puis de supprimer la sauvegarde.
+La forme BSD ne fonctionne pas avec GNU sed, qui prend `''` pour le script et `s/foo/bar/g` pour un nom de fichier (`sed: can't read s/foo/bar/g: No such file or directory`). Pour un script qui doit tourner sur les deux, la solution portable est d'utiliser un suffixe collé (`-i.bak`), puis de supprimer la sauvegarde.
 
 Plusieurs fonctionnalités utilisées dans cet article sont des extensions GNU, d'après le manuel de GNU sed : `\+`, `\?` et `\|` dans les regex basiques, `\w`, `\s` et `\b`, les séquences `\U`, `\L` et `\u`, le flag `I`, le texte sur la même ligne que `a`, `i` et `c`, ou encore `\t` dans des crochets. Pour vérifier qu'un script s'en passe, GNU sed propose l'option `--posix`, qui désactive toutes ces extensions. Sur un Mac, le plus simple reste d'installer GNU sed et d'utiliser `gsed`.
 
 ## Quand passer à un autre outil
 
-sed est fait pour des transformations ligne par ligne. Dès qu'il faut raisonner en colonnes ou faire des calculs, `awk` est plus adapté. Pour du JSON, `jq` comprend la structure du document, là où une regex finira par casser sur un cas particulier, et c'est pareil pour le HTML ou le XML avec un vrai parseur. Enfin, pour des regex complexes (*lookarounds*, Unicode), `perl` ou un petit script Python seront plus confortables.
+sed est fait pour des transformations ligne par ligne. Dès qu'il faut raisonner en colonnes ou faire des calculs, `awk` est plus adapté. Pour du JSON, `jq` comprend la structure du document, là où une regex finira par casser sur un cas particulier. C'est pareil pour le HTML ou le XML, qui demandent un vrai parseur. Enfin, pour des regex complexes (*lookarounds*, Unicode), `perl` ou un petit script Python seront plus confortables.
 
 ## Voir aussi
 

@@ -29,7 +29,7 @@ Dans cet article :
 - Le TSV, une alternative au CSV
 - Les gros fichiers
 
-Pré-requis : jq installé (les commandes ont été testées avec jq 1.7). Si vous débutez, voir [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %}).
+Pré-requis : jq installé (les commandes ont été testées avec jq 1.7). Si vous débutez avec jq, commencez par [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %}).
 
 ## Le fichier d'exemple
 
@@ -99,7 +99,7 @@ id,name,active,score
 3,"Chloé",true,31.7
 ```
 
-C'est aussi la façon la plus simple de renommer les colonnes : il suffit de mettre d'autres noms dans le `printf` (`user_id,full_name,score` par exemple).
+Pour renommer les colonnes, il suffit de mettre d'autres noms dans le `printf` (`user_id,full_name,is_active,score` par exemple).
 
 On peut aussi construire l'en-tête à partir des clés du premier objet. `keys_unsorted` renvoie les clés dans l'ordre où elles apparaissent dans l'objet (`keys` les trierait par ordre alphabétique), et `.[$keys[]]` récupère les valeurs dans ce même ordre :
 
@@ -118,7 +118,7 @@ jq -r '(.[0] | keys_unsorted) as $keys
 
 Le `if type == "array"` est nécessaire à cause de la colonne `tags`. `@csv` n'accepte que des chaînes, des nombres, des booléens et `null` : sans cette conversion, jq affiche l'en-tête puis s'arrête dès la ligne d'Alice avec l'erreur `array (["admin","o...) is not valid in a csv row`.
 
-Attention, les colonnes sont celles du premier objet. Une clé qui n'apparaît que dans les objets suivants est ignorée, sans avertissement. Si vos objets n'ont pas tous les mêmes clés, on peut prendre l'union des clés de tous les objets, au prix d'un ordre alphabétique des colonnes. Ici, seul Bob a un email :
+Attention, les colonnes sont celles du premier objet. Une clé qui n'apparaît que dans les objets suivants est ignorée, sans avertissement. Si les clés varient d'un objet à l'autre, on peut prendre l'union de toutes les clés, au prix d'un ordre alphabétique des colonnes. Ici, seul Bob a un email :
 
 ```bash
 echo '[{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob", "email": "bob@example.com"}]' \
@@ -146,7 +146,7 @@ echo '[{"id": 1, "profile": {"city": "Lyon"}}, {"id": 2}]' | jq -r '.[] | [.id, 
 2,
 ```
 
-Pour mettre une autre valeur par défaut, on utilise l'opérateur `//`, qui renvoie la valeur de droite quand celle de gauche est `null` ou `false` : avec `(.profile.city // "inconnue")`, la deuxième ligne devient `2,"inconnue"`. De la même façon, `(.score // 0)` remplace un score manquant par 0. Attention aux colonnes booléennes : `//` remplace aussi les `false`, et avec `[.id, (.active // "")]` la ligne de Bob devient `2,""` au lieu de `2,false`.
+Pour mettre une autre valeur par défaut, on utilise l'opérateur `//`, qui renvoie la valeur de droite quand celle de gauche est `null` ou `false`. Avec `(.profile.city // "inconnue")`, la deuxième ligne devient `2,"inconnue"`. De la même façon, `(.score // 0)` remplace un score manquant par 0. Attention aux colonnes booléennes : `//` remplace aussi les `false`, et avec `[.id, (.active // "")]` la ligne de Bob devient `2,""` au lieu de `2,false`.
 
 Un tableau doit être converti en chaîne avant de passer dans `@csv`. `join` assemble ses éléments avec le séparateur de votre choix :
 
@@ -249,7 +249,7 @@ Le fichier n'est jamais chargé en entier en mémoire, ce qui compte sur un gros
 
 ## Le TSV, une alternative au CSV
 
-`@tsv` fonctionne comme `@csv`, mais sépare les colonnes par des tabulations et ne met pas de guillemets. C'est pratique quand les valeurs contiennent beaucoup de virgules. Les tabulations, retours à la ligne et antislashs présents dans les valeurs sont échappés en `\t`, `\n` et `\\`, chaque objet tient donc toujours sur une ligne.
+`@tsv` fonctionne comme `@csv`, mais sépare les colonnes par des tabulations et ne met pas de guillemets. C'est pratique quand les valeurs contiennent beaucoup de virgules. Les tabulations, retours à la ligne et antislashs présents dans les valeurs sont échappés en `\t`, `\n` et `\\` : chaque objet tient donc toujours sur une ligne.
 
 ```bash
 jq -r '.[] | [.id, .name, .active, .score] | @tsv' users.json > users.tsv

@@ -15,7 +15,7 @@ tags:
   - search
 ---
 
-Pour retrouver une fonction, un TODO ou une variable de configuration dans un projet, on tape souvent `grep -r`, qui fouille aussi `.git`, `node_modules` et tous les fichiers générés. ripgrep (commande `rg`) les ignore par défaut, ce qui donne des résultats plus pertinents, et beaucoup plus vite sur un vrai projet. Dans ce tutoriel, nous allons voir ses options les plus utiles sur un petit projet d'exemple.
+Pour retrouver une fonction, un TODO ou une variable de configuration dans un projet, on tape souvent `grep -r`, qui fouille aussi `.git`, `node_modules` et tous les fichiers générés. ripgrep (commande `rg`) les ignore par défaut : les résultats sont plus pertinents, et ils arrivent beaucoup plus vite sur un vrai projet. Dans ce tutoriel, nous allons voir ses options les plus utiles sur un petit projet d'exemple.
 <!--more-->
 
 Dans cet article :
@@ -50,7 +50,7 @@ Les exemples de cet article ont été testés avec ripgrep 14.1.0, la version du
 
 ## La recherche de base
 
-Les exemples portent sur un petit projet Python et JavaScript versionné avec git. Son `.gitignore` exclut le dossier `node_modules/`, les fichiers `*.log` et le fichier `.env`.
+Les exemples portent sur un petit projet Python et JavaScript versionné avec git. Son `.gitignore` exclut le dossier `node_modules/`, les fichiers `*.log` et le fichier `.env`. Pour chercher les TODO du projet :
 
 ```bash
 rg TODO
@@ -78,7 +78,7 @@ src/api/routes.py
 5:    # TODO: gérer l'authentification
 ```
 
-Le TODO du dossier `node_modules` n'apparaît pas, nous verrons pourquoi dans la partie suivante. Attention, l'ordre des fichiers peut changer d'une exécution à l'autre, car rg cherche dans plusieurs fichiers en parallèle. Pour un ordre stable, `--sort path` trie les résultats par chemin, mais désactive le parallélisme.
+Le TODO du dossier `node_modules` n'apparaît pas : nous verrons pourquoi dans la partie suivante. Attention, l'ordre des fichiers peut changer d'une exécution à l'autre, car rg cherche dans plusieurs fichiers en parallèle. Pour un ordre stable, `--sort path` trie les résultats par chemin, mais désactive le parallélisme.
 
 On peut aussi limiter la recherche à un dossier ou à un fichier :
 
@@ -89,7 +89,7 @@ rg TODO src/utils.py
 
 Sur un fichier unique, le nom du fichier n'est pas affiché : seuls le numéro de ligne et la ligne trouvée apparaissent.
 
-Le motif est une expression régulière, avec la syntaxe de la bibliothèque `regex` de Rust, proche de celles de Perl ou de Python. Par exemple pour trouver où une fonction est définie, qui importe un module, ou repérer un mot de passe écrit en dur :
+Le motif est une expression régulière, avec la syntaxe de la bibliothèque `regex` de Rust, proche de celles de Perl ou de Python. Par exemple, pour trouver la définition d'une fonction, les imports d'un module ou un mot de passe écrit en dur :
 
 ```bash
 rg 'def calculate_total'
@@ -110,11 +110,11 @@ Quand il parcourt un dossier, rg laisse de côté :
 
 Il ne suit pas non plus les liens symboliques, sauf avec l'option `-L`.
 
-Une bonne partie de l'écart de vitesse avec `grep -r` vient de là. Sur un petit projet de test contenant 207 Mo de dépendances dans `node_modules`, `grep -rn TODO .` a mis 0,3 seconde et renvoyé 814 lignes, presque toutes dans `node_modules`, alors que `rg TODO` a renvoyé la seule ligne du code du projet en 6 millisecondes. Avec les bonnes exclusions (`--exclude-dir=node_modules --exclude-dir=.git`), grep va d'ailleurs aussi vite.
+Une bonne partie de l'écart de vitesse avec `grep -r` vient de là. Sur un petit projet de test contenant 207 Mo de dépendances dans `node_modules`, `grep -rn TODO .` a mis 0,3 seconde et renvoyé 814 lignes, presque toutes dans `node_modules`, alors que `rg TODO` a renvoyé la seule ligne du code du projet en 6 ms. Avec les bonnes exclusions (`--exclude-dir=node_modules --exclude-dir=.git`), grep va d'ailleurs aussi vite.
 
-À périmètre égal, rg garde l'avantage sur de plus gros volumes, grâce à son moteur de regex à base d'automates et à sa recherche en parallèle : sur les 51 Mo d'en-têtes C de `/usr/include`, la même recherche a pris environ 20 ms avec rg contre 50 ms avec `grep -rnI` (machine à 4 cœurs, cache disque chaud).
+À périmètre égal, rg garde l'avantage sur de plus gros volumes, grâce à son moteur de regex à base d'automates et à sa recherche en parallèle. Sur les 51 Mo d'en-têtes C de `/usr/include`, la même recherche a pris environ 20 ms avec rg, contre 50 ms avec `grep -rnI` (machine à 4 cœurs, cache disque chaud).
 
-Notez que `node_modules` n'est pas exclu en dur : il l'est parce qu'il figure dans le `.gitignore`. Et rg ne tient compte des `.gitignore` qu'à l'intérieur d'un dépôt git. Dans une copie du projet sans dossier `.git` (une archive décompressée par exemple), il cherche de nouveau dans `node_modules`, sauf si on lui passe `--no-require-git`.
+Notez que `node_modules` n'est pas exclu en dur : il l'est parce qu'il figure dans le `.gitignore`. Dans une copie du projet sans dossier `.git` (une archive décompressée par exemple), ce `.gitignore` n'est plus pris en compte et rg cherche de nouveau dans `node_modules`, sauf si on lui passe `--no-require-git`.
 
 Pour élargir la recherche :
 
@@ -141,7 +141,7 @@ src/app.py
 
 On l'exclut alors explicitement avec un glob : `rg --hidden -g '!.git' init` ne renvoie plus que `src/app.py`.
 
-Le fichier `.env` du projet est à la fois caché et ignoré par git : `rg DATABASE_URL --hidden` ne trouve rien, il faut `-uu`. Ou plus simplement le nommer, car un fichier passé explicitement en argument est toujours lu : `rg DATABASE_URL .env`.
+Le fichier `.env` du projet est à la fois caché et ignoré par git : `rg DATABASE_URL --hidden` ne trouve rien, il faut `-uu`. Le plus simple est encore de le nommer, car un fichier passé explicitement en argument est toujours lu : `rg DATABASE_URL .env`.
 
 Pour exclure des fichiers de vos recherches sans toucher au `.gitignore`, vous pouvez créer un fichier `.ignore` ou `.rgignore` à la racine du projet, avec la même syntaxe. rg le lit automatiquement, y compris en dehors d'un dépôt git :
 
@@ -156,7 +156,7 @@ Enfin, `rg --files` liste les fichiers que rg fouillerait, sans rien chercher de
 
 ## Casse, mots entiers et texte littéral
 
-La recherche est sensible à la casse par défaut. `-i` la rend insensible, et `-S` (*smart case*) choisit tout seul : la recherche est insensible à la casse si le motif est tout en minuscules, et sensible dès qu'il contient une majuscule. `rg -S todo` trouve donc `TODO`, `Todo` et `todo`, alors que `rg -S Todo` ne trouve que `Todo`.
+La recherche est sensible à la casse par défaut. `-i` la rend insensible, et `-S` (*smart case*) choisit tout seul : insensible à la casse si le motif est tout en minuscules, sensible dès qu'il contient une majuscule. `rg -S todo` trouve donc `TODO`, `Todo` et `todo`, alors que `rg -S Todo` ne trouve que `Todo`.
 
 `-w` ne garde que les mots entiers :
 
@@ -193,7 +193,7 @@ Chaque type correspond à une liste de motifs de noms de fichiers, que `rg --typ
 rg TODO --type-add 'web:*.{html,css,js}' -t web
 ```
 
-Choisissez un nom qui n'existe pas déjà. Si le type existe, `--type-add` ajoute les motifs à sa définition au lieu de la remplacer : c'est le cas de `config`, qui couvre déjà `*.cfg`, `*.conf`, `*.config` et `*.ini`.
+Choisissez un nom qui n'existe pas déjà : si le type existe, `--type-add` ajoute les motifs à sa définition au lieu de la remplacer. Le type `config`, par exemple, existe et couvre déjà `*.cfg`, `*.conf`, `*.config` et `*.ini`.
 
 Pour un filtrage plus fin, `-g` prend un glob, avec la même syntaxe que les `.gitignore`. Un `!` devant le glob exclut les fichiers correspondants :
 
@@ -265,7 +265,7 @@ static/app.js
 9:logger.info(message);
 ```
 
-Une fois le résultat vérifié, on applique le remplacement avec [sed]({% post_url 2026-01-19-Sed-editer-des-fichiers-en-ligne-de-commande %}), sur les fichiers que `rg -l` liste :
+Une fois le résultat vérifié, on applique le remplacement avec [sed]({% post_url 2026-01-19-Sed-editer-des-fichiers-en-ligne-de-commande %}), sur les fichiers que `rg -l` liste. Par exemple, pour renommer une fonction :
 
 ```bash
 rg -l 'old_function' | xargs sed -i 's/old_function/new_function/g'
@@ -275,7 +275,7 @@ Si des chemins peuvent contenir des espaces, il faut séparer les noms de fichie
 
 ## Chercher sur plusieurs lignes
 
-Par défaut, rg cherche ligne par ligne. Avec `-U` (*multiline*), un motif peut s'étendre sur plusieurs lignes. Par exemple pour trouver les fonctions JavaScript vides, y compris quand l'accolade fermante est sur la ligne suivante :
+Par défaut, rg cherche ligne par ligne. Avec `-U` (*multiline*), un motif peut s'étendre sur plusieurs lignes. Par exemple, pour trouver les fonctions JavaScript vides, y compris quand l'accolade fermante est sur la ligne suivante :
 
 ```bash
 rg -U 'function \w+\([^)]*\)\s*\{\s*\}' -t js
@@ -290,7 +290,7 @@ static/app.js
 
 Sans `-U`, seule `noop` est trouvée.
 
-Attention, même avec `-U`, le point ne correspond pas à un retour à la ligne. Pour cela, il faut ajouter `--multiline-dotall`, ou le drapeau `(?s)` au début du motif. Sans `--multiline-dotall`, la commande suivante ne trouve rien :
+Attention, même avec `-U`, le point ne correspond pas à un retour à la ligne. Pour cela, il faut ajouter `--multiline-dotall`, ou le drapeau `(?s)` au début du motif. Sans `--multiline-dotall`, la commande suivante ne trouverait rien. Avec cette option, elle trouve le bloc `try` de `src/app.py` :
 
 ```bash
 rg -U --multiline-dotall 'try:.*?except' -t py
@@ -377,7 +377,7 @@ Une option qui prend une valeur s'écrit avec un `=` (`--glob=!*.min.js`), ou su
 
 ## Utiliser rg avec fzf, Vim, VS Code et git
 
-Avec [fzf](https://github.com/junegunn/fzf), on obtient une recherche interactive. `rg --files | fzf` permet de choisir un fichier du projet, et cette petite fonction, à mettre dans le `~/.bashrc`, cherche dans le contenu avec un aperçu du fichier :
+Avec [fzf](https://github.com/junegunn/fzf), on obtient une recherche interactive. `rg --files | fzf` permet de choisir un fichier du projet. Pour chercher dans le contenu, avec un aperçu du fichier, on peut ajouter cette petite fonction dans le `~/.bashrc` :
 
 ```bash
 rgf() {
@@ -402,7 +402,7 @@ nnoremap <leader>g :grep <C-R><C-W><CR>
 
 `--vimgrep` affiche chaque résultat sous la forme `fichier:ligne:colonne:texte`, le format décrit par `grepformat`.
 
-VS Code utilise déjà ripgrep pour sa recherche dans les fichiers, il n'y a rien à installer. Son comportement se règle avec les paramètres `search.exclude`, `search.useIgnoreFiles` (prise en compte des `.gitignore`, activée par défaut) ou `search.smartCase` (l'équivalent de `-S`, désactivé par défaut).
+VS Code utilise déjà ripgrep pour sa recherche dans les fichiers : il n'y a rien à installer. Son comportement se règle avec les paramètres `search.exclude`, `search.useIgnoreFiles` (prise en compte des `.gitignore`, activée par défaut) ou `search.smartCase` (l'équivalent de `-S`, désactivé par défaut).
 
 Avec git, on peut limiter la recherche aux fichiers modifiés depuis le dernier commit, ou à ceux d'un commit donné :
 

@@ -33,7 +33,7 @@ Dans cet article :
 
 ## Installation
 
-jq est dans les dépôts de toutes les distributions courantes :
+jq est dans les dépôts de toutes les distributions courantes, et s'installe aussi sur macOS et Windows :
 
 ```bash
 sudo apt install jq        # Debian, Ubuntu
@@ -53,7 +53,7 @@ Les exemples de cet article ont été testés avec jq 1.7. Pour connaître votre
 
 ## Le fichier d'exemple
 
-Tous les exemples utilisent ce fichier `data.json` :
+La plupart des exemples utilisent ce fichier `data.json` :
 
 ```json
 {
@@ -67,7 +67,7 @@ Tous les exemples utilisent ce fichier `data.json` :
 
 ## Afficher et valider du JSON
 
-Un programme jq est un filtre : il reçoit du JSON et en produit. Le plus simple est `.`, qui renvoie l'entrée telle quelle. Comme jq indente sa sortie, il suffit à rendre lisible un JSON écrit sur une seule ligne :
+Un programme jq est un filtre : il reçoit du JSON et en produit. Le plus simple est `.`, qui renvoie l'entrée telle quelle. Comme jq indente sa sortie, ce filtre suffit à rendre lisible un JSON écrit sur une seule ligne :
 
 ```bash
 echo '{"id": 1, "name": "Alice", "tags": ["admin", "ops"]}' | jq .
@@ -86,7 +86,7 @@ Ce qui donne :
 }
 ```
 
-Dans un terminal, la sortie est en couleurs. Si on la passe à `less`, il faut forcer les couleurs avec `-C` (`jq -C . data.json | less -R`), et `-M` les désactive.
+Dans un terminal, la sortie est en couleurs. Si on la passe à `less`, il faut forcer les couleurs avec `-C` (`jq -C . data.json | less -R`). À l'inverse, `-M` les désactive.
 
 L'option `-S` trie les clés des objets. Elle sert surtout à comparer deux fichiers dont les clés ne sont pas dans le même ordre :
 
@@ -145,7 +145,7 @@ Bob
 Chloé
 ```
 
-Quand on ne lui donne pas de fichier, jq lit l'entrée standard, on peut donc le placer derrière un `curl`. Par exemple, pour lister les fichiers publiés sur PyPI pour la version 2.32.3 de requests :
+Quand on ne lui donne pas de fichier, jq lit l'entrée standard : on peut donc le placer derrière un `curl`. Par exemple, pour lister les fichiers de la version 2.32.3 de requests publiés sur PyPI :
 
 ```bash
 curl -s https://pypi.org/pypi/requests/2.32.3/json | jq -r '.urls[].filename'
@@ -158,13 +158,13 @@ requests-2.32.3.tar.gz
 
 C'est le même principe avec `docker inspect` ou `kubectl get pods -o json`, qui produisent eux aussi du JSON.
 
-Pour sortir une ligne de texte par élément, on construit une chaîne avec l'interpolation `\( ... )`. Le `|` fonctionne comme dans le shell : il passe chaque résultat du filtre de gauche au filtre de droite.
+Pour afficher une ligne de texte par élément, on construit une chaîne avec l'interpolation `\( ... )`. Le `|` fonctionne comme dans le shell : il passe chaque résultat du filtre de gauche au filtre de droite.
 
 ```bash
 jq -r '.users[] | "\(.id)\t\(.name)\tactive=\(.active)"' data.json
 ```
 
-On obtient des lignes séparées par des tabulations, faciles à passer à `cut` ou `awk` :
+On obtient des lignes dont les champs sont séparés par des tabulations, faciles à passer à `cut` ou `awk` :
 
 ```
 1	Alice	active=true
@@ -192,7 +192,7 @@ jq -e '.users[0].email' data.json > /dev/null || echo "pas d'email"
 pas d'email
 ```
 
-Par contre, demander un champ à une chaîne, un nombre ou un tableau est une erreur : `.users[0].name.first` renvoie `Cannot index string with string "first"`, puisque `name` est une chaîne. Quand la structure des données varie d'un élément à l'autre, le suffixe `?` (`.users[0].name.first?`) fait taire l'erreur et ne produit rien.
+Par contre, demander un champ à une chaîne, un nombre ou un tableau est une erreur : `.users[0].name.first` échoue avec le message `Cannot index string with string "first"`, puisque `name` est une chaîne. Quand la structure des données varie d'un élément à l'autre, le suffixe `?` (`.users[0].name.first?`) fait taire l'erreur et ne produit rien.
 
 ## Filtrer avec select
 
@@ -207,7 +207,7 @@ Alice
 Chloé
 ```
 
-Ou celui dont l'id vaut 2 :
+Ou celui de l'utilisateur dont l'id vaut 2 :
 
 ```bash
 jq -r '.users[] | select(.id == 2) | .name' data.json
@@ -217,7 +217,7 @@ jq -r '.users[] | select(.id == 2) | .name' data.json
 Bob
 ```
 
-Sans `.name` à la fin, on récupère les objets entiers. On ajoute ici `-c` (*compact output*), qui écrit chaque objet sur une seule ligne au lieu de l'indenter :
+Sans `.name` à la fin, on récupère les objets entiers, ici ceux dont le score vaut au moins 30. On ajoute aussi `-c` (*compact output*), qui écrit chaque objet sur une seule ligne au lieu de l'indenter :
 
 ```bash
 jq -c '.users[] | select(.score >= 30)' data.json
@@ -263,7 +263,7 @@ jq -c '.users | sort_by(.score) | map(.name)' data.json
 
 `map(f)` applique `f` à chaque élément d'un tableau et renvoie un nouveau tableau : ici, on ne garde que les noms pour que la sortie reste lisible.
 
-Le tri est croissant, on l'inverse avec `reverse`. Les dates au format ISO 8601 se trient correctement comme de simples chaînes (tant qu'elles ont toutes le même format et le même fuseau), pas besoin de les convertir pour avoir les utilisateurs du plus récent au plus ancien :
+Le tri est croissant, on l'inverse avec `reverse`. Les dates au format ISO 8601 se trient correctement comme de simples chaînes, tant qu'elles ont toutes le même format et le même fuseau. Pas besoin de les convertir pour avoir les utilisateurs du plus récent au plus ancien :
 
 ```bash
 jq -r '.users | sort_by(.created_at) | reverse | .[].name' data.json
@@ -277,7 +277,7 @@ Bob
 
 ## Compter, additionner, grouper
 
-`length` donne la taille d'un tableau et `add` additionne ses éléments. `jq '.users | length' data.json` affiche `3`, et pour la somme des scores :
+`length` donne la taille d'un tableau et `add` additionne ses éléments. `jq '.users | length' data.json` affiche `3`. Pour la somme des scores :
 
 ```bash
 jq '[.users[].score] | add' data.json
@@ -329,7 +329,7 @@ jq -c '.users | unique_by(.active) | map(.name)' data.json
 ["Bob","Alice"]
 ```
 
-Pour compter les utilisateurs actifs et inactifs, `group_by` découpe le tableau en sous-tableaux qui partagent la même valeur de clé (triés de la même façon). Il ne reste qu'à construire un objet par groupe :
+Pour compter les utilisateurs actifs et inactifs, `group_by` range les éléments qui ont la même valeur de clé dans un même sous-tableau, et trie ces sous-tableaux par clé, comme `unique_by`. Il ne reste qu'à construire un objet par groupe :
 
 ```bash
 jq -c '.users | group_by(.active) | map({active: .[0].active, count: length})' data.json
@@ -373,7 +373,7 @@ jq -c '.users | map({id, name, tags: (.tags | join(","))})' data.json
 
 ## Modifier des valeurs
 
-L'opérateur `|=` remplace une valeur par le résultat d'un filtre appliqué à cette valeur, et `+=`, `*=`, etc. sont des raccourcis pour les opérations arithmétiques. jq renvoie le document complet, avec la modification. Pour augmenter tous les scores de 10 % (on n'affiche ensuite que le nom et le score, pour que la sortie reste lisible) :
+L'opérateur `|=` remplace une valeur par le résultat d'un filtre appliqué à cette valeur, et `+=`, `*=`, etc. sont des raccourcis pour les opérations arithmétiques. jq renvoie le document complet, avec la modification. Pour augmenter tous les scores de 10 % (on n'affiche ensuite que le nom et le score, pour alléger la sortie) :
 
 ```bash
 jq -c '.users[].score *= 1.1 | .users[] | {name, score}' data.json
@@ -412,7 +412,7 @@ jq '.users[].score *= 1.1' data.json > data.tmp && mv data.tmp data.json
 
 ## Plusieurs fichiers et JSON Lines
 
-Par défaut, jq applique le filtre à chaque document d'entrée, l'un après l'autre. Avec `-s` (*slurp*), il lit toutes les entrées et les range dans un seul tableau. Avec un fichier `a.json` qui contient `[1, 2]` et un fichier `b.json` qui contient `[3, 4]` :
+Par défaut, jq applique le filtre à chaque document d'entrée, l'un après l'autre. Avec `-s` (*slurp*), il lit toutes les entrées et les range dans un seul tableau. Prenons un fichier `a.json` qui contient `[1, 2]` et un fichier `b.json` qui contient `[3, 4]` :
 
 ```bash
 jq -c -s '.' a.json b.json
@@ -471,7 +471,7 @@ jq -r --arg user "$user" '.users[] | select(.name == $user) | .id' data.json
 
 La seconde commande affiche `1`, l'id d'Alice.
 
-`--arg` crée toujours une chaîne. Pour un nombre ou un booléen, il faut `--argjson`, qui interprète la valeur comme du JSON. Avec `--arg`, la comparaison se fait entre un nombre et une chaîne, et pour jq un nombre est toujours plus petit qu'une chaîne : le filtre ne renvoie rien, sans la moindre erreur.
+`--arg` crée toujours une chaîne. Pour un nombre ou un booléen, il faut `--argjson`, qui interprète la valeur comme du JSON. Avec `--arg`, la comparaison se fait entre un nombre et une chaîne, et pour jq un nombre est toujours plus petit qu'une chaîne : le filtre renvoie un tableau vide, sans la moindre erreur.
 
 ```bash
 jq -c --arg threshold 30 '.users | map(select(.score > $threshold) | .name)' data.json
@@ -483,7 +483,7 @@ jq -c --argjson threshold 30 '.users | map(select(.score > $threshold) | .name)'
 ["Alice","Chloé"]
 ```
 
-Avec `-n` (*null input*), jq ne lit aucune entrée. Combiné à `--arg`, c'est une façon sûre de construire un JSON à envoyer à une API, les guillemets sont échappés correctement :
+Avec `-n` (*null input*), jq ne lit aucune entrée. Associée à `--arg`, cette option permet de construire sans risque un JSON à envoyer à une API, avec des guillemets correctement échappés :
 
 ```bash
 jq -n --arg name 'Jean "Johnny"' --argjson score 18.5 '{name: $name, score: $score}'
