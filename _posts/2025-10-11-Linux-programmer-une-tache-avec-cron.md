@@ -60,12 +60,12 @@ min  heure  jour  mois  jour_sem  commande
 0-59 0-23   1-31  1-12  0-7       ...
 ```
 
-Pour le jour de la semaine, 0 et 7 désignent tous les deux le dimanche, 1 le lundi et 6 le samedi. Les mois et les jours peuvent aussi s'écrire avec les trois premières lettres de leur nom anglais (`jan`, `mon`...). Dans chaque champ, on peut utiliser :
+Pour le jour de la semaine, 0 et 7 désignent tous les deux le dimanche, 1 le lundi et 6 le samedi. Les mois et les jours de la semaine peuvent aussi s'écrire avec les trois premières lettres de leur nom anglais (`jan`, `mon`...). Dans chaque champ, on peut utiliser :
 
-- `*` : toutes les valeurs ;
-- `*/5` : toutes les 5 unités (toutes les 5 minutes dans le premier champ) ;
-- `1,15` : une liste de valeurs ;
-- `1-5` : une plage (du lundi au vendredi dans le dernier champ).
+- `*` : toutes les valeurs
+- `*/5` : toutes les 5 unités (toutes les 5 minutes dans le premier champ)
+- `1,15` : une liste de valeurs
+- `1-5` : une plage (du lundi au vendredi dans le champ du jour de la semaine)
 
 Quelques exemples :
 
@@ -104,7 +104,7 @@ sudo crontab -u alice -l  # afficher la crontab d'un autre utilisateur
 
 Pour désactiver une tâche temporairement, il suffit de commenter sa ligne avec un `#`.
 
-Les crontabs sont stockées dans `/var/spool/cron/crontabs/`, mais on ne modifie jamais ces fichiers directement : la commande `crontab` vérifie la syntaxe avant de les installer (elle refuse par exemple un fichier dont la dernière ligne ne se termine pas par un retour à la ligne). Inutile ensuite de redémarrer cron, il recharge tout seul les crontabs modifiées.
+Les crontabs sont stockées dans `/var/spool/cron/crontabs/`, mais on ne modifie jamais ces fichiers directement : la commande `crontab` vérifie la syntaxe avant de les installer (elle refuse par exemple un fichier dont la dernière ligne ne se termine pas par un retour à la ligne). Inutile ensuite de redémarrer cron : il recharge tout seul les crontabs modifiées.
 
 ## L'environnement des tâches
 
@@ -125,7 +125,7 @@ SHELL=/bin/sh
 PWD=/root
 ```
 
-`HOME` et `LOGNAME` viennent de `/etc/passwd`, `SHELL` vaut `/bin/sh`. Le `PATH` dépend de la distribution : Debian le fixe à `/usr/bin:/bin`, alors qu'Ubuntu, depuis la version 23.04, lance cron avec l'option `-P` et les tâches reçoivent le PATH défini dans `/etc/environment`, plus complet (il contient notamment `/usr/local/bin`, `/usr/sbin` et `/snap/bin`). Dans les deux cas, ce que vous ajoutez au PATH dans votre `~/.bashrc` (`~/.local/bin`, un venv activé...) n'existe pas pour cron.
+`HOME` et `LOGNAME` viennent de `/etc/passwd`, `SHELL` vaut `/bin/sh`. Le `PATH` dépend de la distribution : Debian le fixe à `/usr/bin:/bin`. Ubuntu, depuis la version 23.04, lance cron avec l'option `-P`, et les tâches reçoivent alors le PATH défini dans `/etc/environment`, plus complet (il contient notamment `/usr/local/bin`, `/usr/sbin` et `/snap/bin`). Dans les deux cas, ce que vous ajoutez au PATH dans votre `~/.bashrc` (`~/.local/bin`, un venv activé...) n'existe pas pour cron.
 
 Le plus sûr est donc d'utiliser des chemins absolus partout : `/usr/bin/python3 /home/user/mon_script.py` plutôt que `python ./mon_script.py`. On peut aussi définir le shell et le PATH en tête de la crontab :
 
@@ -208,7 +208,7 @@ Vérifier toutes les 5 minutes qu'un service web répond (`-f` fait échouer `cu
 */5 * * * * curl -fsS https://status.exemple.com/ping || echo "ping KO" >> /var/log/healthcheck.log
 ```
 
-Pour qu'une tâche lourde gêne moins le reste de la machine, on baisse sa priorité processeur avec `nice` et sa priorité disque avec `ionice -c3` (classe « idle »). Ce dernier n'a d'effet qu'avec les ordonnanceurs d'entrées/sorties qui gèrent les priorités, bfq et mq-deadline :
+Pour qu'une tâche lourde gêne moins le reste de la machine, on baisse sa priorité processeur avec `nice` et sa priorité disque avec `ionice -c3` (classe « idle »). `ionice` n'a d'effet qu'avec les ordonnanceurs d'entrées/sorties qui gèrent les priorités, bfq et mq-deadline :
 
 ```
 0 2 * * * nice -n 19 ionice -c3 /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1
@@ -223,19 +223,19 @@ En plus des crontabs des utilisateurs, cron lit `/etc/crontab` et les fichiers d
 0 2 * * * root /usr/local/bin/backup.sh
 ```
 
-Ces fichiers s'éditent directement, sans passer par la commande `crontab`, et cron les relit tout seul. Ils doivent appartenir à root et ne pas être modifiables par le groupe ou les autres utilisateurs. Ceux de `/etc/cron.d/` doivent en plus avoir un nom composé uniquement de lettres, de chiffres, de tirets et de soulignés : un fichier `sauvegarde.conf` ou `backup.cron` est tout simplement ignoré.
+Ces fichiers s'éditent directement, sans passer par la commande `crontab`, et cron les relit tout seul. Ils doivent appartenir à root et ne pas être modifiables par le groupe ou les autres utilisateurs. Ceux de `/etc/cron.d/` doivent en plus avoir un nom composé uniquement de lettres, de chiffres, de tirets (`-`) et de tirets bas (`_`) : un fichier `sauvegarde.conf` ou `backup.cron` est tout simplement ignoré.
 
-Les dossiers `/etc/cron.hourly`, `/etc/cron.daily`, `/etc/cron.weekly` et `/etc/cron.monthly` contiennent des scripts lancés par `run-parts` depuis `/etc/crontab`. Les mêmes règles de nommage s'appliquent, et les scripts doivent être exécutables : un script `backup.sh` déposé dans `/etc/cron.daily` ne sera jamais lancé, il faut l'appeler `backup`. Pour savoir ce qui sera réellement exécuté :
+Les dossiers `/etc/cron.hourly`, `/etc/cron.daily`, `/etc/cron.weekly` et `/etc/cron.monthly` contiennent des scripts lancés par `run-parts` depuis `/etc/crontab`. Les mêmes règles de nommage s'appliquent, et les scripts doivent être exécutables. Un script `backup.sh` déposé dans `/etc/cron.daily` ne sera donc jamais lancé : il faut l'appeler `backup`. Pour savoir ce qui sera réellement exécuté :
 
 ```bash
 run-parts --test /etc/cron.daily
 ```
 
-Sur une machine qui n'est pas allumée en permanence, comme un portable, anacron rattrape les tâches quotidiennes, hebdomadaires et mensuelles qui n'ont pas pu tourner à l'heure prévue. Quand il est installé, `/etc/crontab` lui laisse d'ailleurs la gestion de ces trois dossiers.
+Sur une machine qui n'est pas allumée en permanence, comme un portable, anacron rattrape les tâches quotidiennes, hebdomadaires et mensuelles qui n'ont pas pu tourner à l'heure prévue. Quand il est installé, `/etc/crontab` lui laisse d'ailleurs la gestion de `cron.daily`, `cron.weekly` et `cron.monthly`.
 
 ## Pourquoi ma tâche ne s'exécute pas ?
 
-Commencez par les journaux, cron y note le lancement de chaque tâche :
+Commencez par les journaux, où cron note le lancement de chaque tâche :
 
 ```bash
 # via journald
@@ -244,13 +244,13 @@ journalctl -u cron -f
 sudo grep CRON /var/log/syslog
 ```
 
-Si la tâche n'y apparaît pas du tout, vérifiez la syntaxe de l'horaire, le nom du fichier s'il est dans `/etc/cron.d/`, et que le service tourne avec `systemctl status cron` (`crond` sur RHEL et Fedora).
+Si la tâche n'y apparaît pas du tout, vérifiez la syntaxe de l'horaire, le nom du fichier s'il est dans `/etc/cron.d/` et l'état du service avec `systemctl status cron` (`crond` sur RHEL et Fedora).
 
 Si elle apparaît mais ne fait pas ce qu'on attend, le problème vient presque toujours de ce qui a été vu plus haut : commande introuvable à cause du PATH, `%` non échappé, droits insuffisants pour écrire un fichier, script non exécutable. La redirection de la sortie vers un fichier (`>> fichier.log 2>&1`) donne alors le message d'erreur exact.
 
 ## Les timers systemd
 
-Sur les distributions qui utilisent systemd, les timers sont une alternative à cron. Une tâche y est décrite par deux unités, un service et un timer, ce qui donne accès aux dépendances entre services, aux journaux de `journalctl`, aux limites de ressources (`MemoryMax=`, `CPUQuota=`) et aux options de sandboxing de systemd. Avec `Persistent=true`, un timer lance au démarrage les exécutions manquées pendant que la machine était éteinte, à la manière d'anacron. `systemctl list-timers` affiche les timers actifs, dont ceux du système comme `apt-daily.timer`.
+Sur les distributions qui utilisent systemd, les timers sont une alternative à cron. Une tâche est alors décrite par deux unités, un service et un timer, ce qui donne accès aux dépendances entre services, aux journaux de `journalctl`, aux limites de ressources (`MemoryMax=`, `CPUQuota=`) et aux options de sandboxing de systemd. Avec `Persistent=true`, un timer lance la tâche dès le démarrage si une exécution a été manquée pendant que la machine était éteinte, à la manière d'anacron. `systemctl list-timers` affiche les timers actifs, dont ceux du système comme `apt-daily.timer`.
 
 Pour une simple commande à heure fixe, cron reste plus rapide à mettre en place.
 

@@ -63,7 +63,7 @@ Les lignes `banaction` et `backend` n'existent dans ce fichier que depuis la ver
 
 ## Filtres, actions et jails
 
-Fail2ban repose sur trois notions. Un filtre est un ensemble d'expressions régulières qui reconnaissent les lignes d'échec dans un journal : `/etc/fail2ban/filter.d/sshd.conf` reconnaît par exemple les connexions SSH ratées. Une action, rangée dans `/etc/fail2ban/action.d/`, décrit comment bannir et débannir une adresse : ajouter une règle nftables, iptables ou UFW, envoyer un mail... Enfin, un jail associe un filtre, une ou plusieurs actions et des paramètres comme la durée du bannissement ou le nombre d'échecs tolérés.
+Fail2ban repose sur trois notions. Un filtre est un ensemble d'expressions régulières qui reconnaissent les lignes d'échec dans un journal : `/etc/fail2ban/filter.d/sshd.conf`, par exemple, repère les connexions SSH ratées. Une action, rangée dans `/etc/fail2ban/action.d/`, décrit comment bannir et débannir une adresse : ajouter une règle nftables, iptables ou UFW, envoyer un mail... Enfin, un jail associe un filtre, une ou plusieurs actions et des paramètres comme la durée du bannissement ou le nombre d'échecs qui le déclenche.
 
 Les fichiers `.conf` appartiennent au paquet et peuvent être remplacés lors d'une mise à jour : on ne les modifie pas. On écrit ses réglages dans des fichiers `.local`, qui ne contiennent que ce qu'on veut changer. Pour les jails, les fichiers sont lus dans cet ordre, chacun l'emportant sur les précédents :
 
@@ -107,9 +107,9 @@ filter  = sshd
 # (Sinon : logpath = /var/log/auth.log)
 ```
 
-Avec ces valeurs, qui sont celles par défaut de `jail.conf`, une adresse qui échoue 5 fois en 10 minutes est bannie pendant 10 minutes. Si votre serveur SSH n'écoute pas sur le port 22, indiquez le bon port dans `port` : les actions nftables et iptables ne bloquent que les ports du jail.
+Avec ces valeurs, qui sont celles par défaut de `jail.conf`, une adresse qui accumule 5 échecs en 10 minutes est bannie pendant 10 minutes. Si votre serveur SSH n'écoute pas sur le port 22, indiquez le bon port dans `port` : les actions nftables et iptables ne bloquent que les ports du jail.
 
-La ligne `backend = systemd` fait lire les échecs dans le journal de systemd plutôt que dans un fichier comme `/var/log/auth.log`, qui n'existe que si rsyslog est installé. Ce backend a besoin du module Python de systemd. C'est une dépendance du paquet depuis la version 1.0.2-3 ; avec un paquet plus ancien comme celui de Debian 12, vérifiez qu'il est installé avec `sudo apt install python3-systemd`. Sans lui, le jail ne démarre pas et Fail2ban signale `Failed to initialize any backend for Jail 'sshd'`.
+La ligne `backend = systemd` fait lire les échecs dans le journal de systemd plutôt que dans un fichier comme `/var/log/auth.log`, qui n'existe que si rsyslog est installé. Ce backend a besoin du module Python de systemd. C'est une dépendance du paquet depuis la version 1.0.2-3 ; avec un paquet plus ancien comme celui de Debian 12, installez-le au besoin avec `sudo apt install python3-systemd`. Sans ce module, le jail ne démarre pas et Fail2ban signale `Failed to initialize any backend for Jail 'sshd'`.
 
 On vérifie la configuration, puis on la recharge :
 
@@ -118,7 +118,7 @@ sudo fail2ban-client -t
 sudo systemctl reload fail2ban
 ```
 
-`fail2ban-client -t` teste la configuration sans rien appliquer et affiche `OK: configuration test is successful` si tout va bien. `systemctl reload fail2ban` se contente d'appeler `fail2ban-client reload`, les deux commandes sont équivalentes.
+`fail2ban-client -t` teste la configuration sans rien appliquer et affiche `OK: configuration test is successful` si tout va bien. `systemctl reload fail2ban` se contente d'appeler `fail2ban-client reload` : les deux commandes sont équivalentes.
 
 ## Choisir l'action de bannissement
 
@@ -137,7 +137,7 @@ Si UFW gère le pare-feu de la machine, utilisez son action : les bannissements 
 banaction = ufw
 ```
 
-Sinon, `nftables-multiport` (identique à l'action `nftables` d'Ubuntu) convient aux systèmes récents, et `iptables-multiport` aux configurations encore basées sur iptables. Fail2ban crée alors ses propres règles, sans toucher aux vôtres.
+Sinon, `nftables-multiport` (identique à l'action `nftables` utilisée par Ubuntu) convient aux systèmes récents, et `iptables-multiport` aux configurations encore basées sur iptables. Fail2ban crée alors ses propres règles, sans toucher aux vôtres.
 
 ## Vérifier que ça fonctionne
 
@@ -180,7 +180,7 @@ sudo fail2ban-client set sshd unbanip 203.0.113.10
 
 La commande `sudo fail2ban-client unban 203.0.113.10` fait la même chose dans tous les jails à la fois.
 
-Le compteur `Total failed` doit augmenter quand une connexion SSH échoue. Faites un essai avec un mauvais mot de passe depuis une machine dont l'adresse n'est pas dans `ignoreip` (moins de 5 fois, pour ne pas vous bannir) : si le compteur reste à 0, le jail ne voit pas les échecs, et le problème vient presque toujours du backend ou du chemin du journal.
+Le compteur `Total failed` doit augmenter quand une connexion SSH échoue. Faites un essai avec un mauvais mot de passe depuis une machine dont l'adresse n'est pas dans `ignoreip`, moins de 5 fois pour ne pas vous bannir. Si le compteur reste à 0, le jail ne voit pas les échecs : le problème vient presque toujours du backend ou du chemin du journal.
 
 Fail2ban écrit son propre journal dans `/var/log/fail2ban.log` ; les erreurs de démarrage du service sont aussi visibles avec `journalctl` :
 
@@ -196,9 +196,9 @@ Trois paramètres règlent la sensibilité d'un jail :
 
 - `bantime` : durée du bannissement ;
 - `findtime` : fenêtre pendant laquelle on compte les échecs ;
-- `maxretry` : nombre d'échecs tolérés dans cette fenêtre.
+- `maxretry` : nombre d'échecs qui, dans cette fenêtre, déclenche le bannissement.
 
-Les durées s'écrivent en secondes ou avec une unité : `s`, `m`, `h`, `d` ou `w` pour les semaines. Attention, `m` signifie minutes, les mois s'écrivent `mo`. En cas de doute, `fail2ban-client --str2sec 1w` affiche la conversion en secondes (604800).
+Les durées s'écrivent en secondes ou avec une unité : `s`, `m`, `h`, `d` ou `w` pour les semaines. Attention, `m` signifie minutes : les mois s'écrivent `mo`. En cas de doute, `fail2ban-client --str2sec 1w` affiche la conversion en secondes (604800).
 
 Exemple plus strict :
 
@@ -209,11 +209,11 @@ findtime = 15m
 maxretry = 3
 ```
 
-Commencez avec des valeurs souples pour éviter de vous bannir vous-même, puis resserrez progressivement. Plutôt qu'un `bantime` très long dès le départ, on peut aussi allonger la durée pour les adresses qui reviennent, avec le jail `recidive` présenté plus bas ou avec l'option `bantime.increment = true` (disponible depuis Fail2ban 0.11 et décrite dans les commentaires de `jail.conf`), qui augmente la durée à chaque nouveau bannissement d'une même adresse : par défaut, elle double à chaque fois.
+Commencez avec des valeurs souples pour éviter de vous bannir vous-même, puis resserrez progressivement. Plutôt qu'un `bantime` très long dès le départ, vous pouvez aussi allonger la durée pour les adresses qui reviennent, avec le jail `recidive` présenté plus bas ou avec l'option `bantime.increment = true`. Cette option, disponible depuis Fail2ban 0.11 et décrite dans les commentaires de `jail.conf`, augmente la durée à chaque nouveau bannissement d'une même adresse : par défaut, elle double.
 
 ## Ne pas bannir ses propres adresses
 
-Ajoutez votre IP publique (ou celle de votre bureau, de votre VPN) dans `ignoreip`, dans la section `[DEFAULT]` :
+Ajoutez votre IP publique (ou celle de votre bureau, de votre VPN) à la liste `ignoreip` de la section `[DEFAULT]` :
 
 ```ini
 ignoreip = 127.0.0.1/8 ::1 198.51.100.42 203.0.113.0/24
@@ -247,7 +247,7 @@ Fail2ban 1.0.2 fournit quatre filtres pour Nginx, que l'on peut lister :
 ls /etc/fail2ban/filter.d/ | grep nginx
 ```
 
-Le filtre `nginx-botsearch` repère les robots qui cherchent des pages connues (`wp-login.php`, phpMyAdmin, `cgi-bin`...) et tombent sur une erreur 404. Dans `jail.conf`, ce jail lit les journaux d'erreurs de Nginx, mais le filtre reconnaît aussi le format de `access.log`, utilisé ici :
+Le filtre `nginx-botsearch` repère les robots qui cherchent des pages connues (`wp-login.php`, phpMyAdmin, `cgi-bin`...) et tombent sur une erreur 404. Dans `jail.conf`, le jail du même nom lit les journaux d'erreurs de Nginx, mais le filtre reconnaît aussi le format de `access.log`, utilisé ici :
 
 ```ini
 [nginx-botsearch]

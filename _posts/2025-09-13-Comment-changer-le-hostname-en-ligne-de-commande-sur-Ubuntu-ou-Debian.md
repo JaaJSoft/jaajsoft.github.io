@@ -44,7 +44,7 @@ Operating System: Ubuntu 24.04.3 LTS
 
 Une ligne `Transient hostname` n'apparaît que si le nom courant du noyau diffère du nom statique, et `Pretty hostname` seulement si un nom d'affichage a été défini (on y revient plus bas).
 
-Pour un simple affichage, sans systemd :
+Pour afficher simplement le nom, sans passer par systemd :
 
 ```bash
 hostname          # nom courant, celui du noyau
@@ -77,17 +77,17 @@ systemd distingue en fait trois noms. Le nom statique est celui qu'on vient de m
 sudo hostnamectl set-hostname "Mon Serveur de Paris" --pretty
 ```
 
-Il n'est jamais utilisé sur le réseau : pour les scripts, la résolution de noms ou SSH, c'est le nom statique qui compte. Enfin, le nom transitoire (transient) est celui que peut fournir le réseau : NetworkManager ou systemd-networkd savent récupérer un nom envoyé par le serveur DHCP. systemd ne s'en sert que si aucun nom statique n'est configuré : sur un serveur dont le fichier `/etc/hostname` est rempli, c'est toujours le nom statique qui l'emporte.
+Ce nom n'est jamais utilisé sur le réseau : pour les scripts, la résolution de noms ou SSH, c'est le nom statique qui compte. Enfin, le nom transitoire (transient) est celui que peut fournir le réseau : NetworkManager ou systemd-networkd savent récupérer un nom envoyé par le serveur DHCP. systemd ne s'en sert que si aucun nom statique n'est configuré. Sur un serveur dont le fichier `/etc/hostname` est rempli, c'est donc toujours le nom statique qui l'emporte.
 
 ## Mettre à jour /etc/hosts
 
-`hostnamectl` ne touche pas à `/etc/hosts`. Or sur Debian et Ubuntu, le nom de la machine y est associé à l'adresse `127.0.1.1`. Si cette ligne contient encore l'ancien nom, le nouveau ne se résout plus en local, ce qui gêne les programmes qui cherchent à résoudre le nom de la machine (`hostname -f` par exemple, voir plus bas).
+`hostnamectl` ne touche pas à `/etc/hosts`. Or sur Debian et Ubuntu, le nom de la machine y est associé à l'adresse `127.0.1.1`. Si cette ligne contient encore l'ancien nom, le nouveau nom ne peut pas être résolu en local, ce qui gêne les programmes qui en ont besoin (`hostname -f` par exemple, voir plus bas).
 
 ```bash
 sudo nano /etc/hosts
 ```
 
-Le fichier doit contenir une ligne de ce genre :
+Le début du fichier doit ressembler à ceci :
 
 ```
 127.0.0.1   localhost
@@ -143,7 +143,7 @@ Sur une VM cloud, cloud-init met à jour `/etc/hostname` à chaque démarrage à
 sudo sed -i 's/^preserve_hostname: false/preserve_hostname: true/' /etc/cloud/cloud.cfg
 ```
 
-Autre piège sur ces machines : si `/etc/hosts` commence par un commentaire qui parle de `manage_etc_hosts`, cloud-init régénère le fichier à chaque démarrage. Les modifications doivent alors être faites dans le modèle `/etc/cloud/templates/hosts.debian.tmpl`, ou il faut désactiver `manage_etc_hosts`.
+Autre piège sur ces machines : si `/etc/hosts` commence par un commentaire qui parle de `manage_etc_hosts`, cloud-init régénère le fichier à chaque démarrage. Il faut alors faire les modifications dans le modèle `/etc/cloud/templates/hosts.debian.tmpl`, ou désactiver `manage_etc_hosts`.
 
 Dans un conteneur, enfin, le nom est fixé par le moteur au lancement : avec Docker, on le choisit avec l'option `--hostname` de `docker run`, plutôt que de le modifier depuis l'intérieur du conteneur.
 
