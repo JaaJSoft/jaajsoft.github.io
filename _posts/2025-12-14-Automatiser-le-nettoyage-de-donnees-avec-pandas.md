@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Automatiser le nettoyage de données avec pandas"
+description: "Automatiser le nettoyage de données avec pandas : valeurs manquantes, doublons, formats de texte, types, outliers et pipeline de nettoyage réutilisable."
 tags:
   - python
   - pandas

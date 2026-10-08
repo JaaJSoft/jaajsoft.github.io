@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Augmenter la limite inotify sur Debian et Ubuntu"
+description: "Corriger l'erreur inotify watch limit reached sur Debian et Ubuntu : comprendre les limites d'inotify et les augmenter de façon temporaire ou permanente."
 tags:
   - linux
   - debian

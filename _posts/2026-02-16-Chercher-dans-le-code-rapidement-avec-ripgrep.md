@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Ripgrep (rg) : chercher rapidement dans le code"
+description: "Chercher dans le code avec ripgrep (rg) : fichiers ignorés par défaut, filtres par type et par glob, regex PCRE2, configuration, fzf, Vim et git."
 author: Pierre Chopinet
 tags:
   - linux

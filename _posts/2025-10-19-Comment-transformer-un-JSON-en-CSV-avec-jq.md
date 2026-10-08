@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Comment transformer un JSON en CSV avec jq"
+description: "Convertir du JSON en CSV avec jq en une commande : en-têtes, champs imbriqués, filtres, JSON Lines, valeurs manquantes et gros volumes en streaming."
 tags:
   - linux
   - jq

@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Accélérer Django avec la compression HTTP"
+description: "Activer la compression HTTP GZip dans Django avec GZipMiddleware, la combiner avec WhiteNoise ou un reverse proxy, et comparer avec Brotli."
 tags:
   - python
   - django

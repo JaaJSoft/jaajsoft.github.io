@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Sed : éditer des fichiers en ligne de commande avec des regex"
+description: "Éditer des fichiers en ligne de commande avec sed : remplacer du texte, supprimer ou insérer des lignes, regex, modification en place, GNU sed et BSD sed."
 author: Pierre Chopinet
 tags:
   - linux

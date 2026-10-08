@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Comment manipuler du JSON en ligne de commande avec jq"
+description: "Filtrer et transformer du JSON en ligne de commande avec jq : extraire des valeurs, select, tri, agrégations, modifications, JSON Lines et variables du shell."
 author: Pierre Chopinet
 tags:
   - linux

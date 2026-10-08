@@ -1,6 +1,7 @@
 ---
 layout: article
 title: Les maps (Map) en Java
+description: "Les maps en Java : interface Map, parcours, merge et computeIfAbsent, HashMap, LinkedHashMap et TreeMap, cache LRU, clés stables et ConcurrentHashMap."
 author: Pierre Chopinet
 tags:
   - java

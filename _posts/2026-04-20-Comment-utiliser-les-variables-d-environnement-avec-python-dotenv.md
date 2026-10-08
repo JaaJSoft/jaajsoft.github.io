@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment utiliser les variables d'environnement avec python-dotenv"
+description: "Gérer la configuration d'une application Python avec les variables d'environnement et python-dotenv : fichier .env, priorités, secrets et Docker."
 tags:
     - python
     - dotenv

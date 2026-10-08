@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Introduction aux Streams en Java"
+description: "Introduction à l'API Stream de Java : créer un Stream, opérations intermédiaires et terminales, Streams de primitifs, Collectors et Streams parallèles."
 author: Pierre Chopinet
 tags:
   - java

@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "df/du : surveiller et analyser l'espace disque sous Linux"
+description: "Surveiller l'espace disque sous Linux avec df et du : réserve root, inodes, trouver ce qui prend la place et pourquoi les deux commandes ne sont pas d'accord."
 author: Pierre Chopinet
 tags:
   - linux

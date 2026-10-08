@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Déboguer les requêtes SQL et problèmes N+1 dans Django"
+description: "Afficher les requêtes SQL de Django, détecter les problèmes N+1 et les corriger avec select_related, prefetch_related et Prefetch, avec les outils adaptés."
 tags:
   - python
   - django

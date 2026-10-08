@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Activer les mises à jour de sécurité automatiques sur Ubuntu/Debian"
+description: "Activer les mises à jour de sécurité automatiques sur Ubuntu et Debian avec unattended-upgrades : configuration, fréquence, tests, logs et redémarrages."
 tags:
   - linux
   - ubuntu

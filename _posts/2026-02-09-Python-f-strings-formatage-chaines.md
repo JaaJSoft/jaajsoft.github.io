@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment utiliser les f-strings"
+description: "Formater des chaînes en Python avec les f-strings : expressions, nombres, alignement, dates, accolades, débogage avec = et limites avant Python 3.12."
 tags:
   - python
   - strings

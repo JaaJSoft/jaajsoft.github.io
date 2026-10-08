@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Optional en Java : éviter les NullPointerException"
+description: "Utiliser Optional en Java pour éviter les NullPointerException : création, map, flatMap, filter, ifPresent, anti-patterns et usage avec Spring Data."
 tags:
   - java
   - optional

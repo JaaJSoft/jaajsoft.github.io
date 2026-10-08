@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Installer et configurer Fail2ban sur un serveur Ubuntu/Debian"
+description: "Installer et configurer Fail2ban sur Ubuntu ou Debian pour protéger SSH contre le brute-force : jails, bantime, findtime, maxretry et whitelist."
 author: Pierre Chopinet
 tags:
   - linux

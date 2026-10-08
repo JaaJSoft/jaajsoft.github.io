@@ -1,6 +1,7 @@
 ---
 layout: article
 title: Les listes (List) en Java
+description: "Les listes en Java : interface List, ArrayList ou LinkedList, sous-listes, tri, parcours et ListIterator, listes non modifiables et accès concurrents."
 author: Pierre Chopinet
 tags:
   - java

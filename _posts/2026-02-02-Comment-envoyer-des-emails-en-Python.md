@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment envoyer des emails"
+description: "Envoyer des emails en Python avec smtplib : texte et HTML, pièces jointes, SSL ou STARTTLS, gestion des erreurs, Flask-Mail et templates Jinja2."
 tags:
   - python
   - email

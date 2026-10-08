@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Records en Java : simplifier vos DTOs"
+description: "Les records en Java pour écrire des DTOs immuables sans boilerplate : syntaxe, personnalisation, collections, Spring Boot, limites et comparaison avec Lombok."
 tags:
   - java
   - records

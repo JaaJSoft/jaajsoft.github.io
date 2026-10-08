@@ -1,6 +1,7 @@
 ---
 layout: article
 title: Les files (Queue) et Deques en Java
+description: "Les files en Java : Queue et Deque, ArrayDeque pour les files et les piles, PriorityQueue, et les files bloquantes pour faire travailler des threads ensemble."
 author: Pierre Chopinet
 tags:
   - java

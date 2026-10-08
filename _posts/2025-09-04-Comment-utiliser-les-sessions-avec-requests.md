@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment utiliser les sessions avec requests"
+description: "Réutiliser les connexions avec requests.Session en Python : cookies, en-têtes et authentification partagés, retries avec HTTPAdapter, timeouts et proxies."
 tags:
   - python
   - http

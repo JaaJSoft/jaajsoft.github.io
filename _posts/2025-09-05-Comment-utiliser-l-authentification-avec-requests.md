@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment utiliser les différents modes d'authentification avec requests"
+description: "Les modes d'authentification de requests en Python : Basic, Digest, Bearer token, clé d'API, OAuth1, OAuth2, .netrc et classe d'authentification personnalisée."
 tags:
   - python
   - http

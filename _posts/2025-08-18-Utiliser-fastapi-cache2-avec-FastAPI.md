@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Ajouter un cache à notre application FastAPI avec redis"
+description: "Ajouter un cache à une API FastAPI avec fastapi-cache2 : d'abord en mémoire, puis avec Redis pour le partager entre plusieurs processus."
 author: Pierre Chopinet
 tags:
 - python

@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Comment ajouter un cache à une application Flask"
+description: "Ajouter un cache à une application Flask avec Flask-Caching : SimpleCache, clés par utilisateur, invalidation, puis passage en production avec Redis."
 tags:
   - python
   - flask

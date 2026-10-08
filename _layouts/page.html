@@ -187,7 +187,6 @@ layout: base
                 {%- if page.aside -%}
                   <aside class="page__aside js-page-aside">
                     {%- include aside/toc.html -%}
-                    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8782622197508630" crossorigin="anonymous"></script>
                       <!-- sommaire -->
                       <ins class="adsbygoogle"
                           style="display:block; padding-left: 3rem;"
@@ -204,13 +203,11 @@ layout: base
 
               <div class="col-main cell cell--auto">
                 {%- include main/top/custom.html -%}
-                {%- if _page_type == 'article' -%}
-                  <article itemscope itemtype="http://schema.org/Article">
-                {%- elsif _page_type == 'webpage' -%}
-                  <article itemscope itemtype="http://schema.org/WebPage">
-                {%- else -%}
-                  <article>
-                {%- endif -%}
+                {%- comment -%}
+                  Pas de microdata ici : les données structurées sont produites
+                  uniquement en JSON-LD par jekyll-seo-tag.
+                {%- endcomment -%}
+                <article>
 
                 {%- if _article_header_type == 'overlay' or page.article_header == false -%}
                   {%- include article-header.html article=page html=false -%}

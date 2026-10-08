@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Comment ajouter du cache à une application Django"
+description: "Ajouter du cache à une application Django : backends, cache par vue, par site et de fragments, API bas niveau, invalidation et cache avec Django REST Framework."
 tags:
   - python
   - django

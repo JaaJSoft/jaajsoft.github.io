@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Les Virtual Threads en Java 21"
+description: "Les virtual threads de Java 21 : fonctionnement, création, serveur HTTP, appels en parallèle, migration depuis un pool de threads et pinning avec synchronized."
 author: Pierre Chopinet
 tags:
   - java

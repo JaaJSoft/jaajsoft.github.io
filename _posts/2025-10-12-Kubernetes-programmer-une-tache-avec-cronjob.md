@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Kubernetes : Programmer des tâches avec CronJob"
+description: "Programmer des tâches récurrentes dans Kubernetes avec un CronJob : chevauchements, historique, gestion des échecs, débogage et migration depuis cron."
 tags:
   - kubernetes
   - cron

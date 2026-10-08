@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Comment ajouter du cache à une application Spring Boot"
+description: "Ajouter du cache à une application Spring Boot avec l'abstraction Spring Cache : Caffeine, Redis, annotations, SpEL, invalidation, tests et métriques."
 tags:
   - java
   - spring

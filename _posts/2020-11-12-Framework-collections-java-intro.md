@@ -1,6 +1,7 @@
 ---
 layout: article
 title: Introduction aux collections Java
+description: "Introduction au Framework Collections de Java : List, Set, Queue et Map, leur hiérarchie d'interfaces et les bonnes pratiques pour bien les utiliser."
 tags:
     - java
     - collections
@@ -41,7 +42,7 @@ Le Framework Collections est une architecture présente dans la bibliothèque st
 
 Le Framework Collections forme alors une hiérarchie de classes qui est la suivante :
 
-![](/assets/images/2020-11-12-Framework-collections-java-intro/collectionsHierarchy.png)
+![](/assets/images/2020-11-12-Framework-collections-java-intro/collectionsHierarchy.png){: width="632" height="527"}
 
 Dans cette hiérarchie, nous retrouvons deux interfaces principales représentant les grandes familles de collections :
 

@@ -36,11 +36,7 @@
     {%- endif -%}
 
     {%- if include.type == 'item' -%}
-      {%- if include.article_type == 'BlogPosting' -%}
-        <article class="item" itemscope itemtype="http://schema.org/BlogPosting">
-      {%- else -%}
-        <article class="item">
-      {%- endif -%}
+      <article class="item">
         {%- if _article.cover and include.show_cover-%}
           {%- include snippets/get-nav-url.html path=_article.cover -%}
           {%- assign _article_cover = __return -%}
@@ -55,10 +51,10 @@
           </div>
         {%- endif -%}
         <div class="item__content">
-          <header><a href="{{ _article_url }}"><h2 itemprop="headline" class="item__header">{{ _article.title }}</h2></a></header>
+          <header><a href="{{ _article_url }}"><h2 class="item__header">{{ _article.title }}</h2></a></header>
           <div class="item__description">
             {%- if _article.excerpt and include.show_excerpt -%}
-              <div class="article__content" itemprop="description articleBody">
+              <div class="article__content">
                 {%- if _excerpt_type == 'html' -%}
                   {{ _article.excerpt }}
                 {%- else -%}
@@ -99,12 +95,12 @@
         {%- endif -%}
       {%- endif -%}
       {%- include snippets/get-locale-string.html key='ARTICLE_LIST_DATE_FORMAT' -%}
-      <li class="item" itemscope itemtype="http://schema.org/BlogPosting" data-tags="{{ _tags }}">
+      <li class="item" data-tags="{{ _tags }}">
         <div class="item__content">
           {%- if include.show_info -%}
             <span class="item__meta">{{ _article.date | date: __return }}</span>
           {%- endif -%}
-          <a itemprop="headline" class="item__header" href="{{ _article_url }}">{{ _article.title }}</a></div>
+          <a class="item__header" href="{{ _article_url }}">{{ _article.title }}</a></div>
       </li>
 
     {%- elsif include.type == 'grid' -%}
@@ -140,8 +136,6 @@
       {%- endif -%}
     {%- endif -%}
   {%- endfor -%}
-            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8782622197508630"
-                    crossorigin="anonymous"></script>
             <!-- blog-list -->
             <ins class="adsbygoogle"
                  style="display:block"

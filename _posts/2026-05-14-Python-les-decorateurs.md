@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment utiliser les décorateurs"
+description: "Comprendre et écrire des décorateurs en Python : functools.wraps, décorateurs avec paramètres, empilement, décorateurs de la bibliothèque standard et de classe."
 tags:
   - python
   - decorateurs

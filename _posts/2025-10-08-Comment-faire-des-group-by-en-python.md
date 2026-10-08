@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Python : Comment faire des group by"
+description: "Faire des group by en Python : defaultdict, itertools.groupby, Counter, sommes et moyennes par groupe, groupby et pivot_table de pandas, et gros volumes."
 tags:
   - python
   - data

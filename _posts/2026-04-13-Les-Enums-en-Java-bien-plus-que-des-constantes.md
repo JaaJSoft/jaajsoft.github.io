@@ -1,6 +1,7 @@
 ---
 layout: article
 title: "Les enums en Java"
+description: "Les enums en Java : déclaration, switch, champs et constructeur, interfaces, méthode par constante, EnumSet, EnumMap et machine à états."
 author: Pierre Chopinet
 tags:
   - java
