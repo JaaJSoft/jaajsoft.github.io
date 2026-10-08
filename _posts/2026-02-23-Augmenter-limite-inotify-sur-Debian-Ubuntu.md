@@ -52,13 +52,17 @@ Le projet de test contient 112 répertoires et 200 fichiers : `inotifywait` y a 
 
 ## Les trois limites
 
-Le noyau limite l'utilisation d'inotify avec trois paramètres, dans `/proc/sys/fs/inotify/` :
+Le noyau limite l'utilisation d'inotify avec trois paramètres, que l'on trouve dans `/proc/sys/fs/inotify/`.
 
-- `max_user_watches` : le nombre maximum de watches par utilisateur, tous processus confondus. C'est la limite que l'on atteint le plus souvent. Au-delà, l'ajout d'un watch échoue avec l'erreur `ENOSPC` ("No space left on device"), même si le disque n'est pas plein.
-- `max_user_instances` : le nombre maximum d'instances par utilisateur, 128 par défaut. Chaque programme qui utilise inotify en ouvre au moins une. Au-delà, la création d'une instance échoue avec `EMFILE`, c'est-à-dire "Too many open files", la même erreur que lorsqu'un processus dépasse son nombre maximum de fichiers ouverts. On peut l'atteindre avec beaucoup de conteneurs lancés par le même utilisateur, souvent root : c'est un problème connu de kind, l'outil qui fait tourner des clusters Kubernetes dans Docker, dès que le cluster a plusieurs nœuds.
-- `max_queued_events` : le nombre d'événements qui peuvent attendre d'être lus dans la file d'une instance, 16 384 par défaut. Au-delà, les nouveaux événements sont perdus et le programme reçoit un événement `IN_Q_OVERFLOW` : à lui de relire l'état des fichiers.
+`max_user_watches` fixe le nombre maximum de watches par utilisateur, tous processus confondus. C'est la limite que l'on atteint le plus souvent. Au-delà, l'ajout d'un watch échoue avec l'erreur `ENOSPC` ("No space left on device"), même si le disque n'est pas plein.
 
-Chaque programme affiche ces erreurs à sa façon. Voici ce qu'affichent Node.js, `tail -f` et `inotifywait` quand il n'y a plus de watches disponibles :
+Sa valeur par défaut dépend de la version du noyau. Jusqu'au noyau 5.10, elle valait 8192, ce qui est vite atteint. Depuis le noyau 5.11, elle est calculée au démarrage pour que les watches d'un utilisateur ne puissent pas occuper plus d'environ 1 % de la RAM, avec un minimum de 8192 et un maximum de 1 048 576. Ubuntu 22.04 (noyau 5.15) et les versions suivantes en profitent. Pour connaître la version de votre noyau, lancez `uname -r`.
+
+`max_user_instances` fixe le nombre maximum d'instances par utilisateur, 128 par défaut. Chaque programme qui utilise inotify en ouvre au moins une. Au-delà, la création d'une instance échoue avec `EMFILE`, c'est-à-dire "Too many open files", la même erreur que lorsqu'un processus dépasse son nombre maximum de fichiers ouverts. On peut atteindre cette limite avec beaucoup de conteneurs lancés par le même utilisateur, souvent root. C'est un problème connu de kind, l'outil qui fait tourner des clusters Kubernetes dans Docker, dès que le cluster a plusieurs nœuds.
+
+Enfin, `max_queued_events` fixe le nombre d'événements qui peuvent attendre d'être lus dans la file d'une instance, 16 384 par défaut. Au-delà, les nouveaux événements sont perdus et le programme reçoit un événement `IN_Q_OVERFLOW` : à lui de relire l'état des fichiers.
+
+Chaque programme signale les erreurs `ENOSPC` et `EMFILE` à sa façon. Voici ce qu'affichent Node.js, `tail -f` et `inotifywait` quand il n'y a plus de watches disponibles :
 
 ```
 Error: ENOSPC: System limit for number of file watchers reached, watch 'projet/src/e/3'
@@ -75,8 +79,6 @@ Couldn't initialize inotify: Too many open files
 ```
 
 Comme on le voit avec `tail`, certains programmes se rabattent sur une scrutation régulière des fichiers (*polling*), moins réactive : par défaut, `tail -f` ne vérifie alors le fichier qu'une fois par seconde.
-
-La valeur par défaut de `max_user_watches` dépend de la version du noyau. Jusqu'au noyau 5.10, elle était fixée à 8192, ce qui est vite atteint. Depuis le noyau 5.11, elle est calculée au démarrage pour que les watches d'un utilisateur ne puissent pas occuper plus d'environ 1 % de la RAM, avec un minimum de 8192 et un maximum de 1 048 576. Ubuntu 22.04 (noyau 5.15) et les versions suivantes en profitent. Pour connaître la version de votre noyau, lancez `uname -r`.
 
 ## Vérifier les limites actuelles
 
@@ -114,9 +116,9 @@ fs.inotify.max_user_watches = 524288
 fs.inotify.max_user_instances = 512
 ```
 
-Ces valeurs sont celles que recommandent la documentation de VS Code pour les watches et celle de kind pour les watches et les instances.
+Ce sont les valeurs recommandées par la documentation de VS Code pour les watches, et par celle de kind pour les watches et les instances.
 
-Le noyau vérifie la limite à chaque ajout de watch : la nouvelle valeur s'applique tout de suite. Par contre, un programme qui a déjà rencontré l'erreur ne réessaiera pas forcément de lui-même, il vaut mieux le relancer. La valeur de `max_queued_events`, elle, est lue à la création de chaque instance : un changement ne concerne que les programmes lancés après.
+Le noyau vérifie ces limites à chaque ajout de watch et à chaque création d'instance : les nouvelles valeurs s'appliquent tout de suite. Par contre, un programme qui a déjà rencontré l'erreur ne réessaiera pas forcément de lui-même, il vaut mieux le relancer. La valeur de `max_queued_events`, elle, est lue à la création de chaque instance : un changement ne concerne que les programmes lancés après.
 
 Attention, ces modifications sont perdues au redémarrage. C'est pratique pour tester, mais pour les garder il faut passer par un fichier de configuration.
 
@@ -160,9 +162,9 @@ fs.inotify.max_user_watches = 524288
 
 Un watch n'est alloué qu'au moment où un programme le demande : augmenter la limite ne réserve aucune mémoire. Elle fixe seulement un plafond.
 
-Pour calculer la valeur par défaut, le noyau estime le coût d'un watch à la taille de la structure qui le décrit, plus deux fois la taille d'une inode. En effet, tant qu'un fichier est surveillé, son inode reste en mémoire, et le noyau double la taille de l'inode générique pour couvrir la partie propre au système de fichiers. Sur un noyau 6.18 en x86-64, ces structures font respectivement 80 et 608 octets, soit 80 + 2 × 608 = 1 296 octets par watch. Sur la machine de 16 Go vue plus haut, 1 % de la RAM représente environ 168 Mo, et 168 Mo divisés par 1 296 octets donnent environ 130 000 watches : c'est bien la limite par défaut que nous avions obtenue (130 054).
+Pour calculer la valeur par défaut, le noyau estime le coût d'un watch à la taille de la structure qui le décrit, plus deux fois la taille d'un inode. En effet, tant qu'un fichier est surveillé, son inode reste en mémoire, et le noyau double la taille de l'inode générique pour couvrir la partie propre au système de fichiers. Sur un noyau 6.18 en x86-64, ces structures font respectivement 80 et 608 octets, soit 80 + 2 × 608 = 1 296 octets par watch. Sur la machine de 16 Go vue plus haut, 1 % de la RAM représente environ 168 Mo, et 168 Mo divisés par 1 296 octets donnent environ 130 000 watches : c'est bien la limite par défaut que nous avions obtenue (130 054).
 
-Dans le pire des cas, si les 524 288 watches autorisés sont tous utilisés, ils occupent donc 524 288 × 1 296 octets, un peu moins de 700 Mo de mémoire noyau. Ce plafond n'est atteint que si les watches sont réellement posés, mais c'est l'ordre de grandeur à garder en tête avant de monter la limite à plusieurs millions sur une machine qui a peu de RAM.
+Dans le pire des cas, si les 524 288 watches autorisés sont tous posés, ils occupent donc 524 288 × 1 296 octets, un peu moins de 700 Mo de mémoire noyau. C'est l'ordre de grandeur à garder en tête avant de monter la limite à plusieurs millions sur une machine qui a peu de RAM.
 
 ## Trouver les processus qui utilisent inotify
 

@@ -48,13 +48,13 @@ sudo apt update
 sudo apt install unattended-upgrades apt-listchanges
 ```
 
-À l'installation, le paquet active directement les mises à jour automatiques. Pour les activer (ou les désactiver) par la suite, on passe par sa question de configuration :
+À l'installation, le paquet active directement les mises à jour automatiques. Pour les activer (ou les désactiver) par la suite, on relance sa configuration :
 
 ```bash
 sudo dpkg-reconfigure -plow unattended-upgrades
 ```
 
-L'option `-plow` force l'affichage de la question, qui a une priorité basse. Répondez *Yes* à la question "Automatically download and install stable updates?". La commande écrit alors le fichier `/etc/apt/apt.conf.d/20auto-upgrades` :
+L'option `-plow` demande d'afficher les questions de priorité basse, comme celle de ce paquet. `dpkg-reconfigure` le fait déjà par défaut, mais c'est la commande que donne le README du projet. Répondez *Yes* à la question "Automatically download and install stable updates?". La commande écrit alors le fichier `/etc/apt/apt.conf.d/20auto-upgrades` :
 
 ```conf
 APT::Periodic::Update-Package-Lists "1";
@@ -73,14 +73,14 @@ APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 ```
 
-Le même fichier accepte d'autres options. `APT::Periodic::AutocleanInterval "7";` vide chaque semaine le cache des paquets téléchargés qui ne sont plus disponibles dans les dépôts (comme un `apt-get autoclean`), et `APT::Periodic::Download-Upgradeable-Packages "1";` télécharge chaque jour toutes les mises à jour disponibles sans les installer, ce qui accélère un `apt upgrade` manuel.
+Le même fichier accepte d'autres options. `APT::Periodic::AutocleanInterval "7";` vide chaque semaine le cache des paquets téléchargés qui ne sont plus disponibles dans les dépôts, comme un `apt-get autoclean`. `APT::Periodic::Download-Upgradeable-Packages "1";` télécharge chaque jour toutes les mises à jour disponibles sans les installer, ce qui accélère un `apt upgrade` manuel.
 
 ## Comment les mises à jour sont lancées
 
 Avec systemd, ce sont deux timers d'APT qui font le travail :
 
-- `apt-daily.timer` se déclenche à 6 h et à 18 h, avec un délai aléatoire qui peut aller jusqu'à 12 heures. Il met à jour la liste des paquets et télécharge les mises à jour.
-- `apt-daily-upgrade.timer` se déclenche à 6 h, avec un délai aléatoire d'au plus une heure. Il installe les mises à jour avec `unattended-upgrades` et fait le nettoyage du cache.
+- `apt-daily.timer` met à jour la liste des paquets et télécharge les mises à jour, à 6 h et à 18 h (avec un délai aléatoire d'au plus 12 heures) ;
+- `apt-daily-upgrade.timer` installe les mises à jour avec `unattended-upgrades` et nettoie le cache, à 6 h (avec un délai aléatoire d'au plus une heure).
 
 Les délais aléatoires évitent que toutes les machines interrogent les miroirs en même temps. Les deux timers lancent le script `/usr/lib/apt/apt.systemd.daily`, qui lit les options `APT::Periodic` vues plus haut. Pour voir leur prochaine exécution (colonne `NEXT`) et la dernière (colonne `LAST`) :
 
@@ -90,15 +90,15 @@ systemctl list-timers apt-daily.timer apt-daily-upgrade.timer
 
 Les timers ont l'option `Persistent=true` : si la machine était éteinte à l'heure prévue, la tâche est lancée au démarrage suivant. C'est pour cela que `unattended-upgrades` tourne parfois juste après le boot, et qu'un `apt install` lancé à ce moment doit attendre qu'il ait fini.
 
-Attention, le service `unattended-upgrades.service` ne lance pas les mises à jour, comme le rappelle sa description, "Unattended Upgrades Shutdown" : son statut ne dit donc rien sur les mises à jour quotidiennes. Il ne sert qu'à l'extinction de la machine : si une mise à jour est en cours, il demande à `unattended-upgrades` de s'arrêter et attend qu'il ait terminé. Cela fonctionne grâce à l'option `MinimalSteps`, active par défaut, qui fait installer les paquets par petits groupes pour pouvoir s'arrêter proprement entre deux. Et si une installation a quand même été interrompue, `unattended-upgrades` relance `dpkg --force-confold --configure -a` à son passage suivant (option `AutoFixInterruptedDpkg`, elle aussi active par défaut).
+Attention, le service `unattended-upgrades.service` ne lance pas les mises à jour, comme le rappelle sa description ("Unattended Upgrades Shutdown"). Son statut ne dit donc rien sur les mises à jour quotidiennes. Il ne sert qu'à l'extinction de la machine : si une mise à jour est en cours, il demande à `unattended-upgrades` de s'arrêter et attend que celui-ci ait terminé. Cela fonctionne grâce à l'option `MinimalSteps`, active par défaut, qui fait installer les paquets par petits groupes pour pouvoir s'arrêter proprement entre deux. Et si une installation a quand même été interrompue, `unattended-upgrades` relance `dpkg --force-confold --configure -a` à son passage suivant (option `AutoFixInterruptedDpkg`, elle aussi active par défaut).
 
-Sur une machine sans systemd, c'est le script `/etc/cron.daily/apt-compat` qui prend le relais : il ne fait rien si systemd tourne, et lance sinon le même `apt.systemd.daily`.
+Sur une machine sans systemd, c'est le script `/etc/cron.daily/apt-compat` qui prend le relais : il ne fait rien si systemd tourne, et lance sinon le même script `apt.systemd.daily`.
 
 ## Choisir les mises à jour installées
 
 Tous les autres réglages se trouvent dans `/etc/apt/apt.conf.d/50unattended-upgrades`. Les lignes qui commencent par `//` sont des commentaires, et la plupart des options y figurent déjà, commentées, avec leur valeur par défaut.
 
-Plutôt que de modifier ce fichier, le README du projet conseille de mettre ses réglages dans un fichier lu après lui, par exemple `/etc/apt/apt.conf.d/52unattended-upgrades-local`. Sinon, une nouvelle version du fichier livrée avec le paquet peut entrer en conflit avec vos modifications et bloquer la mise à jour d'`unattended-upgrades` lui-même. Les deux méthodes fonctionnent, et les exemples qui suivent peuvent aller dans l'un ou l'autre fichier.
+Le README du projet conseille de ne pas modifier ce fichier et de mettre vos réglages dans un fichier lu après lui, par exemple `/etc/apt/apt.conf.d/52unattended-upgrades-local`. Sinon, une nouvelle version du fichier livrée avec le paquet peut entrer en conflit avec vos modifications et bloquer la mise à jour d'`unattended-upgrades` lui-même. Les deux méthodes fonctionnent, et les exemples qui suivent peuvent aller dans l'un ou l'autre fichier.
 
 Sur Ubuntu, les dépôts autorisés sont listés dans `Allowed-Origins`. Voici la liste par défaut (sans ses commentaires) :
 
@@ -114,7 +114,7 @@ Unattended-Upgrade::Allowed-Origins {
 };
 ```
 
-`${distro_id}` et `${distro_codename}` sont remplacés par le nom et la version de la distribution, `Ubuntu` et `noble` pour Ubuntu 24.04. La première ligne autorise le dépôt principal de la version : d'après le commentaire du fichier, une mise à jour de sécurité peut avoir besoin d'une nouvelle dépendance qui se trouve dans ce dépôt. Viennent ensuite les mises à jour de sécurité, puis celles de l'ESM (*Expanded Security Maintenance*), disponibles avec Ubuntu Pro. Les lignes commentées correspondent aux mises à jour recommandées, qui corrigent des bugs sans lien avec la sécurité (`-updates`), aux paquets encore en test (`-proposed`, à ne pas activer sur un serveur) et aux backports.
+`${distro_id}` et `${distro_codename}` sont remplacés par le nom de la distribution et le nom de code de sa version : `Ubuntu` et `noble` pour Ubuntu 24.04. La première ligne autorise le dépôt principal de la version : d'après le commentaire du fichier, une mise à jour de sécurité peut avoir besoin d'une nouvelle dépendance qui se trouve dans ce dépôt. Viennent ensuite les mises à jour de sécurité, puis celles de l'ESM (*Expanded Security Maintenance*), disponibles avec Ubuntu Pro. Les lignes commentées correspondent aux mises à jour recommandées (`-updates`), qui corrigent des bugs sans lien avec la sécurité, aux paquets encore en test (`-proposed`, à ne pas activer sur un serveur) et aux backports (`-backports`).
 
 Pour installer aussi les corrections de bugs (ce que je déconseille en production), il suffit de décommenter la ligne `-updates`, ou de l'ajouter dans `52unattended-upgrades-local` :
 
@@ -170,18 +170,18 @@ Unattended-Upgrade::Package-Blacklist {
 
 Attention, ces motifs sont des expressions régulières Python, comparées au début du nom des paquets, et pas des jokers du shell. `"nginx"` exclurait donc aussi `nginx-common` ou `nginx-core` : pour viser un seul paquet, on termine le motif par `$`. De même, dans `"linux-image-*"`, l'étoile porte sur le tiret qui la précède et non sur la suite du nom. Comme la comparaison se fait sur le début du nom, ce motif exclut quand même tous les paquets qui commencent par `linux-image`, mais `"linux-image"` aurait suffi.
 
-Un paquet exclu ne reçoit plus non plus ses correctifs de sécurité : il faudra les installer vous-même. Et d'après le README, si un paquet dépend d'un paquet exclu, aucun des deux n'est mis à jour.
+Un paquet exclu ne reçoit plus aucune mise à jour automatique, pas même ses correctifs de sécurité : il faudra les installer vous-même. Et d'après le README, si un paquet dépend d'un paquet exclu, aucun des deux n'est mis à jour.
 
 ## Gérer les redémarrages
 
-Une mise à jour du noyau ou de la libc ne prend effet qu'après un redémarrage. Les paquets concernés créent alors le fichier `/var/run/reboot-required` et ajoutent leur nom dans `/var/run/reboot-required.pkgs` :
+Une mise à jour du noyau ou de la libc ne prend effet qu'après un redémarrage, ce que signale le fichier `/var/run/reboot-required`. Le nom des paquets concernés est ajouté dans `/var/run/reboot-required.pkgs` :
 
 ```bash
 cat /var/run/reboot-required
 cat /var/run/reboot-required.pkgs
 ```
 
-Si le premier fichier n'existe pas, aucun redémarrage n'est nécessaire. Sur Ubuntu, il contient le message `*** System restart required ***`, qui s'affiche aussi à la connexion. Sur Debian, c'est `unattended-upgrades` qui le crée, vide, après une mise à jour du noyau.
+Si le premier fichier n'existe pas, aucun redémarrage n'est nécessaire. Sur Ubuntu, ce sont les paquets concernés qui le créent, avec le message `*** System restart required ***`, qui s'affiche aussi à la connexion. Sur Debian, c'est `unattended-upgrades` qui le crée, vide, après une mise à jour du noyau.
 
 Pour que la machine redémarre toute seule quand c'est nécessaire :
 
@@ -194,7 +194,7 @@ Le redémarrage se fait sans confirmation, à la fin de l'exécution d'`unattend
 
 Un redémarrage automatique coupe les services sans prévenir : c'est à réserver aux machines qui peuvent s'arrêter quelques minutes à 3 h du matin, ou qui sont redondées. Sur les serveurs de production, mieux vaut planifier les redémarrages soi-même.
 
-Toutes les mises à jour ne demandent pas de redémarrer la machine. Par contre, un service qui utilise une bibliothèque mise à jour continue d'utiliser l'ancienne version tant qu'il n'est pas relancé. Depuis Ubuntu 24.04, le paquet `needrestart`, appelé après les mises à jour, redémarre automatiquement les services concernés.
+Toutes les mises à jour ne demandent pas de redémarrer la machine. Par contre, un service qui a chargé une bibliothèque mise à jour continue d'utiliser l'ancienne version tant qu'il n'est pas relancé. Depuis Ubuntu 24.04, le paquet `needrestart`, appelé après les mises à jour, redémarre automatiquement les services concernés.
 
 ## Supprimer les paquets devenus inutiles
 
@@ -231,11 +231,11 @@ Pendant l'installation de Postfix, choisissez *Internet Site* et entrez votre no
 echo "Test" | mail -s "Test email" admin@example.com
 ```
 
-Si `apt-listchanges` est installé et que `sendmail` est disponible, `unattended-upgrades` lui fait aussi envoyer par mail les nouveautés importantes des paquets mis à jour (les fichiers `NEWS.Debian`). Le destinataire est réglé dans `/etc/apt/listchanges.conf`, c'est `root` par défaut.
+Si `apt-listchanges` est installé et que `sendmail` est disponible, `unattended-upgrades` lui fait aussi envoyer par mail les nouveautés importantes des paquets mis à jour (les fichiers `NEWS.Debian`). Le destinataire, `root` par défaut, se règle dans `/etc/apt/listchanges.conf`.
 
 ## Tester la configuration et lire les logs
 
-Pas besoin d'attendre le lendemain pour tester sa configuration, on peut lancer le script à la main (`unattended-upgrades`, avec un s, est un simple lien vers la même commande) :
+Pas besoin d'attendre le lendemain pour tester sa configuration, on peut lancer `unattended-upgrade` à la main (`unattended-upgrades`, avec un s, est un simple lien vers la même commande) :
 
 ```bash
 sudo unattended-upgrade --dry-run -v
@@ -256,13 +256,13 @@ All upgrades installed
 The list of kept packages can't be calculated in dry-run mode.
 ```
 
-La ligne `Allowed origins are` montre les dépôts autorisés une fois les variables remplacées, ce qui permet de vérifier sa configuration, et `Initial blacklist` les paquets exclus. Pour plus de détails, par exemple pour comprendre pourquoi un paquet n'est pas mis à jour, on remplace `-v` par `--debug`.
+La ligne `Allowed origins are` montre les dépôts autorisés une fois les variables remplacées et `Initial blacklist` les paquets exclus, ce qui permet de vérifier sa configuration. Pour plus de détails, par exemple pour comprendre pourquoi un paquet n'est pas mis à jour, on remplace `-v` par `--debug`.
 
-Chaque exécution, automatique ou manuelle, est journalisée dans `/var/log/unattended-upgrades/` :
+Chaque exécution, automatique ou manuelle, est journalisée dans `/var/log/unattended-upgrades/`, qui contient trois fichiers :
 
 - `unattended-upgrades.log` reprend les messages ci-dessus, précédés de la date et de l'heure ;
 - `unattended-upgrades-dpkg.log` contient la sortie de dpkg pendant l'installation des paquets ;
-- `unattended-upgrades-shutdown.log` est le journal du service qui surveille l'extinction.
+- `unattended-upgrades-shutdown.log` est le journal du service `unattended-upgrades.service`, qui surveille l'extinction.
 
 Pour un historique de toutes les installations faites par APT, manuelles ou automatiques, il y a aussi `/var/log/apt/history.log`. Attention, un test lancé avec `--dry-run` y apparaît lui aussi, avec une ligne `Upgrade:`, alors que rien n'a été installé. Enfin, si vos logs sont centralisés, `Unattended-Upgrade::SyslogEnable "true";` envoie aussi ces messages à syslog, avec la *facility* `daemon` par défaut (modifiable avec `SyslogFacility`).
 
@@ -275,7 +275,7 @@ APT::Periodic::Update-Package-Lists "0";
 APT::Periodic::Unattended-Upgrade "0";
 ```
 
-On peut aussi modifier ces deux lignes à la main. Par contre, désactiver le service `unattended-upgrades` avec `systemctl` ne suffit pas : comme on l'a vu, ce service ne s'occupe que de l'extinction, ce sont les timers d'APT qui lancent les mises à jour.
+On peut aussi modifier ces deux lignes à la main. Par contre, désactiver le service `unattended-upgrades` avec `systemctl` ne suffit pas : comme on l'a vu, ce service ne s'occupe que de l'extinction, et ce sont les timers d'APT qui lancent les mises à jour.
 
 ## Voir aussi
 

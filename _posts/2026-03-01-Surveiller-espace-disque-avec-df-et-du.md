@@ -1,7 +1,7 @@
 ---
 layout: article
 title: "df/du : surveiller et analyser l'espace disque sous Linux"
-description: "Surveiller l'espace disque sous Linux avec df et du : réserve root, inodes, trouver ce qui prend la place et pourquoi les deux commandes ne sont pas d'accord."
+description: "Surveiller l'espace disque sous Linux avec df et du : réserve root, inodes, recherche de ce qui prend la place et écarts entre les deux commandes."
 author: Pierre Chopinet
 tags:
   - linux
@@ -47,7 +47,7 @@ tmpfs           3.9G     0  3.9G   0% /dev/shm
 /dev/sdb1       500G  420G   55G  89% /data
 ```
 
-Chaque ligne donne le périphérique (`Filesystem`), sa taille (`Size`), l'espace occupé (`Used`), l'espace encore disponible (`Avail`), le pourcentage d'utilisation (`Use%`) et le point de montage (`Mounted on`). Ici, c'est `/home` qu'il faut surveiller. `df` lit simplement les compteurs tenus par chaque système de fichiers, c'est pour cela qu'il répond instantanément.
+Chaque ligne donne le périphérique (`Filesystem`), sa taille (`Size`), l'espace utilisé (`Used`), l'espace encore disponible (`Avail`), le pourcentage d'utilisation (`Use%`) et le point de montage (`Mounted on`). Ici, c'est `/home` qu'il faut surveiller. `df` lit simplement les compteurs tenus par chaque système de fichiers : c'est pour cela qu'il répond instantanément.
 
 Pour les exemples qui suivent, on utilise un système de fichiers ext4 de 100 Go créé dans un fichier image, ce qui permet de tout tester sans toucher à ses vrais disques (d'où le périphérique `/dev/loop0`) :
 
@@ -110,7 +110,7 @@ Reserved block count:     1310720
 Block size:               4096
 ```
 
-Soit 1 310 720 blocs de 4 Kio, 5 Gio. Sur une partition de données, qui ne contient pas le système, on peut réduire cette réserve avec l'option `-m` :
+Soit 1 310 720 blocs de 4 Kio, c'est-à-dire 5 Gio. Sur une partition de données, qui ne contient pas le système, on peut réduire cette réserve avec l'option `-m` :
 
 ```bash
 sudo tune2fs -m 1 /dev/loop0
@@ -132,7 +132,7 @@ Pour la suite, on remet la valeur par défaut avec `sudo tune2fs -m 5 /dev/loop0
 
 ## Quand les inodes sont épuisés
 
-Chaque fichier utilise une inode, la structure qui stocke ses métadonnées (propriétaire, droits, dates, emplacement des données). Sur ext4, le nombre d'inodes est fixé à la création du système de fichiers et n'augmente que si on l'agrandit. Avec des millions de petits fichiers (cache, sessions, fichiers temporaires...), il peut donc devenir impossible de créer un fichier alors qu'il reste de la place.
+Chaque fichier utilise un inode, la structure qui stocke ses métadonnées (propriétaire, droits, dates, emplacement des données). Sur ext4, le nombre d'inodes est fixé à la création du système de fichiers et n'augmente que si on l'agrandit. Avec des millions de petits fichiers (cache, sessions, fichiers temporaires...), il peut donc devenir impossible de créer un fichier alors qu'il reste de la place.
 
 Pour le montrer, voici un système de fichiers de 1 Go créé avec seulement 20 000 inodes (`mkfs.ext4 -N 20000`), puis rempli de fichiers vides :
 
@@ -144,7 +144,7 @@ Filesystem      Size  Used Avail Use% Mounted on
 /dev/loop1      985M  544K  917M   1% /mnt/cache
 ```
 
-L'erreur parle d'espace, mais `df -h` indique 917 Mo de libre. C'est `df -i` (ou `df -ih` pour des nombres lisibles) qui donne l'explication :
+L'erreur parle d'espace, mais `df -h` indique encore 917 Mo disponibles. C'est `df -i` (ou `df -ih` pour des nombres lisibles) qui donne l'explication :
 
 ```
 $ df -ih /mnt/cache
@@ -246,7 +246,7 @@ C'est une source de confusion classique : `df` annonce un disque presque plein, 
 
 ### Des fichiers supprimés mais encore ouverts
 
-Quand on supprime un fichier qu'un processus garde ouvert, il disparaît de l'arborescence, mais son contenu reste sur le disque jusqu'à ce que le processus le ferme. `du` ne le voit plus, `df` le compte toujours. Cela arrive souvent avec un fichier de log supprimé pendant que l'application tourne.
+Un fichier supprimé alors qu'un processus le garde ouvert disparaît de l'arborescence, mais son contenu reste sur le disque jusqu'à ce que le processus le ferme. `du` ne le voit plus, `df` le compte toujours. Cela arrive souvent avec un fichier de log supprimé pendant que l'application tourne.
 
 Pour le reproduire, on crée un log de 1 Go sur le disque de test, on le suit avec `tail -f` dans un autre terminal, puis on le supprime avec `rm` :
 
@@ -258,7 +258,7 @@ $ sudo du -sh /mnt/data
 20K	/mnt/data
 ```
 
-`lsof +L1` (paquet `lsof`) liste les fichiers ouverts qui n'ont plus aucun nom sur le disque. Par défaut, `lsof` affiche les fichiers qui correspondent à l'un ou l'autre de ses critères : l'option `-a` demande de les combiner, ce qui permet de se limiter au système de fichiers qui nous intéresse :
+`lsof +L1` (paquet `lsof`) liste les fichiers ouverts qui n'ont plus aucun nom sur le disque. Par défaut, `lsof` affiche les fichiers qui correspondent à l'un ou l'autre de ses critères. L'option `-a` demande de les combiner, ce qui permet de se limiter au système de fichiers qui nous intéresse :
 
 ```bash
 sudo lsof -a +L1 /mnt/data
@@ -295,7 +295,7 @@ $ sudo du -shx /mnt/data
 20K	/mnt/data
 ```
 
-Pour voir ce qui se cache dessous, on monte le système de fichiers une deuxième fois ailleurs avec `mount --bind` : ce deuxième montage ne contient pas les disques montés dans ses sous-répertoires, le contenu caché redevient visible.
+Pour voir ce qui se cache dessous, on monte le système de fichiers une deuxième fois ailleurs avec `mount --bind`. Ce deuxième montage ne contient pas les disques montés dans ses sous-répertoires, si bien que le contenu caché y redevient visible :
 
 ```bash
 sudo mkdir /mnt/vue
@@ -321,7 +321,7 @@ Une fois le système de fichiers plein repéré avec `df -h`, on cherche les plu
 sudo du -xh -d 1 / | sort -rh | head -10
 ```
 
-Sans `-x`, `du` descendrait aussi dans `/proc`, `/sys` et les autres disques montés. On descend ensuite de niveau en niveau, avec par exemple `sudo du -xh -d 1 /var | sort -rh | head -10`, jusqu'à trouver le coupable : souvent des logs, un cache ou de vieilles sauvegardes.
+Sans `-x`, `du` parcourrait aussi `/proc`, `/sys` et les autres disques montés. On descend ensuite de niveau en niveau, avec par exemple `sudo du -xh -d 1 /var | sort -rh | head -10`, jusqu'à trouver le coupable : souvent des logs, un cache ou de vieilles sauvegardes.
 
 Pour lister directement les plus gros fichiers, `find` est plus adapté :
 
@@ -404,10 +404,11 @@ Le script n'écrit rien tant que tout va bien. On peut le lancer régulièrement
 
 ## ncdu et duf
 
-`df` et `du` sont disponibles partout, mais deux outils rendent l'exploration plus confortable :
+`df` et `du` sont disponibles partout, mais deux outils rendent l'exploration plus confortable.
 
-- `ncdu` (*NCurses Disk Usage*) scanne un répertoire puis permet de parcourir l'arborescence triée par taille, et de supprimer un fichier ou un dossier avec la touche `d`. On l'installe avec `sudo apt install ncdu` et on le lance avec `sudo ncdu -x /`.
-- `duf` (*Disk Usage/Free*) remplace `df` avec un affichage en couleurs, regroupé en tableaux par type de périphérique (disques locaux, réseau, FUSE, systèmes de fichiers spéciaux...). Il est dans les dépôts depuis Ubuntu 22.04 et Debian 12 : `sudo apt install duf`.
+`ncdu` (*NCurses Disk Usage*) scanne un répertoire puis permet de parcourir l'arborescence triée par taille, et de supprimer un fichier ou un répertoire avec la touche `d`. On l'installe avec `sudo apt install ncdu` et on le lance avec `sudo ncdu -x /`.
+
+`duf` (*Disk Usage/Free*) remplace `df` avec un affichage en couleurs, regroupé en tableaux par type de périphérique (disques locaux, réseau, FUSE, systèmes de fichiers spéciaux...). Il est dans les dépôts depuis Ubuntu 22.04 et Debian 12 : `sudo apt install duf`.
 
 ## Voir aussi
 
