@@ -1,7 +1,7 @@
 ---
 layout: article
 title: "Déboguer les requêtes SQL et problèmes N+1 dans Django"
-description: "Afficher les requêtes SQL de Django, détecter les problèmes N+1 et les corriger avec select_related, prefetch_related et Prefetch, avec les outils adaptés."
+description: "Afficher les requêtes SQL de Django, repérer les problèmes N+1 (Debug Toolbar, zeal, tests) et les corriger avec select_related, prefetch_related et Prefetch."
 tags:
   - python
   - django
@@ -55,7 +55,7 @@ Time: 0.001s
 Total queries: 1
 ```
 
-La liste est vidée au début de chaque requête HTTP, et `reset_queries()` la vide à la demande. Avec `DEBUG = False`, elle reste vide. C'est voulu : Django y garderait toutes les requêtes exécutées, ce qui consomme vite de la mémoire sur un serveur de production.
+La liste est vidée au début de chaque requête HTTP, et `reset_queries()` la vide à la demande. Avec `DEBUG = False`, elle reste vide. C'est voulu : Django y garderait toutes les requêtes exécutées, ce qui consommerait vite de la mémoire sur un serveur de production.
 
 ### Avec le logging
 
@@ -183,7 +183,7 @@ SELECT "blog_author"."id", "blog_author"."name", "blog_author"."country_id" FROM
 
 C'est le signe à chercher, dans la Debug Toolbar comme dans les logs : la même requête répétée, avec seulement l'identifiant qui change.
 
-Dans un template, c'est pareil, chaque accès à `article.author.name` déclenche une requête :
+Dans un template, c'est pareil. Chaque accès à `article.author.name` déclenche une requête :
 
 ```django
 {% raw %}{# templates/articles.html #}
@@ -195,7 +195,7 @@ Dans un template, c'est pareil, chaque accès à `article.author.name` déclench
 
 ## Corriger avec select_related et prefetch_related
 
-Django propose deux méthodes pour charger les relations en avance, à appeler au moment où l'on construit le queryset.
+Django propose deux méthodes pour charger les relations à l'avance, à appeler au moment où l'on construit le queryset.
 
 ### select_related, pour les ForeignKey
 
@@ -261,7 +261,7 @@ On peut suivre plusieurs relations avec la syntaxe `__` :
 articles = Article.objects.select_related('author', 'author__country').all()
 ```
 
-C'est toujours une seule requête, avec une seconde jointure. Comme le pays d'un auteur est facultatif (`null=True`), Django utilise ici un `LEFT OUTER JOIN` pour ne pas perdre les auteurs sans pays.
+C'est toujours une seule requête, avec une seconde jointure. Comme le pays d'un auteur est facultatif (`null=True`), Django utilise ici un `LEFT OUTER JOIN` pour ne pas perdre les articles dont l'auteur n'a pas de pays.
 
 Et on peut combiner les deux méthodes :
 
@@ -302,7 +302,7 @@ for article in articles:
         print(comment.text)
 ```
 
-Deux requêtes en tout. `to_attr` range le résultat dans une simple liste, `article.published_comments`, au lieu de remplir le cache de `article.comments`. La documentation le recommande dès qu'on filtre : sinon, `article.comments.all()` renverrait une liste filtrée sans que rien ne l'indique dans le code.
+Deux requêtes en tout. `to_attr` range le résultat dans une simple liste, `article.published_comments`, au lieu de remplir le cache de `article.comments`. La documentation le recommande dès qu'on filtre : sinon, `article.comments.all()` ne renverrait que les commentaires publiés, sans que rien ne l'indique dans le code.
 
 Filtrer le queryset principal ne pose pas de problème, en revanche : avec `Article.objects.prefetch_related('comments').filter(...)`, le préchargement est conservé et porte sur les articles filtrés.
 
@@ -351,7 +351,7 @@ SELECT "blog_author"."id", "blog_author"."name",
 
 ### django-zeal
 
-On voit souvent `nplusone` recommandé pour détecter les N+1, mais il n'a plus eu de nouvelle version depuis la 1.0.0 de mai 2018. Il repère encore le cas simple de cet article avec Django 5.2, mais pour un projet actuel, on lui préfère `django-zeal`, qui s'en inspire et reste maintenu.
+On voit souvent `nplusone` recommandé pour détecter les N+1, mais il n'a plus eu de nouvelle version depuis la 1.0.0 de mai 2018. Il repère encore le cas simple de cet article avec Django 5.2. Pour un projet actuel, on lui préfère tout de même `django-zeal`, qui s'en inspire et reste maintenu.
 
 ```bash
 pip install django-zeal
@@ -368,7 +368,7 @@ if DEBUG:
 ZEAL_RAISE = True
 ```
 
-Sur la vue naïve vue plus haut, la requête échoue avec cette erreur (chemin du projet raccourci) :
+Sur la vue naïve présentée plus haut, zeal lève cette erreur (chemin du projet raccourci) :
 
 ```
 NPlusOneError: N+1 detected on blog.Article.author at .../blog/views.py:9 in article_list
@@ -378,7 +378,7 @@ Le message donne la relation en cause et la ligne de code qui a déclenché les 
 
 ## Tester le nombre de requêtes
 
-Pour qu'un N+1 corrigé ne revienne pas, le plus sûr est de l'écrire dans un test. `TestCase` fournit `assertNumQueries`, qui échoue si le bloc n'exécute pas exactement le nombre de requêtes attendu :
+Pour qu'un N+1 corrigé ne revienne pas, le plus sûr est d'ajouter un test. `TestCase` fournit `assertNumQueries`, qui échoue si le bloc n'exécute pas exactement le nombre de requêtes attendu :
 
 ```python
 from django.test import TestCase

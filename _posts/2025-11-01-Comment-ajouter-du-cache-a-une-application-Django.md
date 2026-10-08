@@ -24,13 +24,13 @@ Dans cet article :
 - Invalider le cache
 - Contenu par utilisateur, langues et pagination
 - Django REST Framework
-- Vérifier que le cache sert
+- Vérifier que le cache fonctionne
 
 Pré-requis : connaître les vues et les templates Django. Les exemples ont été testés avec Django 5.2.
 
 ## Choisir un backend de cache
 
-Le backend se configure dans le réglage `CACHES` (sans configuration, Django utilise le cache en mémoire locale). `TIMEOUT` y fixe la durée de vie par défaut en secondes, 300 si on ne le précise pas, et `KEY_PREFIX` est ajouté devant toutes les clés pour éviter les collisions quand plusieurs projets partagent le même serveur de cache.
+Le backend se configure dans le réglage `CACHES` (sans configuration, Django utilise le cache en mémoire locale). `TIMEOUT` y fixe la durée de vie par défaut des entrées, en secondes (300 si on ne le précise pas). `KEY_PREFIX` est ajouté devant toutes les clés, pour éviter les collisions quand plusieurs projets partagent le même serveur de cache.
 
 ### Mémoire locale
 
@@ -64,7 +64,7 @@ CACHES = {
 }
 ```
 
-L'utilisateur du serveur doit pouvoir écrire dans ce dossier, qui ne doit pas se trouver dans `MEDIA_ROOT` ou `STATIC_ROOT` : les valeurs sont sérialisées avec pickle, et la documentation de Django prévient qu'un attaquant qui accède à ces fichiers pourrait aller jusqu'à exécuter du code.
+L'utilisateur du serveur doit pouvoir écrire dans ce dossier, qui ne doit se trouver ni dans `MEDIA_ROOT` ni dans `STATIC_ROOT` : les valeurs sont sérialisées avec pickle, et la documentation de Django prévient qu'un attaquant qui accède à ces fichiers pourrait aller jusqu'à exécuter du code.
 
 ### Base de données
 
@@ -114,7 +114,7 @@ CACHES = {
 }
 ```
 
-Le paquet `django-redis` reste utile pour ses fonctions en plus : suppression par motif, compression des valeurs, ou encore l'option `IGNORE_EXCEPTIONS` :
+Le paquet `django-redis` reste utile pour ses fonctions supplémentaires : suppression par motif, compression des valeurs, ou encore l'option `IGNORE_EXCEPTIONS` :
 
 ```python
 # pip install django-redis
@@ -139,7 +139,7 @@ Sans cette option, et avec le backend natif, un Redis injoignable fait lever `re
 
 ## Mettre une vue en cache
 
-Le cache par vue est le plus simple à mettre en place, pour des pages identiques pour tout le monde (une page d'accueil publique par exemple) :
+Le cache par vue est le plus simple à mettre en place. Il convient aux pages identiques pour tout le monde, une page d'accueil publique par exemple :
 
 ```python
 # views.py
@@ -163,7 +163,7 @@ urlpatterns = [
 ]
 ```
 
-`cache_page` garde la réponse complète pendant 15 minutes. La clé est construite à partir de l'URL complète, query string comprise : `/articles/?page=2` et `/articles/?page=3` sont deux entrées différentes. Le décorateur ajoute aussi les en-têtes `Cache-Control` et `Expires`, et `cache_control(public=True)` autorise les caches intermédiaires (CDN, proxy) à garder la page. La réponse contient alors :
+`cache_page` garde la réponse complète pendant 15 minutes. La clé est construite à partir de l'URL, query string comprise : `/articles/?page=2` et `/articles/?page=3` sont deux entrées différentes. Le décorateur ajoute aussi les en-têtes `Cache-Control` et `Expires`, et `cache_control(public=True)` autorise les caches intermédiaires (CDN, proxy) à garder la page. La réponse contient alors :
 
 ```
 Cache-Control: public, max-age=900
@@ -238,7 +238,7 @@ Quand seule une partie de la page coûte cher (une barre latérale, un menu calc
 ```
 {% endraw %}
 
-La balise prend une durée en secondes, un nom de fragment, puis autant d'arguments que nécessaire pour distinguer les versions : ici une par utilisateur, grâce à `user.pk`. Chaque combinaison d'arguments crée une entrée dans le cache, évitez donc les arguments qui prennent un très grand nombre de valeurs différentes.
+La balise prend une durée en secondes, un nom de fragment, puis autant d'arguments que nécessaire pour distinguer les versions : ici une par utilisateur, grâce à `user.pk`. Chaque combinaison d'arguments crée une entrée dans le cache : évitez donc les arguments qui prennent un très grand nombre de valeurs différentes.
 
 ## L'API bas niveau
 
@@ -290,7 +290,7 @@ def invalidate_article(article_id: int):
     cache.delete(f"article:{article_id}")
 ```
 
-Avec django-redis, on peut aussi supprimer toutes les clés qui suivent un motif :
+Avec django-redis, on peut aussi supprimer toutes les clés qui correspondent à un motif :
 
 ```python
 from django.core.cache import cache
@@ -363,7 +363,7 @@ class BlogConfig(AppConfig):
 
 ### Par utilisateur
 
-Pour une page qui dépend de l'utilisateur, évitez de mettre en cache la page complète. Cachez plutôt des fragments ou des données, avec l'identifiant de l'utilisateur dans la clé :
+Pour une page qui dépend de l'utilisateur, évitez de mettre en cache la page complète. Réservez le cache à des fragments ou à des données, avec l'identifiant de l'utilisateur dans la clé :
 
 ```python
 from django.core.cache import cache
@@ -387,7 +387,7 @@ def public_but_personalized(request):
 
 L'ordre des décorateurs compte : `cache_page` doit être au-dessus, pour voir l'en-tête `Vary: Cookie` posé par `vary_on_cookie` et inclure le cookie dans la clé. Dans l'ordre inverse, la clé ignore le cookie : sur une vue qui affiche un nom lu dans un cookie, Bob reçoit alors la page mise en cache pour Alice.
 
-Même dans le bon ordre, une entrée par session peut vite faire beaucoup de clés, les fragments ciblés restent préférables. Et de façon générale, ne mettez pas de données sensibles (jetons, informations personnelles) dans un cache partagé.
+Même dans le bon ordre, une entrée par session peut vite faire beaucoup de clés : les fragments ciblés restent préférables. Et de façon générale, ne mettez pas de données sensibles (jetons, informations personnelles) dans un cache partagé.
 
 ### Langues
 
@@ -428,9 +428,9 @@ class ProductViewSet(ReadOnlyModelViewSet):
     serializer_class = ProductSerializer
 ```
 
-Seule l'action `list` est mise en cache, le détail d'un produit est recalculé à chaque appel. La négociation de contenu est prise en compte : DRF ajoute `Accept` à l'en-tête `Vary`, et la réponse JSON comme la page HTML de l'API navigable ont chacune leur entrée dans le cache (testé avec DRF 3.18).
+Seule l'action `list` est mise en cache : le détail d'un produit est recalculé à chaque appel. La négociation de contenu est prise en compte : DRF ajoute `Accept` à l'en-tête `Vary`, et la réponse JSON comme la page HTML de l'API navigable ont chacune leur entrée dans le cache (testé avec DRF 3.18).
 
-## Vérifier que le cache sert
+## Vérifier que le cache fonctionne
 
 En développement, Django Debug Toolbar a un panneau "Cache" qui liste les appels au cache de chaque requête. Dans le code, on peut aussi tracer les succès et les échecs autour d'un calcul coûteux :
 

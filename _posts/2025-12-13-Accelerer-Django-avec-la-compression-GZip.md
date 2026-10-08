@@ -43,9 +43,9 @@ MIDDLEWARE = [
 ]
 ```
 
-La documentation demande de le placer avant tout middleware qui lit ou modifie le corps de la réponse. Comme les réponses remontent la liste de bas en haut, il passe ainsi après eux et compresse la version finale. `SecurityMiddleware` peut rester devant : la documentation conseille de le garder en haut de la liste quand la redirection vers HTTPS est activée, pour ne pas faire tourner les autres middlewares avant la redirection.
+La documentation demande de le placer avant tout middleware qui lit ou modifie le corps de la réponse. Comme les réponses remontent la liste de bas en haut, il passe ainsi après eux et compresse la version finale. `SecurityMiddleware` peut rester devant : Django conseille même de le garder en haut de la liste quand la redirection vers HTTPS est activée, pour ne pas faire tourner les autres middlewares avant la redirection.
 
-Si vous utilisez aussi le cache par site, `UpdateCacheMiddleware` doit rester au-dessus de `GZipMiddleware`. La réponse est alors mise en cache déjà compressée, avec une entrée pour les clients qui acceptent gzip et une autre pour les autres, et elle n'est pas recompressée à chaque requête.
+Si vous utilisez aussi le cache par site, `UpdateCacheMiddleware` doit rester au-dessus de `GZipMiddleware`. La réponse est alors mise en cache déjà compressée, avec une entrée par valeur de l'en-tête `Accept-Encoding`, et elle n'est pas recompressée à chaque requête.
 
 Côté sécurité, la compression expose à l'attaque BREACH, qui cherche à retrouver un secret présent dans une page compressée (un jeton CSRF par exemple) en observant la taille des réponses. Django s'en protège de deux façons : le jeton CSRF des formulaires est masqué différemment à chaque réponse, et depuis Django 4.2, `GZipMiddleware` ajoute jusqu'à 100 octets aléatoires à chaque réponse compressée. La taille d'une même page varie donc d'une requête à l'autre : entre 1 176 et 1 275 octets sur 200 appels de la page de test. Évitez malgré tout de renvoyer dans une même réponse compressée un secret et des données contrôlées par l'utilisateur.
 
@@ -123,7 +123,7 @@ Taille transférée : 1252 octets
 Taille décompressée : 25321 octets
 ```
 
-requests décompresse gzip automatiquement : `response.content` contient la page décompressée, ce n'est donc pas lui qu'il faut mesurer. La taille transférée se lit dans l'en-tête `Content-Length`, absent pour les réponses en streaming.
+requests décompresse gzip automatiquement : `response.content` contient la page décompressée et ne donne donc pas la taille transférée. Celle-ci se lit dans l'en-tête `Content-Length`, absent pour les réponses en streaming.
 
 Dans le navigateur, l'onglet Réseau des outils de développement (F12) donne les mêmes informations : les en-têtes de réponse, dont `Content-Encoding`, et la taille transférée à côté de la taille réelle de la ressource.
 
@@ -183,11 +183,11 @@ STORAGES = {
 
 Pour la feuille de style de l'administration de Django (`admin/css/base.css`), WhiteNoise envoie ainsi 5 078 octets en gzip et 4 341 en Brotli, au lieu de 22 285.
 
-Placez `WhiteNoiseMiddleware` au-dessus de `GZipMiddleware`, comme le demande sa documentation : les fichiers statiques sont alors servis sans jamais atteindre `GZipMiddleware`. Dans l'ordre inverse, les fichiers que WhiteNoise n'a pas compressés, comme les images, passent par `GZipMiddleware` sous forme de réponses en streaming, compressées sans contrôle de taille. Sur une image PNG de test de 12 420 octets, la réponse grossit alors à 12 519 octets et perd son en-tête `Content-Length`.
+Placez `WhiteNoiseMiddleware` au-dessus de `GZipMiddleware`, comme le demande sa documentation : les fichiers statiques sont alors servis sans jamais atteindre `GZipMiddleware`. Dans l'ordre inverse, les fichiers que WhiteNoise n'a pas compressés, comme les images, passent par `GZipMiddleware` sous forme de réponses en streaming, compressées sans contrôle de taille. Sur une image PNG de test de 12 420 octets, la réponse grossit alors à environ 12 500 octets et perd son en-tête `Content-Length`.
 
 ## Compresser au niveau du reverse proxy
 
-Si un Nginx ou un Caddy est déjà devant Django, il peut se charger de la compression : les workers de Django sont déchargés de ce travail, et la configuration est commune à toutes les applications derrière le même proxy. Sans reverse proxy, ou si vous ne contrôlez pas celui de votre hébergeur, `GZipMiddleware` fait très bien l'affaire.
+Si un Nginx ou un Caddy est déjà devant Django, il peut se charger de la compression : les workers Gunicorn sont déchargés de ce travail, et la configuration est commune à toutes les applications derrière le même proxy. Sans reverse proxy, ou si vous ne contrôlez pas celui de votre hébergeur, `GZipMiddleware` fait très bien l'affaire.
 
 Activer les deux ne compresse pas deux fois, car Nginx laisse passer telle quelle une réponse qui a déjà un en-tête `Content-Encoding`. Mais c'est alors Django qui fait le travail : choisissez l'un ou l'autre.
 
@@ -214,7 +214,7 @@ server {
 }
 ```
 
-Contrairement à Django, Nginx filtre par type de contenu avec `gzip_types`. Les réponses `text/html` sont toujours compressées, inutile de les ajouter à la liste. `gzip_min_length` se base sur l'en-tête `Content-Length` de la réponse.
+Contrairement à Django, Nginx filtre par type de contenu avec `gzip_types`. Les réponses `text/html` sont toujours compressées : inutile de les ajouter à la liste. `gzip_min_length` se base sur l'en-tête `Content-Length` de la réponse.
 
 Avec Caddy, la compression n'est pas active par défaut : il faut la directive `encode`, qui active zstd et gzip quand on ne précise pas de format :
 
@@ -229,7 +229,7 @@ votre-site.com {
 
 Brotli est un algorithme de compression publié par Google en 2015, qui donne en général des fichiers plus petits que gzip. Les navigateurs ne le demandent qu'en HTTPS : en HTTP simple, ils n'annoncent pas `br` dans `Accept-Encoding`.
 
-Django n'a pas de middleware Brotli, il faut un paquet tiers comme `django-brotli` :
+Django n'a pas de middleware Brotli. Il faut passer par un paquet tiers comme `django-brotli` :
 
 ```bash
 pip install django-brotli
@@ -245,7 +245,7 @@ MIDDLEWARE = [
 ]
 ```
 
-L'ordre est important. Les middlewares traitent la réponse de bas en haut : placé sous `GZipMiddleware`, `BrotliMiddleware` passe en premier. Si le client accepte `br`, la réponse est compressée en Brotli et reçoit `Content-Encoding: br`, et `GZipMiddleware`, qui voit cet en-tête, la laisse telle quelle. Si le client n'accepte pas Brotli, `BrotliMiddleware` ne fait rien et `GZipMiddleware` compresse en gzip. Dans l'ordre inverse, gzip passe d'abord et Brotli n'est plus jamais utilisé pour les clients qui acceptent les deux.
+L'ordre est important. Les middlewares traitent la réponse de bas en haut : placé sous `GZipMiddleware`, `BrotliMiddleware` passe en premier. Si le client accepte `br`, la réponse est compressée en Brotli et reçoit `Content-Encoding: br` : `GZipMiddleware` voit cet en-tête et la laisse telle quelle. Si le client n'accepte pas Brotli, `BrotliMiddleware` ne fait rien et `GZipMiddleware` compresse en gzip. Dans l'ordre inverse, gzip passe d'abord et Brotli n'est plus jamais utilisé pour les clients qui acceptent les deux.
 
 Sur la page de test, la réponse fait 859 octets en Brotli contre environ 1 200 en gzip, et 478 octets contre environ 760 pour le JSON.
 

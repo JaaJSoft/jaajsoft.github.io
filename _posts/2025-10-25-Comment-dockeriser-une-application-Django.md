@@ -1,7 +1,7 @@
 ---
 layout: article
 title: "Comment dockeriser une application Django"
-description: "Dockeriser une application Django pas à pas avec Gunicorn : Dockerfile minimal, lancement en production et docker-compose avec PostgreSQL."
+description: "Dockeriser une application Django pas à pas avec Gunicorn : Dockerfile minimal, lancement en production et Docker Compose avec PostgreSQL."
 tags:
   - python
   - django
@@ -84,9 +84,9 @@ else:
     }
 ```
 
-`SECRET_KEY`, `DEBUG` et `ALLOWED_HOSTS` viennent de l'environnement, avec des valeurs par défaut pratiques pour le développement. Attention à la valeur `"*"` pour `ALLOWED_HOSTS` : elle accepte n'importe quel en-tête `Host`, ce qui revient à désactiver la vérification que fait Django contre les attaques par en-tête `Host`. En production, listez vos domaines : `ALLOWED_HOSTS=monapp.fr,www.monapp.fr`.
+`SECRET_KEY`, `DEBUG` et `ALLOWED_HOSTS` viennent de l'environnement, avec des valeurs par défaut qui permettent de lancer le projet sans rien configurer (`DEBUG` est alors désactivé). Attention à la valeur `"*"` pour `ALLOWED_HOSTS` : elle accepte n'importe quel en-tête `Host`, ce qui revient à désactiver la vérification que fait Django contre les attaques par en-tête `Host`. En production, listez vos domaines : `ALLOWED_HOSTS=monapp.fr,www.monapp.fr`.
 
-WhiteNoise permet à Gunicorn de servir lui-même les fichiers statiques, sans Nginx devant. Sa documentation demande de le placer juste après `SecurityMiddleware`, avant tous les autres middlewares. Le stockage `CompressedManifestStaticFilesStorage` ajoute une empreinte dans le nom de chaque fichier, pour que les navigateurs puissent les garder en cache sans limite, et en crée des versions compressées au moment du `collectstatic`. Par contre, WhiteNoise ne sert pas les fichiers envoyés par les utilisateurs (`media`) : il leur faut un stockage dédié, S3 ou GCS par exemple.
+WhiteNoise permet à Gunicorn de servir lui-même les fichiers statiques, sans Nginx devant. Sa documentation demande de le placer juste après `SecurityMiddleware`, avant tous les autres middlewares. Le stockage `CompressedManifestStaticFilesStorage` ajoute une empreinte dans le nom des fichiers, pour que les navigateurs puissent les garder en cache indéfiniment. Il en crée aussi des versions compressées au moment du `collectstatic`. Par contre, WhiteNoise ne sert pas les fichiers envoyés par les utilisateurs (`media`) : il leur faut un stockage dédié, S3 ou GCS par exemple.
 
 Avec `DATABASE_URL`, une seule variable suffit pour passer à Postgres ou MySQL, par exemple `postgres://user:pass@db:5432/app`.
 
@@ -120,7 +120,7 @@ Pour Postgres, on ajoute le connecteur :
 psycopg[binary]
 ```
 
-`psycopg` est la version 3 du connecteur Postgres pour Python, celle que Django recommande. Elle utilise le même `ENGINE` que psycopg2 (`django.db.backends.postgresql`) : rien à changer dans les réglages. L'extra `[binary]` installe une version précompilée qui embarque libpq, y compris pour Alpine, il n'y a donc rien à compiler. Un projet existant peut garder `psycopg2-binary`, mais la documentation de Django prévient que sa prise en charge sera sans doute retirée un jour.
+`psycopg` est la version 3 du connecteur Postgres pour Python, celle que Django recommande. Elle utilise le même `ENGINE` que psycopg2 (`django.db.backends.postgresql`) : rien à changer dans les réglages. L'extra `[binary]` installe une version précompilée qui embarque libpq (y compris pour Alpine) : il n'y a donc rien à compiler. Un projet existant peut garder `psycopg2-binary`, mais la documentation de Django prévient que sa prise en charge sera sans doute retirée un jour.
 
 ## Le Dockerfile
 
@@ -164,7 +164,7 @@ EXPOSE 8000
 CMD ["sh", "-c", "exec gunicorn config.wsgi:application -b 0.0.0.0:8000 -w ${GUNICORN_WORKERS}"]
 ```
 
-L'ordre des instructions compte : en copiant `requirements.txt` et en installant les dépendances avant le reste du code, Docker réutilise cette couche tant que les dépendances ne changent pas, et une modification du code ne relance pas le `pip install`.
+L'ordre des instructions compte : comme `requirements.txt` est copié et les dépendances installées avant le reste du code, Docker réutilise ces couches tant que `requirements.txt` ne change pas. Une modification du code ne relance donc pas le `pip install`.
 
 Le paquet `build-essential` ne sert que si une de vos dépendances doit être compilée. Celles de cet article ont toutes une version précompilée (wheel), vous pouvez donc retirer ce `RUN` pour alléger l'image.
 
@@ -176,13 +176,13 @@ RUN SECRET_KEY=factice python manage.py collectstatic --noinput
 
 Évitez de la mettre dans un `ENV` : ces variables restent dans l'image (`docker inspect` les affiche) et s'appliqueraient au conteneur si vous oubliiez de passer la vraie valeur au lancement.
 
-Gunicorn écoute sur `0.0.0.0:8000`, car par défaut il n'écoute que sur `127.0.0.1`, une adresse injoignable depuis l'extérieur du conteneur. Le mot-clé `exec` a aussi son importance. On passe par `sh -c` pour que `${GUNICORN_WORKERS}` soit remplacé par sa valeur, mais sans `exec`, le shell reste le processus principal du conteneur (le PID 1) et Gunicorn tourne en dessous. Or `docker stop` envoie son signal d'arrêt au PID 1 : le shell ne le transmet pas, Gunicorn ne s'arrête pas proprement et Docker finit par le tuer au bout de 10 secondes. Avec `exec`, Gunicorn remplace le shell et reçoit directement le signal.
+L'option `-b 0.0.0.0:8000` est nécessaire : par défaut, Gunicorn n'écoute que sur `127.0.0.1`, une adresse injoignable depuis l'extérieur du conteneur. Le mot-clé `exec` a aussi son importance. On passe par `sh -c` pour que `${GUNICORN_WORKERS}` soit remplacé par sa valeur, mais sans `exec`, le shell reste le processus principal du conteneur (le PID 1) et Gunicorn tourne en dessous. Or `docker stop` envoie son signal d'arrêt au PID 1 : le shell ne le transmet pas, Gunicorn ne s'arrête pas proprement et Docker finit par tuer le conteneur au bout de 10 secondes. Avec `exec`, Gunicorn remplace le shell et reçoit directement le signal.
 
-Si votre projet ne s'appelle pas `config`, pensez à adapter `config.wsgi:application`, sinon les workers ne démarrent pas et le log affiche `ModuleNotFoundError: No module named 'config'`.
+Si votre module de configuration ne s'appelle pas `config`, pensez à adapter `config.wsgi:application`, sinon les workers ne démarrent pas et le log affiche `ModuleNotFoundError: No module named 'config'`.
 
-L'option `-w` fixe le nombre de *workers*. Ce sont des processus indépendants, et avec le type de worker par défaut (synchrone), chacun traite une requête à la fois. Plus de workers permet de traiter plus de requêtes en parallèle, au prix de plus de mémoire. La documentation de Gunicorn conseille de partir de `2 * nombre de cœurs + 1` et d'ajuster selon la charge, en précisant que 4 à 12 workers suffisent en général, même pour un trafic important.
+L'option `-w` fixe le nombre de *workers*. Ce sont des processus indépendants, et avec le type de worker par défaut (synchrone), chacun traite une requête à la fois. Augmenter leur nombre permet de traiter plus de requêtes en parallèle, au prix de plus de mémoire. La documentation de Gunicorn conseille de partir de `2 * nombre de cœurs + 1` et d'ajuster selon la charge, en précisant que 4 à 12 workers suffisent en général, même pour un trafic important.
 
-Nginx n'est pas obligatoire pour démarrer : WhiteNoise sert les statiques et Gunicorn le reste. Gunicorn recommande tout de même de placer devant ses workers synchrones un proxy qui met en tampon les clients lents (Nginx par exemple), sans quoi quelques connexions lentes suffisent à occuper tous les workers. Un reverse proxy devient aussi utile pour le TLS ou pour héberger plusieurs applications sur la même machine.
+Nginx n'est pas obligatoire pour démarrer : WhiteNoise sert les statiques et Gunicorn le reste. Gunicorn recommande tout de même de placer devant ses workers synchrones un proxy comme Nginx, qui met en tampon les échanges avec les clients lents : sans lui, quelques connexions lentes suffisent à occuper tous les workers. Un reverse proxy devient aussi utile pour le TLS ou pour héberger plusieurs applications sur la même machine.
 
 Pensez aussi au fichier `.dockerignore`, à côté du Dockerfile, pour ne pas envoyer dans l'image l'historique git, les secrets locaux ou votre base SQLite de développement :
 
@@ -241,7 +241,7 @@ Referrer-Policy: same-origin
 Cross-Origin-Opener-Policy: same-origin
 ```
 
-Ici, la base SQLite vit dans le conteneur et disparaît avec lui, et les migrations ne sont pas appliquées : c'est suffisant pour vérifier que l'image démarre, pas pour s'en servir. Pour une vraie base, on passe à Docker Compose.
+Ici, les migrations ne sont pas appliquées et la base SQLite disparaît avec le conteneur : c'est suffisant pour vérifier que l'image démarre, pas pour s'en servir. Pour une vraie base, on passe à Docker Compose.
 
 ## Docker Compose avec Postgres
 
@@ -318,7 +318,7 @@ services:
       - ./:/app
 ```
 
-Docker Compose lit automatiquement ce fichier en plus de `docker-compose.yml` lors d'un `docker compose up` : il doit donc rester sur les postes de développement et ne jamais se retrouver sur le serveur de production. Avec `DEBUG` à 1, `runserver` sert lui-même les fichiers statiques, le `collectstatic` n'est pas nécessaire.
+Docker Compose lit automatiquement ce fichier en plus de `docker-compose.yml` lors d'un `docker compose up` : il doit donc rester sur les postes de développement et ne jamais se retrouver sur le serveur de production. Avec `DEBUG` à 1, `runserver` sert lui-même les fichiers statiques : le `collectstatic` n'est pas nécessaire.
 
 ## Voir aussi
 
