@@ -118,10 +118,10 @@ WORKDIR /app
 # (Optionnel) Installer curl si vous utilisez la healthcheck basée sur curl
 # RUN apk add --no-cache curl
 
-# On copie les wheels produits par l'étape builder
+# On copie les wheels produites par l'étape builder
 COPY --from=builder /app/wheels /app/wheels
 
-# On installe les dépendances à partir des wheels locaux (pas d'accès réseau)
+# On installe les dépendances à partir des wheels locales (pas d'accès réseau)
 COPY requirements.txt .
 RUN pip install --no-cache-dir --no-index --find-links=/app/wheels -r requirements.txt \
     && rm -rf /app/wheels \
@@ -154,24 +154,25 @@ contient les en-têtes du Python 3.12 de la distribution, alors que l'image
 officielle `python` embarque déjà ceux de son propre Python 3.13 dans
 `/usr/local/include`.
 
-Avec le `requirements.txt` de cet article, pip trouve des wheels déjà
-compilées pour Alpine (musllinux) pour toutes les dépendances, et ne compile
+Avec le `requirements.txt` de cet article, pip trouve pour toutes les
+dépendances des wheels déjà compilées pour Alpine (musllinux), et ne compile
 rien (vérifié en octobre 2026). Les outils de compilation ne serviront que le
 jour où vous ajouterez une dépendance sans wheel pour Alpine.
 
 La seconde étape repart de l'image `python` d'origine : les compilateurs
-restent dans l'étape `builder`. On y copie les wheels, et
-`pip install --no-index --find-links` les installe sans aller chercher quoi que
-ce soit sur PyPI. Les dépendances sont installées avant de copier le code : tant
-que `requirements.txt` ne change pas, Docker réutilise ces couches en cache, et
-une modification de `app.py` ne relance pas l'installation.
+restent dans l'étape `builder`, et seules les wheels sont copiées.
+`pip install --no-index --find-links` les installe ensuite sans aller chercher
+quoi que ce soit sur PyPI. Les dépendances sont installées avant de copier le
+code : tant que `requirements.txt` ne change pas, Docker réutilise ces couches
+en cache, et une modification de `app.py` ne relance pas l'installation.
 
 Attention, le `rm -rf /app/wheels` fait disparaître les wheels du système de
 fichiers de l'image, mais ne la fait pas maigrir : elles restent stockées dans
-la couche créée par le `COPY --from=builder` (une dizaine de Mo ici), une couche
-suivante ne pouvant que les masquer. Pour s'en passer, BuildKit, le builder par
-défaut de Docker, permet de monter le dossier de l'étape `builder` le temps d'un
-`RUN`. On remplace alors le `COPY --from=builder` et le `RUN pip install` par :
+la couche créée par le `COPY --from=builder` (une dizaine de Mo ici), et une
+couche suivante ne peut que les masquer. Pour éviter cette couche, BuildKit, le
+moteur de build par défaut de Docker, permet de monter le dossier de l'étape
+`builder` le temps d'un `RUN`. On remplace alors le `COPY --from=builder` et le
+`RUN pip install` par :
 
 ```dockerfile
 COPY requirements.txt .
@@ -258,10 +259,10 @@ docker inspect --format='{{json .State.Health}}' fastapi-app | jq
 {% endraw %}
 
 Le champ `Status` vaut `starting` jusqu'au premier contrôle réussi, puis
-`healthy`. Depuis Docker 27, pendant la `start-period`, Docker lance un contrôle
-toutes les 5 secondes : le conteneur passe donc à `healthy` environ 5 secondes
-après son démarrage. Avec une version plus ancienne, le premier contrôle n'a
-lieu qu'au bout de l'`interval`, soit 60 secondes ici.
+`healthy`. Depuis la version 27, Docker lance un contrôle toutes les 5 secondes
+pendant la `start-period` : le conteneur passe donc à `healthy` environ 5
+secondes après son démarrage. Avec une version plus ancienne, le premier
+contrôle n'a lieu qu'au bout de l'`interval`, soit 60 secondes ici.
 
 ## Voir aussi
 

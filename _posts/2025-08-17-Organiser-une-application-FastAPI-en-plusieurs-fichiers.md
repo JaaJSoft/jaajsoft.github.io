@@ -15,7 +15,7 @@ tags:
 
 Tant qu'une API FastAPI tient en quelques routes, un seul fichier `app.py`
 suffit. Quand elle grossit, mieux vaut ranger les routes par thème dans des
-modules séparés : dans ce tutoriel, nous allons découper une application avec
+modules séparés. Dans ce tutoriel, nous allons découper une application avec
 les `APIRouter` de FastAPI, et un point d'entrée qui les assemble.
 <!--more-->
 
@@ -129,10 +129,10 @@ app = create_app()
 
 Les imports relatifs (`from .routers.status ...`) désignent des modules du même
 package `app`. Comme chaque module de router expose une variable nommée
-`router`, on les renomme à l'import pour pouvoir les utiliser côte à côte. La
-fonction `create_app()` n'est pas obligatoire, mais elle permet de fabriquer
-une application neuve à la demande, dans les tests par exemple. Uvicorn, lui,
-utilise la variable `app` créée en bas du fichier.
+`router`, on renomme ces variables à l'import pour pouvoir les utiliser côte à
+côte. La fonction `create_app()` n'est pas obligatoire, mais elle permet de
+fabriquer une application neuve à la demande, dans les tests par exemple.
+Uvicorn, lui, utilise la variable `app` créée en bas du fichier.
 
 ## Les fichiers `__init__.py`
 
@@ -183,7 +183,7 @@ l'erreur `Attribute "app" not found in module "app"`.
 
 ## Ajouter d'autres routers
 
-Pour ajouter un nouveau groupe de routes, on crée un nouveau module dans
+Pour ajouter un nouveau groupe de routes, on crée un module dans
 `app/routers`, par exemple `users.py` :
 
 ```python
@@ -217,8 +217,8 @@ app.include_router(users_router)
 
 Le paramètre `dependencies` de l'exemple montre un autre intérêt des routers :
 une dépendance déclarée au niveau du router (ici la vérification d'un en-tête
-`X-Token`) s'applique à toutes ses routes, sans la répéter sur chacune. Un appel
-sur `/users/1` sans le bon en-tête est refusé :
+`X-Token`) s'applique à toutes ses routes, sans avoir à la répéter sur chacune.
+Un appel sur `/users/1` sans le bon en-tête est refusé :
 
 ```bash
 curl -H "X-Token: faux" http://127.0.0.1:8000/users/1

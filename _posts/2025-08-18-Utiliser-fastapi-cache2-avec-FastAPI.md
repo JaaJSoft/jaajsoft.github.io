@@ -50,9 +50,9 @@ python -m pip install redis
 ```
 
 jinja2 n'est pas une dépendance déclarée de fastapi-cache2, mais il est devenu
-nécessaire : la librairie importe le module de templates de Starlette (le
-framework sur lequel repose FastAPI), qui refuse de se charger sans jinja2
-depuis Starlette 1.0, sortie en mars 2026. Sans lui, l'import de `fastapi_cache`
+nécessaire : la librairie importe le module de templates de Starlette, le
+framework sur lequel repose FastAPI. Depuis Starlette 1.0, sortie en mars 2026,
+ce module refuse de se charger sans jinja2, et l'import de `fastapi_cache`
 échoue avec l'erreur `ImportError: jinja2 must be installed to use Jinja2Templates`.
 Si vous avez installé FastAPI avec `pip install "fastapi[standard]"`, jinja2 est
 déjà là.
@@ -151,10 +151,10 @@ et `HIT` quand elle sort du cache. fastapi-cache2 ajoute aussi un
 
 Ce cache a ses limites : il vit dans la mémoire du processus, il est donc perdu
 à chaque redémarrage, et il n'est pas partagé. Avec `uvicorn --workers 4`,
-chaque worker a son propre cache. De plus, `InMemoryBackend` ne supprime une
-entrée expirée que lorsqu'on la relit : une route appelée avec beaucoup de
-valeurs différentes (une entrée par valeur de `q` ici) fait grossir la mémoire
-du processus.
+chacun des 4 processus (les *workers*) a son propre cache. De plus,
+`InMemoryBackend` ne supprime une entrée expirée que lorsqu'on la relit : une
+route appelée avec beaucoup de valeurs différentes (une entrée par valeur de `q`
+ici) fait grossir la mémoire du processus.
 
 ## Ce que le décorateur met en cache
 
@@ -178,8 +178,8 @@ abus (c'est le rôle d'un
 
 Enfin, la route `DELETE /cache/clear` vide le cache : sans namespace,
 `FastAPICache.clear()` supprime toutes les clés de l'application. En production,
-une route comme celle-ci doit être protégée par une authentification, sinon
-n'importe qui peut vider votre cache.
+une route comme celle-ci doit être protégée par une authentification, sinon le
+premier venu peut vider votre cache.
 
 ## Cache Redis
 
@@ -201,14 +201,14 @@ services:
     command: [ "redis-server", "--appendonly", "yes" ]
 ```
 
-Lancez-le :
+On démarre Redis :
 
 ```bash
 docker compose up -d
 ```
 
-L'option `--appendonly yes` active la persistance de Redis sur disque : le cache
-survit aussi à un redémarrage de Redis.
+L'option `--appendonly yes` active la persistance sur disque : le cache survit
+aussi à un redémarrage de Redis.
 
 ### Le code avec RedisBackend
 

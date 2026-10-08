@@ -1,7 +1,7 @@
 ---
 layout: article
 title: "Comment ajouter un rate limiter à notre application FastAPI avec redis"
-description: "Limiter le nombre de requêtes d'une API FastAPI avec fastapi-limiter et Redis : limite par IP, clé d'API ou utilisateur, reverse proxy et gestion du 429."
+description: "Limiter le nombre de requêtes d'une API FastAPI avec fastapi-limiter et Redis : limite par IP, clé API ou utilisateur, reverse proxy et gestion du 429."
 author: Pierre Chopinet
 tags:
   - python
@@ -15,12 +15,12 @@ tags:
   - performance
 ---
 
-> **Note (2026) :** fastapi-limiter a changé depuis l'écriture de cet article. La version 0.2.0 (février 2026) abandonne l'API utilisée ici. Et depuis FastAPI 0.137 (juin 2026), fastapi-limiter, en 0.1.6 comme en 0.2.0, provoque une erreur 500 sur les routes limitées dès que l'application utilise `include_router`. Les exemples restent valables avec les versions épinglées dans la partie installation : ils ont été testés en octobre 2026 avec FastAPI 0.136.3, fastapi-limiter 0.1.6 et redis-py 8.1.0.
+> **Note (2026) :** fastapi-limiter a changé depuis l'écriture de cet article. La version 0.2.0 (février 2026) abandonne l'API utilisée ici. De plus, depuis FastAPI 0.137 (juin 2026), les routes limitées répondent par une erreur 500 dès que l'application utilise `include_router`, avec fastapi-limiter 0.1.6 comme avec la 0.2.0. Les exemples restent valables avec les versions épinglées dans la partie installation : ils ont été testés en octobre 2026 avec FastAPI 0.136.3, fastapi-limiter 0.1.6 et redis-py 8.1.0.
 
 Dans ce tutoriel, nous allons limiter le nombre de requêtes qu'un client peut
 faire sur une API FastAPI, avec la librairie `fastapi-limiter` et Redis.
 Au-delà de la limite, l'API répond `429 Too Many Requests` : de quoi se protéger
-d'un script trop gourmand, d'un client qui boucle, ou limiter la consommation
+d'un script trop gourmand ou d'un client qui boucle, ou encore limiter l'usage
 d'une route coûteuse.
 <!--more-->
 
@@ -48,20 +48,20 @@ Sous Windows (PowerShell), vous pouvez faire :
 python -m pip install "fastapi<0.137" uvicorn "fastapi-limiter==0.1.6" redis
 ```
 
-Les deux versions sont épinglées. fastapi-limiter 0.1.6 est la dernière version
-construite directement sur Redis : la 0.2.0 confie le comptage à la librairie
-pyrate-limiter (qui peut elle-même stocker ses compteurs dans Redis), avec une
-autre API. `FastAPILimiter.init()` comme les paramètres `times` et `seconds`
-utilisés plus bas n'y existent plus.
+Les versions de FastAPI et de fastapi-limiter sont épinglées. fastapi-limiter
+0.1.6 est la dernière version construite directement sur Redis : la 0.2.0 confie
+le comptage à la librairie pyrate-limiter (qui peut elle-même stocker ses
+compteurs dans Redis), avec une autre API. `FastAPILimiter.init()` comme les
+paramètres `times` et `seconds` utilisés plus bas n'y existent plus.
 
 Quant à FastAPI, la version 0.137 a changé le contenu de `app.routes` : on y
 trouve maintenant des objets intermédiaires pour les routers inclus, et plus
 seulement des routes. Or fastapi-limiter parcourt cette liste à chaque requête
 pour retrouver la route appelée. Dès que l'application contient un
 `include_router`, chaque requête sur une route limitée échoue alors avec
-`AttributeError: '_IncludedRouter' object has no attribute 'path'`, et
-l'utilisateur reçoit une erreur 500. La 0.136.3 est la dernière version de
-FastAPI avec laquelle les exemples de cet article fonctionnent.
+`AttributeError: '_IncludedRouter' object has no attribute 'path'`, et le
+client reçoit une erreur 500. La 0.136.3 est la dernière version de FastAPI avec
+laquelle les exemples de cet article fonctionnent.
 
 ## Démarrer un Redis local
 
@@ -78,7 +78,7 @@ services:
     command: [ "redis-server", "--appendonly", "yes" ]
 ```
 
-Lancez :
+On démarre Redis :
 
 ```bash
 docker compose up -d
@@ -182,16 +182,16 @@ propre compteur.
 
 Attention, pour trouver l'IP du client, l'identifiant par défaut lit d'abord
 l'en-tête `X-Forwarded-For`, sans vérifier d'où vient la requête. Un client qui
-envoie une valeur différente de cet en-tête à chaque appel obtient un nouveau
-compteur à chaque fois, et n'est donc jamais bloqué. La partie sur le reverse
-proxy montre comment corriger ça.
+change la valeur de cet en-tête à chaque appel obtient un nouveau compteur, et
+n'est donc jamais bloqué. La partie sur le reverse proxy montre comment corriger
+ça.
 
 ## Limiter par clé API ou par utilisateur
 
 On peut préférer limiter par clé API ou par utilisateur plutôt que par IP. Pour
-cela, on passe une fonction `identifier` au `RateLimiter`. fastapi-limiter
-l'appelle avec `await` : il doit donc s'agir d'une fonction asynchrone
-(`async def`), et non d'un `lambda` synchrone.
+cela, on passe une fonction au paramètre `identifier` de `RateLimiter`.
+fastapi-limiter l'appelle avec `await` : il doit donc s'agir d'une fonction
+asynchrone (`async def`), et non d'un `lambda` synchrone.
 
 ```python
 from fastapi import Request
@@ -273,7 +273,7 @@ app.include_router(api_router)
 ```
 
 Attention, la dépendance est ajoutée à chaque route : `GET /api/items` et
-`POST /api/items` ont chacune leur compteur de 120 requêtes par minute, ce n'est
+`POST /api/items` ont chacune leur compteur de 120 requêtes par minute. Ce n'est
 pas un quota commun à tout le groupe.
 
 Un `Depends(RateLimiter(...))` ajouté sur une des routes du router impose une
@@ -281,8 +281,8 @@ seconde limite, qui s'applique en plus de la première : c'est la plus stricte
 qui bloque. On peut donc rendre une route plus restrictive que le reste du
 groupe, mais pas plus permissive.
 
-C'est ce `include_router` qui provoque les erreurs 500 avec FastAPI 0.137 et
-suivants, d'où la version de FastAPI épinglée à l'installation.
+C'est ce `include_router` qui provoque les erreurs 500 à partir de FastAPI
+0.137, d'où la version de FastAPI épinglée à l'installation.
 
 ## Derrière un reverse proxy
 

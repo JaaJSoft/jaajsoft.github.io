@@ -17,10 +17,10 @@ FastAPI est un framework python permettant de réaliser des api web. Il
 s'appuie sur les annotations de type de python pour convertir et valider les
 données reçues, et génère tout seul la documentation de l'api.
 
-L'objectif de ce tutoriel est d'apprendre comment faire :
+L'objectif de ce tutoriel est d'apprendre à :
 
-- Une api web en python avec FastAPI
-- Le traitement des requêtes
+- faire une api web en python avec FastAPI
+- traiter les requêtes
 
 ## Installation
 
@@ -38,7 +38,7 @@ Depuis un terminal, installation de python3 :
 sudo apt install python3
 ```
 
-Vous aurez ensuite besoin de pip le gestionnaire de package de python, il est
+Vous aurez ensuite besoin de pip, le gestionnaire de paquets de python. Il est
 souvent préinstallé avec python, mais dans le doute :
 
 ```bash
@@ -70,8 +70,8 @@ Windows [ici](https://www.python.org/downloads/) et installez-le.
 
 Déplacez-vous dans le dossier où vous avez installé python et faites :
 
-`shift + click droit -> ouvrir une fenêtre powershell` (sur Windows 7 pour les
-réfractaires au changement ça doit être cmd)
+`shift + click droit -> ouvrir une fenêtre powershell` (sur Windows 7, pour les
+réfractaires au changement, ça doit être cmd)
 
 Vous êtes normalement dans un terminal, entrez alors :
 
@@ -81,8 +81,8 @@ Vous êtes normalement dans un terminal, entrez alors :
 
 ### MacOS
 
-N'ayant pas de Mac, je ne peux pas tester l'installation, il faut toutefois
-aussi utiliser python et [PIP](https://pypi.org/project/pip/), et suivre les
+N'ayant pas de Mac, je ne peux pas tester l'installation. Il faut toutefois
+aussi utiliser python et [pip](https://pypi.org/project/pip/), et suivre les
 instructions pour linux afin d'installer FastAPI et uvicorn.
 
 ## Une requête HTTP ?
@@ -97,13 +97,12 @@ Source Wikipédia.
 
 Il existe 5 principales méthodes HTTP :
 
-- GET, permet d'accéder à une ressource.
-- HEAD, permet de récupérer l'entête d'une ressource, pour par exemple connaitre
-  la date de sa dernière modification (utile pour le système de cache d'un
-  navigateur)
-- POST, permet d'ajouter une ressource
-- PUT, permet de mettre à jour une ressource
-- DELETE, permet de supprimer une ressource
+- GET : accéder à une ressource
+- HEAD : récupérer l'en-tête d'une ressource, par exemple pour connaître la date
+  de sa dernière modification (utile pour le système de cache d'un navigateur)
+- POST : ajouter une ressource
+- PUT : mettre à jour une ressource
+- DELETE : supprimer une ressource
 
 ## Qu'est-ce qu'une API web ?
 
@@ -114,7 +113,7 @@ Il existe 5 principales méthodes HTTP :
 Source Wikipédia.
 
 À ne pas confondre avec une API REST, qui est une api web avec un ensemble de
-contraintes et de règles prédéfinies à utiliser. Toutes les API web ne sont pas
+contraintes et de règles prédéfinies à respecter. Toutes les API web ne sont pas
 des API REST...
 
 ## Un premier *Endpoint*
@@ -137,7 +136,7 @@ Pour lancer votre premier *Endpoint* :
 uvicorn app:app --reload
 ```
 
-Si uvicorn n'est pas trouvé vous pouvez essayer de lancer :
+Si uvicorn n'est pas trouvé, vous pouvez essayer de lancer :
 
 ```bash
 python -m uvicorn app:app --reload
@@ -150,7 +149,7 @@ devriez avoir :
 "Hello World"
 ```
 
-Ou alors avec `curl`
+Ou alors avec `curl` :
 
 ```bash
 curl http://127.0.0.1:8000/
@@ -189,7 +188,7 @@ curl http://127.0.0.1:8000/test
 
 Dans la vraie vie, il est parfois (même très souvent) nécessaire de passer des
 paramètres à notre _endpoint_.
-Pour passer des paramètres avec le *routing* on utilise les `{}` dans le chemin
+Pour passer des paramètres avec le *routing*, on utilise les `{}` dans le chemin
 et on déclare la variable en paramètre de la fonction, avec son type :
 
 ```python
@@ -265,8 +264,8 @@ curl -X GET http://127.0.0.1:8000/test
 ```
 
 Le GET renvoie bien la bonne valeur, mais si on tente avec un POST ça ne
-fonctionne pas ! FastAPI renvoie alors une erreur `405 Method Not Allowed`, car
-aucune route POST n'est déclarée sur ce chemin :
+fonctionne pas ! FastAPI répond alors avec une erreur `405 Method Not Allowed`,
+car aucune route POST n'est déclarée sur ce chemin :
 
 ```bash
 curl -X POST http://127.0.0.1:8000/test
@@ -288,8 +287,8 @@ def test_endpoint_post(data: Data):
     # Traiter la requête
     return data
 ```
-FastAPI convertit automatiquement le JSON en objet Python (modèle Pydantic) et
-inversement retourne du JSON.
+FastAPI convertit automatiquement le JSON reçu en objet Python (le modèle
+Pydantic), et l'objet retourné en JSON.
 
 ```bash
 curl -X POST http://127.0.0.1:8000/test \

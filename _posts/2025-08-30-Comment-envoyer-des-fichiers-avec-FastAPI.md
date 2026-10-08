@@ -14,9 +14,9 @@ tags:
 ---
 
 Dans ce tutoriel, nous allons voir comment envoyer des fichiers à une API web
-FastAPI : un fichier seul, plusieurs fichiers, un fichier accompagné de champs
-de formulaire, puis comment l'enregistrer sur le disque et vérifier son type et
-sa taille.
+FastAPI : un fichier seul, un fichier accompagné de champs de formulaire,
+plusieurs fichiers, puis comment enregistrer le fichier reçu sur le disque et
+vérifier son type et sa taille.
 <!--more-->
 
 Dans cet article :
@@ -59,13 +59,12 @@ On peut récupérer un fichier de deux façons :
 - avec le type `bytes`, on reçoit directement tout le contenu du fichier en
   mémoire, ce qui convient aux petits fichiers ;
 - avec le type `UploadFile`, on reçoit un objet qui donne le nom du fichier
-  (`filename`), son type (`content_type`) et un fichier Python (`file`). Le
-  contenu est gardé en mémoire jusqu'à 1 Mo, puis écrit dans un fichier
-  temporaire sur le disque, ce qui permet de recevoir de gros fichiers sans
-  remplir la RAM.
+  (`filename`), son type (`content_type`) et un fichier Python (`file`).
 
-Dans les deux cas, FastAPI reçoit le fichier en entier avant d'appeler votre
-fonction.
+Le contenu d'un `UploadFile` est gardé en mémoire jusqu'à 1 Mo, puis écrit dans
+un fichier temporaire sur le disque, ce qui permet de recevoir de gros fichiers
+sans remplir la RAM. Dans les deux cas, FastAPI reçoit le fichier en entier
+avant d'appeler votre fonction.
 
 ## Un premier upload
 
@@ -214,8 +213,8 @@ curl -F "files=@a.png" -F "files=@b.png" http://127.0.0.1:8000/uploadfiles
 ```
 
 Avec `requests`, `files` devient une liste de tuples qui portent tous le nom
-`files`. Le `ExitStack` ouvre les fichiers et garantit qu'ils seront tous
-fermés à la sortie du bloc `with` :
+`files`. L'`ExitStack` enregistre chaque fichier ouvert et garantit qu'ils
+seront tous fermés à la sortie du bloc `with` :
 
 ```python
 import requests
@@ -282,8 +281,8 @@ curl -F "file=@monimage.png;filename=../../evil.png" http://127.0.0.1:8000/uploa
 ```
 
 Si votre application est découpée en plusieurs fichiers, ces routes ont leur
-place dans un module dédié (`routers/upload.py`) inclus avec `include_router`,
-voir
+place dans un module dédié (`app/routers/upload.py`) inclus avec
+`include_router`, voir
 [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %}).
 
 ## Valider le type et la taille
@@ -315,10 +314,10 @@ async def upload_validate(file: UploadFile = File(...)):
 ```
 
 Le code 413 signifie que le contenu envoyé est trop gros. Le `seek(0)` remet le
-curseur au début du fichier, pour pouvoir le relire ensuite (pour le sauvegarder
-par exemple). Ici, la taille est mesurée en lisant tout le fichier en mémoire.
-Pour de gros fichiers, on peut s'en passer : `UploadFile` donne aussi la taille
-du fichier reçu dans `file.size`, sans rien lire.
+curseur au début du fichier, afin de pouvoir le relire ensuite (pour le
+sauvegarder, par exemple). Ici, la taille est mesurée en lisant tout le fichier
+en mémoire. Pour de gros fichiers, on peut éviter cette lecture : `UploadFile`
+donne aussi la taille du fichier reçu dans `file.size`, sans rien lire.
 
 Attention, `content_type` est le type déclaré par le client, pas le résultat
 d'une analyse du fichier : rien n'empêche d'envoyer un script en le déclarant
@@ -331,7 +330,7 @@ curl -F "file=@app.py;type=image/png" http://127.0.0.1:8000/uploadfile/validate
 
 Inversement, `curl` ne devine le type qu'à partir de l'extension, et seulement
 pour quelques formats courants (png, jpg, pdf...). Un fichier `.csv` part en
-`application/octet-stream` et se fait refuser, il faut préciser son type :
+`application/octet-stream` et se fait refuser. Il faut alors préciser son type :
 
 ```bash
 curl -F "file=@ventes.csv" http://127.0.0.1:8000/uploadfile/validate
