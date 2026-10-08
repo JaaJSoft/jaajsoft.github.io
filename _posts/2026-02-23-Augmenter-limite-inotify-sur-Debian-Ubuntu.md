@@ -10,283 +10,212 @@ tags:
 author: Pierre Chopinet
 ---
 
-Lorsque vous développez sur Linux avec des outils modernes (IDE, hot-reload, watchers), vous rencontrez souvent l'erreur "too many open files" ou "inotify watch limit reached". Ces messages indiquent que la limite par défaut d'inotify est atteinte. Ce guide vous montre comment augmenter ces limites sur Debian et Ubuntu.
+Les IDE, les serveurs de développement avec rechargement automatique ou un simple `tail -f` utilisent inotify pour savoir quand un fichier change. Sur un gros projet, ou avec beaucoup de conteneurs, on finit par atteindre les limites fixées par le noyau et par tomber sur des erreurs comme `ENOSPC: System limit for number of file watchers reached` ou `Too many open files`. Voyons comment vérifier ces limites et les augmenter sur Debian et Ubuntu.
 <!--more-->
 
-Dans cet article, vous découvrirez :
-- Ce qu'est inotify et pourquoi les limites existent
-- Comment vérifier vos limites actuelles
-- Comment augmenter temporairement les limites
-- Comment rendre les modifications permanentes
-- Les valeurs recommandées selon votre usage
-- Comment diagnostiquer les processus qui consomment des watchers
+Dans cet article :
+- Comment fonctionne inotify
+- Les trois limites
+- Vérifier les limites actuelles
+- Augmenter les limites temporairement
+- Rendre la modification permanente
+- Combien de mémoire consomme un watch
+- Trouver les processus qui utilisent inotify
 
-Pré-requis : Debian ou Ubuntu (la procédure s'applique aussi aux autres distributions Linux modernes) et accès `sudo`.
+Pré-requis : Debian ou Ubuntu (la procédure est la même sur les autres distributions) et un accès `sudo`.
 
----
+## Comment fonctionne inotify
 
-## Qu'est-ce qu'inotify ?
+inotify (pour *inode notify*) est l'API du noyau Linux qui permet à un programme d'être prévenu quand un fichier ou un répertoire est créé, modifié, supprimé ou déplacé. Le programme crée d'abord une *instance* inotify, puis il y ajoute des *watches*, un par fichier ou répertoire à surveiller. La surveillance d'un répertoire n'est pas récursive : un outil qui surveille tout un projet pose un watch sur chacun de ses sous-répertoires.
 
-`inotify` (inode notify) est un sous-système du noyau Linux qui surveille les modifications du système de fichiers. Il permet aux applications de recevoir des notifications lorsqu'un fichier ou répertoire est créé, modifié, supprimé ou déplacé.
-
----
-
-## Les trois limites d'inotify
-
-Le système inotify possède trois paramètres configurables :
-
-### max_user_watches
-
-Nombre maximum de fichiers et répertoires surveillés par utilisateur.
+Pour voir inotify en action, on peut utiliser `inotifywait`, du paquet `inotify-tools` :
 
 ```bash
-cat /proc/sys/fs/inotify/max_user_watches
-# Par défaut : 8192 ou 524288 (selon distribution)
+sudo apt install inotify-tools
+inotifywait -m -r projet
 ```
 
-> Note : depuis le noyau Linux 5.11, cette valeur par défaut n'est plus figée. Le noyau la dimensionne dynamiquement pour ne pas dépasser environ 1 % de la mémoire adressable, dans une plage de 8192 à 1048576 (comportement calqué sur `epoll`). Sur les noyaux plus anciens, la valeur historique de 8192 est souvent trop basse.
+L'option `-m` laisse tourner la commande et `-r` surveille aussi les sous-répertoires. En modifiant deux fichiers du projet depuis un autre terminal, on obtient :
 
-Problème courant : dépassement lors du watch de gros projets (node_modules, monorepos).
-
-### max_user_instances
-
-Nombre maximum d'instances inotify par utilisateur (nombre de processus pouvant surveiller des fichiers).
-
-```bash
-cat /proc/sys/fs/inotify/max_user_instances
-# Par défaut : 128
+```
+Setting up watches.  Beware: since -r was given, this may take a while!
+Watches established.
+projet/src/a/1/ OPEN f1.js
+projet/src/a/1/ ATTRIB f1.js
+projet/src/a/1/ CLOSE_WRITE,CLOSE f1.js
+projet/src/b/2/ OPEN f2.js
+projet/src/b/2/ MODIFY f2.js
+projet/src/b/2/ CLOSE_WRITE,CLOSE f2.js
 ```
 
-Problème courant : trop d'outils tournent simultanément (IDE + webpack + tests + docker).
+Le projet de test contient 112 répertoires et 200 fichiers : `inotifywait` y a posé 112 watches, un par répertoire, les fichiers étant couverts par le watch de leur répertoire. Sur un gros projet, ou avec un dossier `node_modules` qui peut contenir des milliers de sous-répertoires, le nombre de watches grimpe donc vite.
 
-### max_queued_events
+## Les trois limites
 
-Nombre maximum d'événements en attente dans la file avant qu'ils ne soient traités.
+Le noyau limite l'utilisation d'inotify avec trois paramètres, que l'on trouve dans `/proc/sys/fs/inotify/`.
 
-```bash
-cat /proc/sys/fs/inotify/max_queued_events
-# Par défaut : 16384
+`max_user_watches` fixe le nombre maximum de watches par utilisateur, tous processus confondus. C'est la limite que l'on atteint le plus souvent. Au-delà, l'ajout d'un watch échoue avec l'erreur `ENOSPC` ("No space left on device"), même si le disque n'est pas plein.
+
+Sa valeur par défaut dépend de la version du noyau. Jusqu'au noyau 5.10, elle valait 8192, ce qui est vite atteint. Depuis le noyau 5.11, elle est calculée au démarrage pour que les watches d'un utilisateur ne puissent pas occuper plus d'environ 1 % de la RAM, avec un minimum de 8192 et un maximum de 1 048 576. Ubuntu 22.04 (noyau 5.15) et les versions suivantes en profitent. Pour connaître la version de votre noyau, lancez `uname -r`.
+
+`max_user_instances` fixe le nombre maximum d'instances par utilisateur, 128 par défaut. Chaque programme qui utilise inotify en ouvre au moins une. Au-delà, la création d'une instance échoue avec `EMFILE`, c'est-à-dire "Too many open files", la même erreur que lorsqu'un processus dépasse son nombre maximum de fichiers ouverts. On peut atteindre cette limite avec beaucoup de conteneurs lancés par le même utilisateur, souvent root. C'est un problème connu de kind, l'outil qui fait tourner des clusters Kubernetes dans Docker, dès que le cluster a plusieurs nœuds.
+
+Enfin, `max_queued_events` fixe le nombre d'événements qui peuvent attendre d'être lus dans la file d'une instance, 16 384 par défaut. Au-delà, les nouveaux événements sont perdus et le programme reçoit un événement `IN_Q_OVERFLOW` : à lui de relire l'état des fichiers.
+
+Chaque programme signale les erreurs `ENOSPC` et `EMFILE` à sa façon. Voici ce qu'affichent Node.js, `tail -f` et `inotifywait` quand il n'y a plus de watches disponibles :
+
+```
+Error: ENOSPC: System limit for number of file watchers reached, watch 'projet/src/e/3'
+tail: inotify resources exhausted
+Failed to watch projet; upper limit on inotify watches reached!
 ```
 
-Problème courant : modifications massives (git checkout, npm install) peuvent saturer la file.
+Et quand c'est le nombre d'instances qui est atteint :
 
----
+```
+Error: EMFILE: too many open files, watch 'projet'
+tail: inotify cannot be used, reverting to polling: Too many open files
+Couldn't initialize inotify: Too many open files
+```
 
-## Vérifier vos limites actuelles
+Comme on le voit avec `tail`, certains programmes se rabattent sur une scrutation régulière des fichiers (*polling*), moins réactive : par défaut, `tail -f` ne vérifie alors le fichier qu'une fois par seconde.
 
-### Afficher toutes les limites
+## Vérifier les limites actuelles
+
+La commande `sysctl` affiche les trois valeurs d'un coup :
 
 ```bash
 sysctl fs.inotify
 ```
 
-Sortie typique :
+Sur une machine de 16 Go de RAM avec un noyau récent, on obtient :
+
 ```
 fs.inotify.max_queued_events = 16384
 fs.inotify.max_user_instances = 128
-fs.inotify.max_user_watches = 524288
+fs.inotify.max_user_watches = 130054
 ```
 
-### Vérifier combien d'instances inotify sont ouvertes
-
-```bash
-find /proc/*/fd -lname 'anon_inode:inotify' 2>/dev/null | wc -l
-```
-
-Attention à ne pas confondre les deux notions. Cette commande compte les **instances** inotify (un descripteur de fichier `anon_inode:inotify` par appel à `inotify_init`), pas les **watches**. Une seule instance peut poser des milliers de watches ; c'est `max_user_watches` qui limite le nombre total de watches, `max_user_instances` le nombre d'instances. Pour compter les watches réellement posés, additionnez les lignes `inotify wd:` des fichiers `/proc/*/fdinfo/*` :
-
-```bash
-find /proc/*/fdinfo -type f 2>/dev/null | xargs grep -c '^inotify' 2>/dev/null | awk -F: '{sum+=$NF} END {print sum}'
-```
-
-### Identifier les processus consommateurs
-
-```bash
-for pid in $(ps -ef | awk '{print $2}'); do
-    count=$(find /proc/$pid/fd -lname 'anon_inode:inotify' 2>/dev/null | wc -l)
-    if [ $count -gt 0 ]; then
-        echo "$count instances inotify: $(ps -p $pid -o comm=)"
-    fi
-done | sort -rn
-```
-
-Cette commande liste les processus avec leurs nombres de watchers (utile pour diagnostiquer).
-
----
+On peut aussi lire directement les fichiers, par exemple avec `cat /proc/sys/fs/inotify/max_user_watches`. Nous verrons plus bas d'où viennent ces 130 054 watches.
 
 ## Augmenter les limites temporairement
 
-### Modifier pour la session en cours
+Avant de toucher aux limites, il est souvent plus simple de ne pas surveiller les dossiers qui n'en ont pas besoin. La documentation de VS Code conseille par exemple d'ajouter les gros dossiers comme un `.venv` Python au réglage `files.watcherExclude` avant d'augmenter `max_user_watches`.
+
+Si cela ne suffit pas, on modifie les valeurs avec `sysctl -w` (le `-w` est facultatif quand on donne une valeur) :
 
 ```bash
 sudo sysctl fs.inotify.max_user_watches=524288
 sudo sysctl fs.inotify.max_user_instances=512
-sudo sysctl fs.inotify.max_queued_events=32768
 ```
 
-> Limitation : ces changements sont perdus au redémarrage.
+Chaque commande affiche la nouvelle valeur :
 
-Usage : test rapide ou débogage ponctuel.
+```
+fs.inotify.max_user_watches = 524288
+fs.inotify.max_user_instances = 512
+```
 
----
+Ce sont les valeurs recommandées par la documentation de VS Code pour les watches, et par celle de kind pour les watches et les instances.
 
-## Augmenter les limites de façon permanente
+Le noyau vérifie ces limites à chaque ajout de watch et à chaque création d'instance : les nouvelles valeurs s'appliquent tout de suite. Par contre, un programme qui a déjà rencontré l'erreur ne réessaiera pas forcément de lui-même, il vaut mieux le relancer. La valeur de `max_queued_events`, elle, est lue à la création de chaque instance : un changement ne concerne que les programmes lancés après.
 
-### Méthode recommandée : créer un fichier de configuration
+Attention, ces modifications sont perdues au redémarrage. C'est pratique pour tester, mais pour les garder il faut passer par un fichier de configuration.
+
+## Rendre la modification permanente
+
+Au démarrage, les fichiers `.conf` du dossier `/etc/sysctl.d/` sont lus et appliqués. On crée donc un fichier pour nos réglages :
 
 ```bash
 sudo nano /etc/sysctl.d/60-inotify.conf
 ```
 
-Ajoutez ces lignes :
+Et on y ajoute ces lignes :
 
 ```
-fs.inotify.max_user_watches=524288
-fs.inotify.max_user_instances=512
-fs.inotify.max_queued_events=32768
+fs.inotify.max_user_watches = 524288
+fs.inotify.max_user_instances = 512
 ```
 
-### Appliquer immédiatement sans redémarrage
+Le nom du fichier importe peu, du moment qu'il se termine par `.conf`. Je n'ai pas mis `max_queued_events` : la valeur par défaut suffit tant qu'un programme ne signale pas de débordement de sa file d'événements.
+
+Pour appliquer le fichier sans redémarrer :
 
 ```bash
 sudo sysctl -p /etc/sysctl.d/60-inotify.conf
 ```
 
-### Vérifier l'application
-
-```bash
-sysctl fs.inotify.max_user_watches
+```
+fs.inotify.max_user_watches = 524288
+fs.inotify.max_user_instances = 512
 ```
 
-Résultat attendu :
+La commande `sudo sysctl --system` fait la même chose avec tous les fichiers de configuration (`/etc/sysctl.d/`, `/usr/lib/sysctl.d/`, `/etc/sysctl.conf`...), comme au démarrage. Il ne reste plus qu'à vérifier avec `sysctl fs.inotify` :
+
 ```
+fs.inotify.max_queued_events = 16384
+fs.inotify.max_user_instances = 512
 fs.inotify.max_user_watches = 524288
 ```
 
----
+## Combien de mémoire consomme un watch
 
-## Impact mémoire des limites
+Un watch n'est alloué qu'au moment où un programme le demande : augmenter la limite ne réserve aucune mémoire. Elle fixe seulement un plafond.
 
-Chaque watch **effectivement posé** consomme de l'ordre de 1 Ko de mémoire noyau (non paginable). Rien n'est préalloué : relever la limite n'immobilise aucune RAM tant que les watches ne sont pas réellement créés.
+Pour calculer la valeur par défaut, le noyau estime le coût d'un watch à la taille de la structure qui le décrit, plus deux fois la taille d'un inode. En effet, tant qu'un fichier est surveillé, son inode reste en mémoire, et le noyau double la taille de l'inode générique pour couvrir la partie propre au système de fichiers. Sur un noyau 6.18 en x86-64, ces structures font respectivement 80 et 608 octets, soit 80 + 2 × 608 = 1 296 octets par watch. Sur la machine de 16 Go vue plus haut, 1 % de la RAM représente environ 168 Mo, et 168 Mo divisés par 1 296 octets donnent environ 130 000 watches : c'est bien la limite par défaut que nous avions obtenue (130 054).
 
-Le calcul suivant donne donc le **plafond théorique**, atteint uniquement si les 524 288 watches sont tous utilisés simultanément :
+Dans le pire des cas, si les 524 288 watches autorisés sont tous posés, ils occupent donc 524 288 × 1 296 octets, un peu moins de 700 Mo de mémoire noyau. C'est l'ordre de grandeur à garder en tête avant de monter la limite à plusieurs millions sur une machine qui a peu de RAM.
+
+## Trouver les processus qui utilisent inotify
+
+Quand la limite est atteinte, il faut savoir qui consomme les watches. Chaque instance inotify apparaît comme un descripteur de fichier `anon_inode:inotify` dans `/proc/PID/fd/`, et le fichier `/proc/PID/fdinfo/N` correspondant contient une ligne par watch :
+
 ```
-524288 watches × 1 Ko = 512 Mo (maximum théorique)
-```
-
-En pratique, un poste de développement en utilise une petite fraction. Sur une machine moderne (16 Go de RAM ou plus), même le pire cas reste raisonnable.
-
-> Conseil : ne dépassez pas 4 millions de watchers sauf cas extrême (risque de ralentissements).
-
----
-
-## Debugging : lister les watchers actifs
-
-### Avec inotify-tools
-
-Installez le paquet :
-```bash
-sudo apt update
-sudo apt install inotify-tools
+inotify wd:1 ino:925a7 sdev:fe00000 mask:2 ignored_mask:0 fhandle-bytes:8 fhandle-type:1 f_handle:a72509008489f91a
 ```
 
-Surveillez en temps réel :
-```bash
-inotifywatch -v /chemin/vers/dossier
-```
-
-### Avec un script
-
-Créez `list-watchers.sh` :
-```bash
-#!/bin/bash
-for pid in /proc/*/fd/*; do
-    if [ -L "$pid" ]; then
-        link=$(readlink "$pid" 2>/dev/null)
-        if [ "$link" = "anon_inode:inotify" ]; then
-            echo "$(ps -p $(echo $pid | cut -d'/' -f3) -o comm=)"
-        fi
-    fi
-done | sort | uniq -c | sort -rn
-```
-
-Exécutez :
-```bash
-chmod +x list-watchers.sh
-./list-watchers.sh
-```
-
-Sortie exemple :
-```
-  45 node
-  12 java
-   8 code
-   3 docker
-```
-
----
-
-## Bonnes pratiques
-
-### À faire
-
-- **Augmenter progressivement** : commencez par 524288, augmentez si nécessaire
-- **Monitorer la RAM** : surveillez l'impact mémoire avec `htop` ou `free -h`
-- **Exclure les gros dossiers** : node_modules, .git, dist, build
-- **Redémarrer les processus** après modification : IDE, serveurs de dev
-- **Documenter** : notez les valeurs choisies
-
-### À éviter
-
-- **Ne pas fixer à des valeurs astronomiques** (> 4 millions) sans raison
-- **Ne pas ignorer les erreurs** : si vous atteignez la limite, investiguer pourquoi
-- **Ne pas utiliser le polling** comme solution par défaut (moins performant)
-- **Ne pas oublier de tester après redémarrage**
-
----
-
-## Conclusion
-
-Augmenter les limites inotify est une configuration essentielle pour tout développeur sous Debian ou Ubuntu. En ajustant les paramètres `max_user_watches`, `max_user_instances` et `max_queued_events` dans `/etc/sysctl.d/60-inotify.conf`, vous éviterez les erreurs frustrantes et améliorerez l'expérience de développement.
-
-**Récapitulatif des commandes clés** :
+Pour compter les instances ouvertes, puis le nombre total de watches :
 
 ```bash
-# Vérifier les limites actuelles
-sysctl fs.inotify
-
-# Configuration permanente
-sudo nano /etc/sysctl.d/60-inotify.conf
-
-# Appliquer immédiatement
-sudo sysctl -p /etc/sysctl.d/60-inotify.conf
-
-# Diagnostiquer la consommation
-for pid in $(ps -ef | awk '{print $2}'); do
-    count=$(find /proc/$pid/fd -lname 'anon_inode:inotify' 2>/dev/null | wc -l)
-    if [ $count -gt 0 ]; then
-        echo "$count instances inotify: $(ps -p $pid -o comm=)"
-    fi
-done | sort -rn
+find /proc/*/fd -lname 'anon_inode:inotify' 2>/dev/null | wc -l
+cat /proc/*/fdinfo/* 2>/dev/null | grep -c '^inotify'
 ```
 
-**Points clés à retenir** :
-- inotify surveille les modifications du système de fichiers
-- Les limites par défaut sont souvent insuffisantes pour le développement moderne
-- Utilisez `/etc/sysctl.d/60-inotify.conf` pour des modifications permanentes
-- Chaque watch réellement posé consomme environ 1 Ko de RAM noyau, sans préallocation (la limite est un plafond, pas une réservation)
+Attention à ne pas confondre les deux : une seule instance peut porter des milliers de watches. C'est `max_user_watches` qui limite les watches et `max_user_instances` les instances.
 
----
+Pour avoir le détail par processus, voici un petit script :
 
-## Pour aller plus loin
+```bash
+#!/usr/bin/env bash
+# Affiche, pour chaque processus qui utilise inotify, son nombre de watches et d'instances
 
-- [Documentation officielle inotify](https://man7.org/linux/man-pages/man7/inotify.7.html)
-- [Kernel.org - inotify parameters](https://www.kernel.org/doc/Documentation/sysctl/fs.txt)
+printf '%8s %9s  %s\n' WATCHES INSTANCES 'PID COMMANDE'
+find /proc/[0-9]*/fd -lname 'anon_inode:inotify' 2>/dev/null |
+while IFS=/ read -r _ _ pid _ fd; do
+    watches=$(grep -c '^inotify' "/proc/$pid/fdinfo/$fd")
+    echo "$pid $(tr ' ' '_' < "/proc/$pid/comm") $watches"
+done 2>/dev/null |
+awk '{ inst[$1" "$2]++; w[$1" "$2] += $3 }
+     END { for (p in w) printf "%8d %9d  %s\n", w[p], inst[p], p }' | sort -rn
+```
+
+Avec `inotifywait`, un script Node.js et un `tail -f` lancés sur le projet de test, on obtient :
+
+```
+ WATCHES INSTANCES  PID COMMANDE
+     112         1  8052 node
+     112         1  8050 inotifywait
+       1         1  8054 tail
+```
+
+`inotifywait` et le script Node.js surveillent chacun les 112 répertoires du projet, avec une seule instance. `tail -f` n'a besoin que d'un watch, sur le fichier suivi.
+
+Lancé sans `sudo`, le script ne voit que vos propres processus, ce qui suffit puisque les limites sont comptées par utilisateur. Avec `sudo`, il liste les processus de tous les utilisateurs.
 
 ## Voir aussi
 
-- [Chercher dans le code rapidement avec ripgrep]({% post_url 2026-02-16-Chercher-dans-le-code-rapidement-avec-ripgrep %})
-- [Sed : éditer des fichiers en ligne de commande avec des regex]({% post_url 2026-01-19-Sed-editer-des-fichiers-en-ligne-de-commande %})
-- [Activer les mises à jour de sécurité automatiques sur Ubuntu/Debian]({% post_url 2025-12-19-Activer-les-mises-a-jour-de-securite-automatiques-sur-Ubuntu-Debian %})
-- [Surveiller la mémoire avec free]({% post_url 2026-03-16-Surveiller-la-memoire-avec-free %})
-- [Surveiller l'espace disque avec df et du]({% post_url 2026-03-01-Surveiller-espace-disque-avec-df-et-du %})
+- [free : surveiller et comprendre l'utilisation mémoire sous Linux]({% post_url 2026-03-16-Surveiller-la-memoire-avec-free %})
+- [df/du : surveiller et analyser l'espace disque sous Linux]({% post_url 2026-03-01-Surveiller-espace-disque-avec-df-et-du %})
+- [man inotify](https://man7.org/linux/man-pages/man7/inotify.7.html)
+- [VS Code sous Linux](https://code.visualstudio.com/docs/setup/linux), dont la section sur l'erreur ENOSPC du *file watcher*
+- [Problèmes connus de kind](https://kind.sigs.k8s.io/docs/user/known-issues/), section *Pod errors due to "too many open files"*

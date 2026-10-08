@@ -1,7 +1,7 @@
 ---
 layout: article
 title: "Python : Comment faire des group by"
-description: "Faire des group by en Python : defaultdict, itertools.groupby, Counter, agrégations personnalisées et groupby pandas, avec le choix de la bonne approche."
+description: "Faire des group by en Python : defaultdict, itertools.groupby, Counter, sommes et moyennes par groupe, groupby et pivot_table de pandas, et gros volumes."
 tags:
   - python
   - data
@@ -10,24 +10,23 @@ tags:
 author: Pierre Chopinet
 ---
 
-Regrouper des données par clé (faire un "group by") est une opération courante : compter des occurrences, agréger des montants par catégorie, calculer des moyennes par groupe. En Python, il existe plusieurs façons de procéder selon la taille des données, le besoin d'agrégation et vos dépendances.
+Regrouper des données par clé, le "group by" de SQL, revient tout le temps : compter des occurrences, additionner des montants par catégorie, calculer une moyenne par groupe. Nous allons voir les différentes façons de le faire en Python, de la bibliothèque standard jusqu'à pandas, sur un même jeu de données.
 <!--more-->
 
 Dans cet article :
-- Groupement simple avec `defaultdict`
-- Groupement en flux avec `itertools.groupby`
-- Comptages avec `Counter`
-- Multi-clés et agrégations personnalisées
-- "Group by" haut niveau avec `pandas`
-- Pièges et bonnes pratiques
+- Le jeu de données
+- Regrouper avec `defaultdict`
+- Regrouper des données triées avec `itertools.groupby`
+- Compter avec `Counter`
+- Calculer des sommes et des moyennes
+- Le `groupby` de pandas
+- Quand les données ne tiennent pas en mémoire
 
-Pré-requis : Python 3 et notions de base sur les dictionnaires et les listes.
+Pré-requis : connaître les listes et les dictionnaires Python. Les exemples ont été testés avec Python 3.13 et pandas 3.0.5.
 
----
+## Le jeu de données
 
-## Jeu de données d'exemple
-
-Nous utiliserons une petite liste de ventes :
+Tous les exemples utilisent la même petite liste de ventes :
 
 ```python
 ventes = [
@@ -40,11 +39,9 @@ ventes = [
 ]
 ```
 
----
+## Regrouper avec `defaultdict`
 
-## Groupement simple avec collections.defaultdict
-
-La manière la plus directe pour regrouper des éléments par clé est d'utiliser `defaultdict(list)` :
+Le plus direct pour regrouper des éléments par clé est un `defaultdict(list)` : quand on accède à une clé qui n'existe pas encore, il l'initialise avec une liste vide.
 
 ```python
 from collections import defaultdict
@@ -57,10 +54,15 @@ for v in ventes:
 print(par_ville["Paris"])  # -> liste des ventes de Paris
 ```
 
-- Avantages : simple, lisible, ne nécessite pas de tri préalable.
-- Inconvénients : stocke toutes les lignes en mémoire dans des listes.
+On récupère les trois ventes de Paris :
 
-Variation avec `setdefault` (si vous ne voulez pas importer `defaultdict`) :
+```
+[{'ville': 'Paris', 'produit': 'Livre', 'qte': 2, 'prix': 12.5}, {'ville': 'Paris', 'produit': 'Stylo', 'qte': 3, 'prix': 1.2}, {'ville': 'Paris', 'produit': 'Cahier', 'qte': 4, 'prix': 3.0}]
+```
+
+Pas besoin de trier les données avant, et les villes restent dans l'ordre de leur première apparition, puisqu'un dictionnaire conserve l'ordre d'insertion. Par contre, toutes les lignes sont gardées en mémoire dans les listes.
+
+On peut se passer de l'import avec `setdefault`, qui renvoie la valeur associée à la clé après l'avoir initialisée si elle n'existait pas :
 
 ```python
 groupes = {}
@@ -68,11 +70,9 @@ for v in ventes:
     groupes.setdefault(v["ville"], []).append(v)
 ```
 
----
+## Regrouper des données triées avec `itertools.groupby`
 
-## Groupement avec itertools.groupby
-
-`itertools.groupby` groupe les éléments consécutifs ayant la même clé. Il exige que les données soient triées par la clé de groupement, sinon les groupes seront fragmentés.
+`itertools.groupby` fonctionne comme la commande `uniq` d'Unix : il regroupe les éléments consécutifs qui ont la même clé. Il faut donc trier les données sur cette clé avant de les lui passer :
 
 ```python
 from itertools import groupby
@@ -87,10 +87,37 @@ for ville, groupe_iter in groupby(ventes_triees, key=itemgetter("ville")):
     print(ville, "->", len(groupe), "lignes")
 ```
 
-- Avantages : fonctionne en flux (chaque groupe est produit à la volée), utile pour gros volumes si la source est déjà triée.
-- Inconvénients : nécessite un tri (O(n log n)) ou une source déjà triée. Les éléments identiques mais non contigus ne sont pas fusionnés.
+Ce qui donne :
 
-Astuce : groupement par plusieurs champs en une fois en utilisant une clé composée :
+```
+Lyon -> 2 lignes
+Nantes -> 1 lignes
+Paris -> 3 lignes
+```
+
+`itemgetter("ville")` fait la même chose que `lambda v: v["ville"]`, en plus court. Pour grouper des objets sur un attribut, `operator.attrgetter` joue le même rôle.
+
+Sans le tri, `groupby` crée un nouveau groupe à chaque fois que la ville change :
+
+```python
+for ville, groupe_iter in groupby(ventes, key=itemgetter("ville")):
+    print(ville, "->", len(list(groupe_iter)), "lignes")
+```
+
+```
+Paris -> 1 lignes
+Lyon -> 1 lignes
+Paris -> 1 lignes
+Nantes -> 1 lignes
+Paris -> 1 lignes
+Lyon -> 1 lignes
+```
+
+Attention aussi au `list(groupe_iter)` du premier exemple : chaque groupe est un itérateur qui partage la source avec `groupby`. Dès qu'on passe au groupe suivant, le précédent n'est plus accessible, il faut donc le stocker dans une liste si on veut s'en resservir.
+
+L'intérêt de `groupby` est de travailler en flux : les groupes sont produits au fur et à mesure, sans tout charger en mémoire. C'est utile quand la source est déjà triée, par exemple un gros fichier qu'on lit ligne par ligne. Dans le cas contraire, il faut payer le tri (en O(n log n)), et les groupes sortent dans l'ordre des clés et non plus dans l'ordre d'apparition.
+
+Pour grouper sur plusieurs champs, on passe plusieurs noms à `itemgetter`, qui renvoie alors un tuple :
 
 ```python
 cles = ("ville", "produit")
@@ -101,11 +128,18 @@ for cle, grp in groupby(ventes_triees, key=itemgetter(*cles)):
     print((ville, produit), "->", total_qte)
 ```
 
----
+```
+('Lyon', 'Livre') -> 2
+('Lyon', 'Stylo') -> 5
+('Nantes', 'Livre') -> 1
+('Paris', 'Cahier') -> 4
+('Paris', 'Livre') -> 2
+('Paris', 'Stylo') -> 3
+```
 
-## Compter rapidement avec collections.Counter
+## Compter avec `Counter`
 
-Si vous voulez seulement compter le nombre d'occurrences d'une clé (et pas regrouper les lignes), `Counter` est très pratique :
+Si on veut seulement savoir combien de fois chaque clé apparaît, sans garder les lignes, `Counter` s'en charge :
 
 ```python
 from collections import Counter
@@ -115,17 +149,17 @@ compte = Counter(v["ville"] for v in ventes)
 print(compte)  # Counter({'Paris': 3, 'Lyon': 2, 'Nantes': 1})
 ```
 
-Pour compter par clé multiple, utilisez un tuple comme clé :
+`compte.most_common(1)` renvoie la ville qui a le plus de ventes, ici `[('Paris', 3)]`.
+
+Pour compter sur plusieurs champs, on utilise là aussi un tuple comme clé :
 
 ```python
 compte_ville_produit = Counter((v["ville"], v["produit"]) for v in ventes)
 ```
 
----
+## Calculer des sommes et des moyennes
 
-## Agrégations personnalisées (sommes, moyennes)
-
-Pour agréger des mesures par groupe (ex: chiffre d'affaires par ville), on peut accumuler des totaux dans un dictionnaire :
+Pour agréger une valeur par groupe, le chiffre d'affaires par ville par exemple, inutile de stocker les lignes : on cumule directement les totaux dans un dictionnaire.
 
 ```python
 from collections import defaultdict
@@ -137,7 +171,11 @@ for v in ventes:
 print(dict(ca_par_ville))
 ```
 
-Moyenne par groupe (accumuler somme et compte) :
+```
+{'Paris': 40.6, 'Lyon': 31.0, 'Nantes': 12.5}
+```
+
+Pour une moyenne, il faut garder deux choses par groupe : la somme et le nombre d'éléments. Ici, on calcule le montant moyen d'une vente dans chaque ville :
 
 ```python
 from collections import defaultdict
@@ -149,13 +187,16 @@ for v in ventes:
     d[1] += 1
 
 moy_par_ville = {ville: somme / n for ville, (somme, n) in somme_et_n.items()}
+print(moy_par_ville)
 ```
 
----
+```
+{'Paris': 13.533333333333333, 'Lyon': 15.5, 'Nantes': 12.5}
+```
 
-## Group by haut niveau avec pandas
+## Le `groupby` de pandas
 
-Lorsque vous manipulez des données en tableau, `pandas` offre un `groupby` très puissant et concis.
+Dès que les données sont sous forme de tableau, pandas est plus pratique : son `groupby` regroupe et agrège en une seule expression.
 
 ```python
 import pandas as pd
@@ -164,7 +205,19 @@ df = pd.DataFrame(ventes)
 
 # Somme des quantités par ville
 print(df.groupby("ville")["qte"].sum())
+```
 
+```
+ville
+Lyon      7
+Nantes    1
+Paris     9
+Name: qte, dtype: int64
+```
+
+Avec `agg`, on calcule plusieurs agrégations d'un coup en donnant un nom à chaque colonne du résultat :
+
+```python
 # Agrégations multiples (créer d'abord une colonne chiffre d'affaires)
 df = df.assign(ca=df["qte"] * df["prix"])
 agg = df.groupby("ville").agg(
@@ -174,7 +227,15 @@ agg = df.groupby("ville").agg(
 print(agg)
 ```
 
-Agrégation sur plusieurs clés et plusieurs mesures :
+```
+        total_qte  total_ca
+ville                      
+Lyon            7      31.0
+Nantes          1      12.5
+Paris           9      40.6
+```
+
+Pour grouper sur plusieurs colonnes, on passe une liste :
 
 ```python
 res = (
@@ -186,50 +247,59 @@ res = (
 print(res)
 ```
 
-Astuces pandas :
-- `as_index=False` pour conserver les colonnes de groupement comme colonnes normales.
-- `reset_index()` pour aplatir l'index après un groupby.
-- `pivot_table` est une alternative pratique pour des tableaux croisés.
+```
+                total_qte  prix_moyen
+ville  produit                       
+Lyon   Livre            2        12.5
+       Stylo            5         1.2
+Nantes Livre            1        12.5
+Paris  Cahier           4         3.0
+       Livre            2        12.5
+       Stylo            3         1.2
+```
 
----
+Par défaut, pandas trie les groupes par clé (`sort=False` pour garder l'ordre d'apparition) et les colonnes de groupement deviennent l'index du résultat. Pour les récupérer comme des colonnes normales, on passe `as_index=False` à `groupby`, ou on appelle `reset_index()` sur le résultat :
 
-## Choisir la bonne approche
+```python
+print(res.reset_index())
+```
 
-- Petites ou moyennes données en mémoire, besoin de groupes réels : `defaultdict(list)`.
-- Données triées ou besoin de streaming par groupe : `itertools.groupby` (après tri si nécessaire).
-- Simple comptage d'occurrences : `Counter`.
-- Agrégations numériques personnalisées sans conserver les lignes : dictionnaires d'accumulateurs.
-- Données tabulaires et besoins analytiques avancés : `pandas.DataFrame.groupby`.
+```
+    ville produit  total_qte  prix_moyen
+0    Lyon   Livre          2        12.5
+1    Lyon   Stylo          5         1.2
+2  Nantes   Livre          1        12.5
+3   Paris  Cahier          4         3.0
+4   Paris   Livre          2        12.5
+5   Paris   Stylo          3         1.2
+```
 
----
+Enfin, pour un tableau croisé avec les villes en lignes et les produits en colonnes, `pivot_table` donne un résultat plus lisible :
 
-## Pièges et bonnes pratiques
+```python
+print(df.pivot_table(index="ville", columns="produit", values="qte", aggfunc="sum", fill_value=0))
+```
 
-- `itertools.groupby` regroupe seulement les éléments consécutifs : triez par la même clé avant de grouper.
-- Pour plusieurs clés : utilisez des tuples comme clés (`(ville, produit)`) ou `itemgetter(*cles)`.
-- Si l'ordre d'apparition d'origine est important, préférez `defaultdict` + accumulation. `groupby` après tri perd l'ordre initial.
-- Pour de très gros volumes non triés, envisagez une base embarquée (`sqlite3`), `pandas` en mode chunk, ou un tri externe.
-- Évitez d'empiler de gros objets dans des listes si vous ne les réutilisez pas : cumulez directement les agrégats.
-- Utilisez `operator.itemgetter` ou `attrgetter` pour des clés rapides et lisibles.
+```
+produit  Cahier  Livre  Stylo
+ville                        
+Lyon          0      2      5
+Nantes        0      1      0
+Paris         4      2      3
+```
 
----
+## Quand les données ne tiennent pas en mémoire
 
-## Conclusion
+`defaultdict(list)` et pandas chargent toutes les lignes en mémoire. `Counter` et les dictionnaires d'accumulateurs, eux, peuvent consommer les lignes au fil de l'eau, par exemple depuis un fichier lu ligne par ligne : ils ne gardent qu'une entrée par clé, et tiennent donc en mémoire tant que le nombre de clés distinctes reste raisonnable. `itertools.groupby` va encore plus loin sur une source déjà triée, puisqu'il n'a besoin que du groupe en cours.
 
-Python offre plusieurs stratégies de "group by", du plus bas niveau (`defaultdict`, `groupby`) jusqu'au haut niveau avec `pandas`. Choisissez la méthode en fonction de votre volume de données, du besoin de conserver les lignes ou non, et des agrégations à réaliser.
-
----
-
-## Pour aller plus loin
-
-- [Documentation collections.defaultdict](https://docs.python.org/3/library/collections.html#collections.defaultdict)
-- [Documentation itertools.groupby](https://docs.python.org/3/library/itertools.html#itertools.groupby)
-- [Documentation pandas.DataFrame.groupby](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.groupby.html)
+Au-delà, il faut changer d'approche : charger les données dans une base SQLite (module `sqlite3`) et faire un vrai `GROUP BY`, lire le fichier par morceaux avec pandas (`read_csv` avec le paramètre `chunksize`) en cumulant les résultats de chaque morceau, ou trier le fichier sur disque avant de le parcourir avec `itertools.groupby`.
 
 ## Voir aussi
 
-- [Comment faire des group by en Java]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
-- [Automatiser le nettoyage de données avec pandas]({% post_url 2025-12-14-Automatiser-le-nettoyage-de-donnees-avec-pandas %})
+- [Java : Comment faire des group by]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
 - [Python : Comment merger deux DataFrame pandas]({% post_url 2025-08-31-Comment-merger-deux-dataframe-pandas %})
+- [Automatiser le nettoyage de données avec pandas]({% post_url 2025-12-14-Automatiser-le-nettoyage-de-donnees-avec-pandas %})
 - [Python : Comment sauvegarder et charger un dataframe Pandas avec Excel (ou du csv)]({% post_url 2023-12-28-Comment-sauvegarder-un-dataframe-pandas %})
-- [Python : Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
+- [Documentation du module collections (defaultdict, Counter)](https://docs.python.org/3/library/collections.html)
+- [Documentation de itertools.groupby](https://docs.python.org/3/library/itertools.html#itertools.groupby)
+- [Documentation de pandas.DataFrame.groupby](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.groupby.html)

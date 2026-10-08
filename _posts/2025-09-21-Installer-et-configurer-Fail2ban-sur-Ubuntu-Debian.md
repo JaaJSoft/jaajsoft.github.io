@@ -14,64 +14,75 @@ tags:
   - serveur
 ---
 
-Fail2ban est un outil indispensable pour protéger un serveur exposé sur Internet contre les tentatives de brute-force (SSH, HTTP, etc.).
+Un serveur exposé sur Internet reçoit en permanence des tentatives de connexion SSH par force brute. Fail2ban surveille les journaux, repère les échecs répétés et bannit temporairement les adresses IP concernées via le pare-feu.
 <!--more-->
-L'outil surveille les logs, détecte les échecs répétés, puis bannit temporairement l'adresse IP via le pare-feu.
 
-Objectifs de cet article :
+On va l'installer sur Ubuntu ou Debian, protéger SSH, puis ajouter le jail `recidive`, un jail pour Nginx et les notifications par mail.
 
-- Installer Fail2ban sur Ubuntu/Debian
-- Comprendre sa philosophie (filters, jails, actions)
-- Activer une protection SSH simple et efficace
-- Vérifier le bon fonctionnement, dépanner, puis aller plus loin (recidive, notifications)
+Dans cet article :
+- Installation
+- Filtres, actions et jails
+- Protéger SSH
+- Choisir l'action de bannissement
+- Vérifier que ça fonctionne
+- Ajuster bantime, findtime et maxretry
+- Ne pas bannir ses propres adresses
+- Le jail recidive
+- Protéger Nginx
+- Recevoir un mail à chaque bannissement
 
-Pré-requis :
+Pré-requis : un serveur Debian ou Ubuntu avec un accès sudo. Les configurations ont été vérifiées avec Fail2ban 1.0.2, la version fournie par Ubuntu 24.04.
 
-- Un serveur Debian/Ubuntu avec accès sudo
-- Un pare-feu actif (UFW recommandé sur Ubuntu) ou iptables/nftables
-
----
-
-## Installation et démarrage
-
-Sur Debian/Ubuntu récents :
+## Installation
 
 ```bash
 sudo apt update
 sudo apt install fail2ban
 ```
 
-Activer au démarrage et lancer :
+Le paquet active et démarre le service. Pour s'en assurer et voir son état :
 
 ```bash
 sudo systemctl enable --now fail2ban
 sudo systemctl status fail2ban
 ```
 
----
-
-## Philosophie et fichiers importants
-
-- Filters (filtres) : regex qui détectent les lignes suspectes dans les logs (ex : `/etc/fail2ban/filter.d/sshd.conf`).
-- Actions : que fait Fail2ban quand il bannit ? (ex : ajouter une règle firewall via UFW/iptables/nftables).
-- Jails : association filtre + action + paramètres (bantime, findtime, maxretry, etc.).
-
-Ne modifiez jamais les fichiers `.conf` fournis par le paquet ; créez des `.local` pour surcharger :
-
-- Fichier global : `/etc/fail2ban/jail.local`
-- Dossiers de configuration utilisateurs : `/etc/fail2ban/jail.d/*.local` et `*.conf` (priorité `.local`)
-
-Les journaux observés peuvent être des fichiers (ex : `/var/log/auth.log`) ou le journal `systemd` (backend `systemd`).
-
----
-
-## Configuration de base: protéger SSH
-
-Créer un fichier `/etc/fail2ban/jail.local` :
+Sur Ubuntu 24.04, la protection SSH est même active dès l'installation, grâce au fichier `/etc/fail2ban/jail.d/defaults-debian.conf` livré par le paquet :
 
 ```ini
 [DEFAULT]
-# Temps de bannissement (ex : 10 minutes)
+banaction = nftables
+banaction_allports = nftables[type=allports]
+backend = systemd
+
+[sshd]
+enabled = true
+```
+
+Les lignes `banaction` et `backend` n'existent dans ce fichier que depuis la version 1.0.2-3 du paquet Debian. Le paquet de Debian 12, antérieur à cette version, ne les contient pas : c'est une bonne raison de les écrire explicitement dans votre propre configuration.
+
+## Filtres, actions et jails
+
+Fail2ban repose sur trois notions. Un filtre est un ensemble d'expressions régulières qui reconnaissent les lignes d'échec dans un journal : `/etc/fail2ban/filter.d/sshd.conf`, par exemple, repère les connexions SSH ratées. Une action, rangée dans `/etc/fail2ban/action.d/`, décrit comment bannir et débannir une adresse : ajouter une règle nftables, iptables ou UFW, envoyer un mail... Enfin, un jail associe un filtre, une ou plusieurs actions et des paramètres comme la durée du bannissement ou le nombre d'échecs qui le déclenche.
+
+Les fichiers `.conf` appartiennent au paquet et peuvent être remplacés lors d'une mise à jour : on ne les modifie pas. On écrit ses réglages dans des fichiers `.local`, qui ne contiennent que ce qu'on veut changer. Pour les jails, les fichiers sont lus dans cet ordre, chacun l'emportant sur les précédents :
+
+```
+jail.conf
+jail.d/*.conf
+jail.local
+jail.d/*.local
+```
+
+Un `jail.local` passe donc après le `defaults-debian.conf` vu plus haut.
+
+## Protéger SSH
+
+Créez le fichier `/etc/fail2ban/jail.local` :
+
+```ini
+[DEFAULT]
+# Temps de bannissement (ex : 10 minutes)
 bantime = 10m
 # Fenêtre d'observation des échecs
 findtime = 10m
@@ -92,23 +103,26 @@ enabled = true
 port    = 22
 # Le filtre sshd est fourni par défaut
 filter  = sshd
-# Journal : laissez Fail2ban deviner avec backend=systemd
-# (Sinon: logpath = /var/log/auth.log)
+# Journal : laissez Fail2ban deviner avec backend=systemd
+# (Sinon : logpath = /var/log/auth.log)
 ```
 
-> Note : avec `backend = systemd`, Fail2ban s'appuie sur la bibliothèque Python de systemd. Sur une Debian minimale, installez le paquet `python3-systemd` (`sudo apt install python3-systemd`), sinon le service refusera de démarrer avec ce backend.
+Avec ces valeurs, qui sont celles par défaut de `jail.conf`, une adresse qui accumule 5 échecs en 10 minutes est bannie pendant 10 minutes. Si votre serveur SSH n'écoute pas sur le port 22, indiquez le bon port dans `port` : les actions nftables et iptables ne bloquent que les ports du jail.
 
-Sauvegardez, puis rechargez la configuration :
+La ligne `backend = systemd` fait lire les échecs dans le journal de systemd plutôt que dans un fichier comme `/var/log/auth.log`, qui n'existe que si rsyslog est installé. Ce backend a besoin du module Python de systemd. C'est une dépendance du paquet depuis la version 1.0.2-3 ; avec un paquet plus ancien comme celui de Debian 12, installez-le au besoin avec `sudo apt install python3-systemd`. Sans ce module, le jail ne démarre pas et Fail2ban signale `Failed to initialize any backend for Jail 'sshd'`.
+
+On vérifie la configuration, puis on la recharge :
 
 ```bash
+sudo fail2ban-client -t
 sudo systemctl reload fail2ban
-# ou
-sudo fail2ban-client reload
 ```
 
-### Choisir le firewall (UFW / iptables / nftables)
+`fail2ban-client -t` teste la configuration sans rien appliquer et affiche `OK: configuration test is successful` si tout va bien. `systemctl reload fail2ban` se contente d'appeler `fail2ban-client reload` : les deux commandes sont équivalentes.
 
-Vérifiez quel firewall est installé :
+## Choisir l'action de bannissement
+
+L'action utilisée par défaut dépend du paquet : `nftables` sur Ubuntu 24.04 (le `defaults-debian.conf` vu plus haut), `iptables-multiport` dans le `jail.conf` d'origine. Pour savoir ce qui est installé sur la machine :
 
 ```bash
 sudo ufw status               # si actif, privilégier banaction=ufw
@@ -116,66 +130,59 @@ which iptables                # compat couche iptables-nft possible
 which nft                     # présence de nftables
 ```
 
-- Si UFW est votre pare-feu :
+Si UFW gère le pare-feu de la machine, utilisez son action : les bannissements apparaîtront alors dans `sudo ufw status`.
 
 ```ini
 # dans [DEFAULT]
 banaction = ufw
 ```
 
-- Sans UFW, sur systèmes modernes (nftables) :
-
-```ini
-banaction = nftables-multiport
-```
-
-- Anciennes configs encore basées iptables :
-
-```ini
-banaction = iptables-multiport
-```
-
----
+Sinon, `nftables-multiport` (identique à l'action `nftables` utilisée par Ubuntu) convient aux systèmes récents, et `iptables-multiport` aux configurations encore basées sur iptables. Fail2ban crée alors ses propres règles, sans toucher aux vôtres.
 
 ## Vérifier que ça fonctionne
 
-- État global :
+L'état global liste les jails actifs :
 
 ```bash
 sudo fail2ban-client status
 ```
 
-- Détail du jail SSH :
-
-```bash
-sudo fail2ban-client status sshd
+```
+Status
+|- Number of jail:      1
+`- Jail list:   sshd
 ```
 
-- Voir les IP bannies, les tentatives récentes, etc. Exemple de sortie :
+Pour tester, on peut bannir une adresse à la main, puis regarder l'état du jail :
+
+```bash
+sudo fail2ban-client set sshd banip 203.0.113.10
+sudo fail2ban-client status sshd
+```
 
 ```
 Status for the jail: sshd
 |- Filter
 |  |- Currently failed: 0
-|  `- Total failed: 12
+|  |- Total failed:     0
+|  `- Journal matches:  _SYSTEMD_UNIT=sshd.service + _COMM=sshd
 `- Actions
-   |- Currently banned: 2
-   `- Total banned: 4
+   |- Currently banned: 1
+   |- Total banned:     1
+   `- Banned IP list:   203.0.113.10
 ```
 
-- Débannir manuellement une IP (ex : 203.0.113.10) :
+La ligne `Journal matches` confirme que le jail lit le journal de systemd ; avec un backend fichier, on verrait à la place une ligne `File list` avec le chemin du journal. Pour débannir l'adresse :
 
 ```bash
 sudo fail2ban-client set sshd unbanip 203.0.113.10
 ```
 
-- Bannir manuellement pour tester :
+La commande `sudo fail2ban-client unban 203.0.113.10` fait la même chose dans tous les jails à la fois.
 
-```bash
-sudo fail2ban-client set sshd banip 203.0.113.10
-```
+Le compteur `Total failed` doit augmenter quand une connexion SSH échoue. Faites un essai avec un mauvais mot de passe depuis une machine dont l'adresse n'est pas dans `ignoreip`, moins de 5 fois pour ne pas vous bannir. Si le compteur reste à 0, le jail ne voit pas les échecs : le problème vient presque toujours du backend ou du chemin du journal.
 
-- Logs Fail2ban :
+Fail2ban écrit son propre journal dans `/var/log/fail2ban.log` ; les erreurs de démarrage du service sont aussi visibles avec `journalctl` :
 
 ```bash
 sudo journalctl -u fail2ban -e
@@ -183,15 +190,17 @@ sudo journalctl -u fail2ban -e
 sudo tail -f /var/log/fail2ban.log
 ```
 
----
+## Ajuster bantime, findtime et maxretry
 
-## Ajuster la sensibilité (bantime, findtime, maxretry)
+Trois paramètres règlent la sensibilité d'un jail :
 
-- bantime : durée de ban (ex : 10m, 1h, 24h). Unité : s, m, h, d, w.
-- findtime : fenêtre pendant laquelle on compte les échecs.
-- maxretry : nombre d'échecs permis dans la fenêtre.
+- `bantime` : durée du bannissement ;
+- `findtime` : fenêtre pendant laquelle on compte les échecs ;
+- `maxretry` : nombre d'échecs qui, dans cette fenêtre, déclenche le bannissement.
 
-Exemple « plus strict » :
+Les durées s'écrivent en secondes ou avec une unité : `s`, `m`, `h`, `d` ou `w` pour les semaines. Attention, `m` signifie minutes : les mois s'écrivent `mo`. En cas de doute, `fail2ban-client --str2sec 1w` affiche la conversion en secondes (604800).
+
+Exemple plus strict :
 
 ```ini
 [DEFAULT]
@@ -200,32 +209,26 @@ findtime = 15m
 maxretry = 3
 ```
 
-Astuce : mettez des valeurs plus permissives au début pour éviter de vous bannir et ajustez progressivement.
+Commencez avec des valeurs souples pour éviter de vous bannir vous-même, puis resserrez progressivement. Plutôt qu'un `bantime` très long dès le départ, vous pouvez aussi allonger la durée pour les adresses qui reviennent, avec le jail `recidive` présenté plus bas ou avec l'option `bantime.increment = true`. Cette option, disponible depuis Fail2ban 0.11 et décrite dans les commentaires de `jail.conf`, augmente la durée à chaque nouveau bannissement d'une même adresse : par défaut, elle double.
 
----
+## Ne pas bannir ses propres adresses
 
-## Whitelist: ignorer vos IPs
-
-Ajoutez votre IP publique (ou votre bureau/VPN) dans `ignoreip` :
+Ajoutez votre IP publique (ou celle de votre bureau, de votre VPN) à la liste `ignoreip` de la section `[DEFAULT]` :
 
 ```ini
 ignoreip = 127.0.0.1/8 ::1 198.51.100.42 203.0.113.0/24
 ```
 
-Rechargez ensuite Fail2ban.
+La liste accepte des adresses, des plages CIDR et des noms DNS, séparés par des espaces. Les adresses de la machine elle-même sont déjà ignorées par défaut (option `ignoreself`). Rechargez ensuite Fail2ban.
 
----
+## Le jail recidive
 
-## Jails avancés et notifications
-
-### Jail « recidive » (récidivistes)
-
-Le jail `recidive` bannit plus longtemps les IP qui déclenchent plusieurs bans dans la journée.
+Le jail `recidive` lit le journal de Fail2ban lui-même et bannit plus longtemps, sur tous les ports, les adresses qui se font bannir à répétition par les autres jails :
 
 ```ini
 [recidive]
 enabled  = true
-# Indispensable si backend=systemd est défini dans [DEFAULT] :
+# Nécessaire si backend=systemd est défini dans [DEFAULT] :
 # le backend systemd ignore logpath, on force la lecture du fichier
 backend  = auto
 logpath  = /var/log/fail2ban.log
@@ -234,39 +237,43 @@ findtime = 1d
 maxretry = 5
 ```
 
-> Note : ce jail opère au-dessus des autres jails (il lit le log Fail2ban). Utile en production. Avec `backend = systemd` en global, Fail2ban lirait le journal et ignorerait `logpath`, d'où le `backend = auto` dans ce jail.
+Ici, une adresse bannie 5 fois dans la journée l'est ensuite pour une semaine. La ligne `backend = auto` est importante : avec le `backend = systemd` hérité de `[DEFAULT]`, Fail2ban ignorerait `logpath` et chercherait les bannissements dans le journal de systemd, alors qu'il les écrit dans `/var/log/fail2ban.log`. Le jail démarrerait sans erreur, mais ne bannirait jamais personne.
 
-### Protéger Nginx
+## Protéger Nginx
 
-Plusieurs filtres sont fournis (selon la distribution) : `nginx-http-auth`, `nginx-botsearch`, etc. Exemple d'un jail basique :
-
-```ini
-[nginx-botsearch]
-enabled = true
-port    = http,https
-logpath = /var/log/nginx/access.log
-maxretry = 10
-findtime = 10m
-bantime  = 1h
-```
-
-Vérifiez que le filtre existe sur votre système :
+Fail2ban 1.0.2 fournit quatre filtres pour Nginx, que l'on peut lister :
 
 ```bash
 ls /etc/fail2ban/filter.d/ | grep nginx
 ```
 
-Sinon, vous pouvez créer vos propres filtres et jails dans `*.local`. Testez vos regex avec :
+Le filtre `nginx-botsearch` repère les robots qui cherchent des pages connues (`wp-login.php`, phpMyAdmin, `cgi-bin`...) et tombent sur une erreur 404. Dans `jail.conf`, le jail du même nom lit les journaux d'erreurs de Nginx, mais le filtre reconnaît aussi le format de `access.log`, utilisé ici :
+
+```ini
+[nginx-botsearch]
+enabled  = true
+# Nginx écrit dans des fichiers : pas de backend systemd ici
+backend  = auto
+port     = http,https
+logpath  = /var/log/nginx/access.log
+maxretry = 10
+findtime = 10m
+bantime  = 1h
+```
+
+Comme pour `recidive`, la ligne `backend = auto` est nécessaire quand `backend = systemd` est défini dans `[DEFAULT]` : sans elle, le jail surveille le journal de systemd et ne voit jamais les requêtes enregistrées dans `access.log`.
+
+Avant d'activer un jail, et surtout pour mettre au point vos propres filtres (dans des fichiers `.local`), testez le filtre sur un vrai journal avec `fail2ban-regex` :
 
 ```bash
 sudo fail2ban-regex /var/log/nginx/access.log /etc/fail2ban/filter.d/nginx-botsearch.conf
 ```
 
-### Notifications email
+La commande indique combien de lignes ont été reconnues (`Lines: ... matched, ... missed`) et affiche une partie des lignes non reconnues (toutes avec `--print-all-missed`). Pour un jail qui lit le journal de systemd, on remplace le fichier par `systemd-journal` : `sudo fail2ban-regex systemd-journal sshd`.
 
-Vous pouvez recevoir un email lors d'un ban, en utilisant une action prédéfinie (ex : `action_mw`, `action_mwl`). Il faut disposer d'un agent de mail (ex : `postfix`).
+## Recevoir un mail à chaque bannissement
 
-Exemple :
+Fail2ban peut envoyer un mail à chaque bannissement avec les actions prédéfinies `action_mw` et `action_mwl` :
 
 ```ini
 [DEFAULT]
@@ -275,27 +282,13 @@ sender = fail2ban@example.com
 action = %(action_mwl)s
 ```
 
----
+Les deux actions bannissent l'adresse comme d'habitude et envoient un mail contenant le résultat de `whois` pour cette adresse ; `action_mwl` y ajoute les lignes du journal qui la concernent. L'envoi passe par la commande `sendmail` : il faut un serveur de mail sur la machine (Postfix par exemple) et la commande `whois`.
 
-## Bonnes pratiques
+Attention, `action_mwl` cherche ces lignes dans le fichier indiqué par `logpath`. Avec le backend `systemd` et sans rsyslog, `/var/log/auth.log` n'existe pas et cette partie du mail reste vide : `action_mw` suffit alors.
 
-- Toujours utiliser des fichiers `.local`, ne pas modifier les `.conf` d'origine.
-- Recharger la configuration après modification : `sudo fail2ban-client reload`.
-- Tester les filtres avec `fail2ban-regex` si un jail ne matche pas.
-- Surveiller `journalctl -u fail2ban` pour les erreurs (permissions de logs, chemins).
-- Ne mettez pas un gros `bantime` au début, combinez plutôt avec `recidive`.
-- Avec UFW, assurez-vous que les ports légitimes restent ouverts (allow) avant d'activer des jails.
+## Voir aussi
 
-
----
-
-## Pour aller plus loin
-
-- [Documentation officielle Fail2ban](https://www.fail2ban.org/)
 - [Activer les mises à jour de sécurité automatiques sur Ubuntu/Debian]({% post_url 2025-12-19-Activer-les-mises-a-jour-de-securite-automatiques-sur-Ubuntu-Debian %})
-- [Linux : Programmer une tâche avec cron (exemples utiles)]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
 - [Linux : Comment changer le hostname en ligne de commande (Ubuntu/Debian)]({% post_url 2025-09-13-Comment-changer-le-hostname-en-ligne-de-commande-sur-Ubuntu-ou-Debian %})
-
-
-
-
+- [Fail2ban sur GitHub (code source et wiki)](https://github.com/fail2ban/fail2ban)
+- [Page de manuel jail.conf(5) (Ubuntu 24.04)](https://manpages.ubuntu.com/manpages/noble/en/man5/jail.conf.5.html)

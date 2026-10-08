@@ -12,12 +12,12 @@ author: Rémi Lecouillard
 Dans ce tutoriel, vous allez apprendre à définir des properties spring et à les utiliser dans votre projet Java. <!--more-->
 Ce tutoriel suppose que vous avez déjà un projet avec Spring Boot fonctionnel et des bases de programmation en Java.
 
-## Qu'est-ce que les _applications properties_ Spring ?
+## Qu'est-ce que les _application properties_ Spring ?
 
 Plus communément appelées _properties_, elles sont des valeurs accessibles dans toute
 votre application.
 
-Spring les utilise pour de nombreux paramètres, la plupart possèdent des valeurs par défaut, mais que vous pouvez aussi redéfinir par vous-même. Vous pouvez retrouver la liste complète de ces paramètres [ici](https://docs.spring.io/spring-boot/appendix/application-properties/index.html).
+Spring les utilise pour de nombreux paramètres. La plupart possèdent des valeurs par défaut, que vous pouvez aussi redéfinir par vous-même. Vous pouvez retrouver la liste complète de ces paramètres [ici](https://docs.spring.io/spring-boot/appendix/application-properties/index.html).
 
 Vous pouvez également créer vos propres _properties_ pour vos besoins spécifiques.
 
@@ -27,7 +27,7 @@ Vous pouvez également créer vos propres _properties_ pour vos besoins spécifi
 
 Que ce soit pour définir les différents paramètres de spring ou vos propres
 properties, Spring recherche par défaut les properties dans le fichier
-`application.properties` ou `application.yaml`
+`application.properties` ou `application.yaml`.
 
 Ces fichiers sont recherchés dans les dossiers suivants :
 
@@ -38,11 +38,11 @@ Ces fichiers sont recherchés dans les dossiers suivants :
 * Les sous-répertoires directs du sous-répertoire /config
 
 Si vous utilisez le _Standard Directory Layout_, que ce soit avec Maven ou Gradle,
-les fichiers sont généralement mis dans `src/main/resources`. Puisqu'on peut y accéder depuis le _classpath_.
+les fichiers sont généralement mis dans `src/main/resources`, puisqu'on peut y accéder depuis le _classpath_.
 
 ### Définir ses propres fichiers
 
-Si vous voulez accéder à des *properties* définies dans un fichier comportant un
+Si vous voulez accéder à des *properties* définies dans un fichier portant un
 autre nom, c'est très simple. Il suffit d'utiliser l'annotation `@PropertySource`
 comme ci-dessous :
 
@@ -57,8 +57,8 @@ public class PropertiesWithJavaConfig {
 
 Il est impératif de l'utiliser avec l'annotation `@Configuration`.
 
-Comme vous avez pu le remarquer la même annotation est définie deux fois. On peut
-définir l'annotation autant de fois qu'on le souhaite pour définir autant de fichiers.
+Comme vous avez pu le remarquer, la même annotation est utilisée deux fois. On peut
+répéter l'annotation autant de fois qu'on le souhaite pour définir autant de fichiers.
 Une autre façon de définir plusieurs fichiers est la suivante :
 
 ```java
@@ -88,8 +88,8 @@ public class PropertiesWithJavaConfig {
 
 Dans ce cas, si la *property* `db.provider` a été préalablement définie à mongodb par
 exemple, le fichier `persistence-mongodb.properties` sera chargé. Si elle n'est pas
-définie, ce sera la valeur après le ':' qui sera utilisée. À savoir qu'utiliser le
-':' est optionnel, mais si la _property_ n'est jamais déclarée une exception sera levée.
+définie, ce sera la valeur après le ':' qui sera utilisée. À noter qu'utiliser le
+':' est optionnel, mais si la _property_ n'est jamais déclarée, une exception sera levée.
 
 ### Les différents formats de fichier
 
@@ -106,12 +106,12 @@ app:
   description: "${app.name} is a Spring Boot application"
 ```
 
-Attention, les fichiers Yaml ne sont pas disponibles avec l'annotation `@PropertySource`.
+Attention, les fichiers Yaml ne peuvent pas être chargés avec l'annotation `@PropertySource`.
 
 #### *Property Placeholders*
 
 Comme vous l'avez peut-être remarqué dans les exemples précédents, nous avons utilisé `${app.name}`.
-Cette syntaxe permet dans une *property* de référer à une autre.
+Cette syntaxe permet, dans une *property*, de faire référence à une autre.
 
 ## Utiliser les _properties_ en Java
 
@@ -120,7 +120,7 @@ Il existe principalement trois manières différentes d'accéder aux *properties
 ### L'annotation @Value
 
 On peut accéder à une property très facilement en l'injectant via l'annotation @Value.
-Ici par exemple si on veut accéder à la property keycloak.url, il faudra marquer :
+Ici, par exemple, si on veut accéder à la property keycloak.url, il faudra marquer :
 
 ```java
 @Value( "${keycloak.url}" )
@@ -136,7 +136,7 @@ private String keycloakUrl;
 
 ### L'objet Environment
 
-Il est aussi possible d'injecter un objet environnement qui vous permet ensuite
+Il est aussi possible d'injecter un objet `Environment` qui vous permet ensuite
 d'accéder à n'importe quelle _property_ via une méthode comme suit :
 
 ```java
@@ -174,17 +174,17 @@ public class Database {
 
 Pour que Spring construise ce bean et l'alimente avec les *properties*, la classe
 doit être enregistrée. Le plus simple est de l'annoter avec `@Component` comme
-ci-dessus. Vous pouvez aussi vous en passer en activant le scan des classes de
-configuration avec `@ConfigurationPropertiesScan` sur votre classe principale, ou
+ci-dessus. Vous pouvez aussi vous en passer en activant le scan des classes annotées
+`@ConfigurationProperties` avec `@ConfigurationPropertiesScan` sur votre classe principale, ou
 en déclarant la classe explicitement via `@EnableConfigurationProperties(Database.class)`
 sur une classe de configuration.
 
 ## Conclusion
 
-Comme nous l'avons vu Spring offre un panel de possibilités assez large pour déclarer et utiliser très facilement les _properties_ selon les besoins de votre application.
+Comme nous l'avons vu, Spring offre un panel de possibilités assez large pour déclarer et utiliser très facilement les _properties_ selon les besoins de votre application.
 
 ## Voir aussi
 
-- [Ajouter du cache à une application Spring Boot]({% post_url 2025-11-08-Comment-ajouter-du-cache-a-une-application-Spring-Boot %})
+- [Comment ajouter du cache à une application Spring Boot]({% post_url 2025-11-08-Comment-ajouter-du-cache-a-une-application-Spring-Boot %})
 - [La doc de spring sur la configuration externe](https://docs.spring.io/spring-boot/reference/features/external-config.html)
 - [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})

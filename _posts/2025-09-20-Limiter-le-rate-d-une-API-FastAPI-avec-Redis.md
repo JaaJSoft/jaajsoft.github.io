@@ -1,7 +1,7 @@
-﻿---
+---
 layout: article
 title: "Comment ajouter un rate limiter à notre application FastAPI avec redis"
-description: "Limiter le nombre de requêtes d'une API FastAPI avec fastapi-limiter et Redis : limite par IP, clé d'API ou utilisateur, reverse proxy et gestion du 429."
+description: "Limiter le nombre de requêtes d'une API FastAPI avec fastapi-limiter et Redis : limite par IP, clé API ou utilisateur, reverse proxy et gestion du 429."
 author: Pierre Chopinet
 tags:
   - python
@@ -15,39 +15,58 @@ tags:
   - performance
 ---
 
-Dans ce tutoriel, on met en place un rate limiting pour une API FastAPI à l'aide
-de
-la bibliothèque `fastapi-limiter`, avec Redis.
-<!--more-->
-L'objectif est de protéger vos
-endpoints contre les abus (pics de trafic, scripts, DDoS applicatif léger) et de
-mieux contrôler votre consommation de ressources.
+> **Note (2026) :** fastapi-limiter a changé depuis l'écriture de cet article. La version 0.2.0 (février 2026) abandonne l'API utilisée ici. De plus, depuis FastAPI 0.137 (juin 2026), les routes limitées répondent par une erreur 500 dès que l'application utilise `include_router`, avec fastapi-limiter 0.1.6 comme avec la 0.2.0. Les exemples restent valables avec les versions épinglées dans la partie installation : ils ont été testés en octobre 2026 avec FastAPI 0.136.3, fastapi-limiter 0.1.6 et redis-py 8.1.0.
 
-Prérequis : savoir démarrer une API minimaliste.
-Voir [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %}).
+Dans ce tutoriel, nous allons limiter le nombre de requêtes qu'un client peut
+faire sur une API FastAPI, avec la librairie `fastapi-limiter` et Redis.
+Au-delà de la limite, l'API répond `429 Too Many Requests` : de quoi se protéger
+d'un script trop gourmand ou d'un client qui boucle, ou encore limiter l'usage
+d'une route coûteuse.
+<!--more-->
+
+Dans cet article :
+- Installation
+- Démarrer un Redis local
+- Mise en place minimale
+- Limiter par clé API ou par utilisateur
+- Limiter un groupe de routes
+- Derrière un reverse proxy
+- Personnaliser la réponse 429
+
+Pré-requis : savoir démarrer une API minimale, voir
+[Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %}).
 
 ## Installation
 
-Installez les dépendances nécessaires :
-
 ```bash
-pip install fastapi uvicorn "fastapi-limiter==0.1.6" redis
+pip install "fastapi<0.137" uvicorn "fastapi-limiter==0.1.6" redis
 ```
 
 Sous Windows (PowerShell), vous pouvez faire :
 
 ```powershell
-python -m pip install fastapi uvicorn "fastapi-limiter==0.1.6" redis
+python -m pip install "fastapi<0.137" uvicorn "fastapi-limiter==0.1.6" redis
 ```
 
-> Note : ce tutoriel épingle `fastapi-limiter` en version `0.1.6`. La version
-> `0.2.0` a introduit des changements d'API (refonte interne du limiteur) qui
-> rendent certains exemples ci-dessous incompatibles. Épingler la version
-> garantit que le code fonctionne tel quel.
+Les versions de FastAPI et de fastapi-limiter sont épinglées. fastapi-limiter
+0.1.6 est la dernière version construite directement sur Redis : la 0.2.0 confie
+le comptage à la librairie pyrate-limiter (qui peut elle-même stocker ses
+compteurs dans Redis), avec une autre API. `FastAPILimiter.init()` comme les
+paramètres `times` et `seconds` utilisés plus bas n'y existent plus.
 
-## Démarrer un Redis local (docker-compose)
+Quant à FastAPI, la version 0.137 a changé le contenu de `app.routes` : on y
+trouve maintenant des objets intermédiaires pour les routers inclus, et plus
+seulement des routes. Or fastapi-limiter parcourt cette liste à chaque requête
+pour retrouver la route appelée. Dès que l'application contient un
+`include_router`, chaque requête sur une route limitée échoue alors avec
+`AttributeError: '_IncludedRouter' object has no attribute 'path'`, et le
+client reçoit une erreur 500. La 0.136.3 est la dernière version de FastAPI avec
+laquelle les exemples de cet article fonctionnent.
 
-On utilise docker pour déployer un serveur Redis rapidement en local :
+## Démarrer un Redis local
+
+On utilise Docker pour lancer un serveur Redis en local, avec ce fichier
+`docker-compose.yml` :
 
 ```yaml
 # docker-compose.yml
@@ -59,23 +78,16 @@ services:
     command: [ "redis-server", "--appendonly", "yes" ]
 ```
 
-Lancez :
+On démarre Redis :
 
 ```bash
 docker compose up -d
 ```
 
----
+## Mise en place minimale
 
-## Mise en place minimale avec fastapi-limiter
-
-`fastapi-limiter` s'initialise au démarrage de l'application avec un client
-Redis.
-Ensuite, on ajoute une dépendance `RateLimiter` sur les routes à protéger.
-
-### Mise en place du limiter
-
-On initialise le rate limiter dans le gestionnaire de contexte lifespan utilisé par FastAPI :
+`fastapi-limiter` s'initialise au démarrage de l'application, avec un client
+Redis, dans la fonction `lifespan` utilisée par FastAPI :
 
 ```python
 # app.py
@@ -103,9 +115,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 ```
 
-> Note : Vous pouvez réutiliser le même client redis que pour votre cache
+Si votre application utilise déjà Redis pour son cache, comme dans l'article
+[Ajouter un cache à notre application FastAPI avec redis]({% post_url 2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %}),
+vous pouvez réutiliser le même client. Il doit alors être créé avec
+`decode_responses=False`, comme l'exige fastapi-cache2 : fastapi-limiter
+fonctionne aussi dans ce mode.
 
-Puis, on ajoute à nos routes notre limiteur :
+Ensuite, on protège une route en lui ajoutant la dépendance `RateLimiter` :
 
 ```python
 # Cette route autorise 5 requêtes par minute (par identifiant; voir plus bas)
@@ -114,33 +130,68 @@ async def ping():
     return {"pong": True}
 ```
 
-Démarrage :
+On lance l'API :
 
 ```bash
 uvicorn app:app --reload
 ```
 
-Test rapide :
+Puis on l'appelle 7 fois de suite, en n'affichant que le code HTTP de la
+réponse :
 
 ```bash
-# Faites plus de 5 appels en moins de 60s pour observer l'erreur 429
-for i in {1..7}; do curl -i http://127.0.0.1:8000/ping; echo; done
+for i in {1..7}; do curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/ping; done
+200
+200
+200
+200
+200
+429
+429
 ```
 
-Par défaut, `fastapi-limiter` identifie le client par son IP (en s'aidant des
-en-têtes classiques si vous utilisez un proxy). Vous pouvez cependant personnaliser cet
-identifiant si besoin.
+Les 5 premiers appels passent, les suivants sont refusés jusqu'à la fin de la
+minute. La réponse indique combien de secondes attendre, dans l'en-tête
+`retry-after` :
 
----
+```bash
+curl -i http://127.0.0.1:8000/ping
+HTTP/1.1 429 Too Many Requests
+date: Wed, 07 Oct 2026 20:54:26 GMT
+server: uvicorn
+retry-after: 60
+content-length: 30
+content-type: application/json
 
-## Personnaliser l'identifiant (IP, clé API, utilisateur, etc.)
+{"detail":"Too Many Requests"}
+```
 
-Souvent, on veut limiter par clé API ou par utilisateur authentifié plutôt que
-par IP.
-Pour cela, on peut fournir une fonction `identifier` au `RateLimiter`.
+fastapi-limiter compte les requêtes dans Redis avec une fenêtre fixe : le
+premier appel crée un compteur qui expire au bout de 60 secondes, les suivants
+l'incrémentent, et une fois la limite atteinte, les requêtes sont refusées
+jusqu'à l'expiration du compteur. On voit ce compteur dans Redis :
 
-`fastapi-limiter` appelle l'`identifier` avec `await` : il doit donc s'agir
-d'une fonction asynchrone (`async def`), et non d'un `lambda` synchrone.
+```bash
+docker compose exec redis redis-cli keys 'fastapi-limiter:*'
+fastapi-limiter:127.0.0.1:/ping:4:0
+```
+
+La clé contient l'identifiant du client, par défaut son IP suivie du chemin
+appelé, puis la position de la route dans l'application : chaque route a son
+propre compteur.
+
+Attention, pour trouver l'IP du client, l'identifiant par défaut lit d'abord
+l'en-tête `X-Forwarded-For`, sans vérifier d'où vient la requête. Un client qui
+change la valeur de cet en-tête à chaque appel obtient un nouveau compteur, et
+n'est donc jamais bloqué. La partie sur le reverse proxy montre comment corriger
+ça.
+
+## Limiter par clé API ou par utilisateur
+
+On peut préférer limiter par clé API ou par utilisateur plutôt que par IP. Pour
+cela, on passe une fonction au paramètre `identifier` de `RateLimiter`.
+fastapi-limiter l'appelle avec `await` : il doit donc s'agir d'une fonction
+asynchrone (`async def`), et non d'un `lambda` synchrone.
 
 ```python
 from fastapi import Request
@@ -166,14 +217,14 @@ async def get_data(request: Request):
     return {"ok": True}
 ```
 
-Autre exemple : limitation par utilisateur connecté (ex: `request.state.user.id`
-ou
-`request.user.id` selon votre middleware d'authentification).
+Pour limiter par utilisateur connecté, l'identifiant dépend de votre
+authentification. Avec un `AuthenticationMiddleware` de Starlette, l'utilisateur
+est rangé dans `request.scope["user"]` :
 
 ```python
 async def user_identifier(request: Request) -> str:
-    # Identifiant de l'utilisateur connecté si disponible, sinon IP
-    user = getattr(request, "user", None)
+    # Utilisateur posé par le middleware d'authentification s'il y en a un, sinon IP
+    user = request.scope.get("user")
     return str(getattr(user, "id", None) or request.client.host)
 
 @app.get(
@@ -192,13 +243,15 @@ async def me():
     return {"me": True}
 ```
 
----
+On passe par `request.scope` plutôt que par `request.user` : sans middleware
+d'authentification, `request.user` lève une `AssertionError`, que
+`getattr(request, "user", None)` ne rattrape pas (il ne gère que les
+`AttributeError`). La route répondrait alors par une erreur 500.
 
-## Appliquer une limite par défaut à un groupe de routes
+## Limiter un groupe de routes
 
-Vous pouvez appliquer un rate limit à l'échelle d'un router, afin qu'il
-s'applique
-à toutes les routes incluses.
+On peut aussi déclarer la limite sur un router, pour qu'elle s'applique à toutes
+ses routes :
 
 ```python
 from fastapi import APIRouter
@@ -219,37 +272,59 @@ async def create_item():
 app.include_router(api_router)
 ```
 
-Vous pouvez toujours surcharger/compléter le comportement sur une route précise
-en
-ajoutant un autre `Depends(RateLimiter(...))` directement sur l'endpoint.
+Attention, la dépendance est ajoutée à chaque route : `GET /api/items` et
+`POST /api/items` ont chacune leur compteur de 120 requêtes par minute. Ce n'est
+pas un quota commun à tout le groupe.
 
----
+Un `Depends(RateLimiter(...))` ajouté sur une des routes du router impose une
+seconde limite, qui s'applique en plus de la première : c'est la plus stricte
+qui bloque. On peut donc rendre une route plus restrictive que le reste du
+groupe, mais pas plus permissive.
 
-## Cas derrière un reverse proxy (Nginx, Traefik, Cloudflare)
+C'est ce `include_router` qui provoque les erreurs 500 à partir de FastAPI
+0.137, d'où la version de FastAPI épinglée à l'installation.
 
-Pour que l'IP réelle du client soit correctement vue, pensez à activer la prise
-en
-compte des en-têtes proxy. Par exemple :
+## Derrière un reverse proxy
 
-```python
-from starlette.middleware import Middleware
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+Derrière un reverse proxy (Nginx, Traefik...), toutes les requêtes arrivent de
+l'IP du proxy, et c'est l'en-tête `X-Forwarded-For` qui porte l'IP du client.
+Uvicorn sait lire cet en-tête, mais par défaut il ne lui fait confiance que pour
+les requêtes qui viennent de `127.0.0.1` ou `::1`, c'est-à-dire d'un proxy
+installé sur la même machine. Si le proxy est ailleurs (dans un autre conteneur par exemple),
+on donne son adresse avec l'option `--forwarded-allow-ips` :
 
-# trusted_hosts : IP ou hôtes des proxies de confiance dont on accepte les en-têtes
-# X-Forwarded-* ("*" fait confiance à tous les proxies, à réserver aux environnements
-# où l'accès direct à l'application est impossible)
-app = FastAPI(lifespan=lifespan, middleware=[Middleware(ProxyHeadersMiddleware, trusted_hosts="*")])
+```bash
+uvicorn app:app --host 0.0.0.0 --forwarded-allow-ips 10.0.0.5
 ```
 
----
+`request.client.host` contient alors l'IP du client, et non celle du proxy. La
+valeur `"*"` fait confiance à toutes les adresses : à réserver aux cas où
+personne ne peut joindre l'application sans passer par le proxy.
 
-## Gérer le 429 Too Many Requests
+Comme l'identifiant par défaut de fastapi-limiter lit `X-Forwarded-For` sans
+tenir compte de ce réglage, mieux vaut le remplacer, pour toute l'application,
+par un identifiant basé sur `request.client.host` :
 
-Quand la limite est dépassée, `fastapi-limiter` soulève une
-`HTTPException(429)`.
-Vous pouvez personnaliser la gestion globale avec un handler FastAPI pour
-retourner
-un message JSON cohérent avec votre API.
+```python
+from fastapi import Request
+
+async def ip_identifier(request: Request) -> str:
+    # request.client.host : IP corrigée par uvicorn, uniquement si la requête
+    # vient d'un proxy de confiance (--forwarded-allow-ips)
+    return request.client.host + ":" + request.scope["path"]
+
+# Dans lifespan :
+await FastAPILimiter.init(redis_client, prefix="fastapi-limiter", identifier=ip_identifier)
+```
+
+Un client qui envoie directement à l'API un faux `X-Forwarded-For` reste alors
+compté sous sa vraie IP.
+
+## Personnaliser la réponse 429
+
+Quand la limite est dépassée, `fastapi-limiter` lève une `HTTPException` 429,
+avec l'en-tête `Retry-After`. Pour renvoyer un JSON cohérent avec le reste de
+votre API, on peut déclarer un gestionnaire d'exception :
 
 ```python
 from fastapi import Request, HTTPException
@@ -263,31 +338,30 @@ async def too_many_requests_handler(request: Request, exc: HTTPException):
             "error": "too_many_requests",
             "detail": exc.detail or "Rate limit exceeded",
         },
-        headers={"Retry-After": "60"},
+        headers=exc.headers,  # contient déjà le Retry-After calculé par fastapi-limiter
     )
 ```
 
----
+```bash
+curl -i http://127.0.0.1:8000/ping
+HTTP/1.1 429 Too Many Requests
+date: Wed, 07 Oct 2026 20:54:46 GMT
+server: uvicorn
+retry-after: 56
+content-length: 58
+content-type: application/json
 
-## Bonnes pratiques et points d'attention
+{"error":"too_many_requests","detail":"Too Many Requests"}
+```
 
-- Granularité : adaptez les paramètres (secondes, minutes, heures) à vos usages.
-- Identifiant : préférez un identifiant stable (clé API, user id) quand c'est
-  pertinent.
-- Proxies : gérez correctement les IP réelles (ProxyHeadersMiddleware, trusted
-  hops).
-- Endpoints sensibles : combinez avec de l'authentification, voire du captcha sur
-  les routes publiques.
-- Observabilité : loggez les 429 et surveillez vos métriques.
+On reprend les en-têtes de l'exception, qui contiennent le nombre exact de
+secondes à attendre : une valeur fixe comme `"60"` serait fausse pour la limite
+de 24 heures de la route `/data`.
 
----
+## Voir aussi
 
-## Pour aller plus loin
-
-- GitHub : [long2ice/fastapi-limiter](https://github.com/long2ice/fastapi-limiter)
-- [Ajouter un cache à notre application FastAPI avec redis]({% post_url 2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
 - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
+- [Ajouter un cache à notre application FastAPI avec redis]({% post_url 2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
 - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
-- [Comment dockeriser une API FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
-- [Comment dockeriser une application Django]({% post_url 2025-10-25-Comment-dockeriser-une-application-Django %})
-
+- [fastapi-limiter sur GitHub](https://github.com/long2ice/fastapi-limiter)
+- [Les notes de version de FastAPI](https://fastapi.tiangolo.com/release-notes/), voir la 0.137.0 pour le changement sur les routers

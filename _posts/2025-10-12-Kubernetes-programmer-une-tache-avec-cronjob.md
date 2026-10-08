@@ -10,27 +10,22 @@ tags:
 author: Pierre Chopinet
 ---
 
-Besoin d'exécuter une commande ou un script de façon récurrente dans votre cluster Kubernetes, comme vous le feriez avec cron sur Linux ? Les CronJobs K8s sont faits pour ça. Dans cet article, on voit comment créer un CronJob robuste, éviter les chevauchements, paramétrer l'historique, gérer les échecs et dépanner. On fera aussi le lien avec cron classique sur Linux pour migrer sereinement.
+Pour exécuter une tâche récurrente dans un cluster Kubernetes (une sauvegarde, un rapport, une purge), on utilise un CronJob : l'équivalent d'une ligne de crontab, qui crée un Job à chaque échéance. Voyons comment en écrire un, régler ses principales options (chevauchements, rattrapage, fuseau horaire, historique) et le déboguer quand il ne se lance pas.
 <!--more-->
 
 Dans cet article :
-- TL;DR : un CronJob minimal qui fonctionne
-- Différences entre CronJob K8s et cron Linux
-- Création et options importantes (`concurrencyPolicy`, `startingDeadlineSeconds`, `timeZone`)
-- Exemples utiles et patterns courants
-- Débogage et observabilité
-- Migration depuis cron classique vers CronJob
-- Bonnes pratiques
-- FAQ
+- Un CronJob minimal
+- Ce qui change par rapport à cron
+- Un CronJob plus complet
+- Les options importantes
+- Quelques variantes
+- Lancer, suspendre et supprimer un CronJob
+- Déboguer un CronJob
+- Migrer une tâche cron vers Kubernetes
 
-Pré-requis :
-- Un cluster Kubernetes (1.27+ recommandé pour `spec.timeZone`)
-- `kubectl` configuré
-- Si vous débutez avec cron côté Linux, lisez d'abord [Linux : Programmer une tâche avec cron]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
+Pré-requis : un cluster Kubernetes (1.27 ou plus pour `spec.timeZone`) et `kubectl` configuré. Les deux manifestes complets de l'article ont été validés avec le schéma de l'API Kubernetes (versions 1.27 et 1.36). Si vous débutez avec cron côté Linux, lisez d'abord [Linux : Programmer une tâche avec cron]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %}).
 
----
-
-## TL;DR : un CronJob minimal
+## Un CronJob minimal
 
 ```yaml
 apiVersion: batch/v1
@@ -54,38 +49,25 @@ spec:
               args: ["sh", "-c", "date; echo Hello from K8s CronJob"]
 ```
 
-- Appliquer : `kubectl apply -f cronjob.yaml`
-- Lister : `kubectl get cronjobs` puis `kubectl get jobs` et `kubectl get pods`
-- Logs : `kubectl logs <pod>`
+On l'applique, puis on suit ce qu'il produit : toutes les 5 minutes, le contrôleur crée un Job, qui lance lui-même un Pod.
 
----
+```bash
+kubectl apply -f cronjob.yaml
+kubectl get cronjobs
+kubectl get jobs
+kubectl get pods
+kubectl logs <pod>
+```
 
-## CronJob vs cron Linux
+## Ce qui change par rapport à cron
 
-Points communs :
-- Syntaxe d'horaire type crontab : `* * * * *` (minute heure jour mois jour_sem)
+Le champ `schedule` utilise la syntaxe de cron (minute, heure, jour du mois, mois, jour de la semaine), avec les raccourcis `@hourly`, `@daily`, `@weekly`, `@monthly` et `@yearly`. Comme dans une crontab, quand le jour du mois et le jour de la semaine sont tous les deux renseignés, il suffit que l'un des deux corresponde. Deux différences peuvent surprendre lors d'une migration. Le jour de la semaine va de 0 à 6, et `7` pour le dimanche est refusé par l'API. Une variable `CRON_TZ` ou `TZ` dans `schedule` est refusée elle aussi : le fuseau horaire se règle avec le champ `timeZone`.
 
-Différences clés :
-- Exécution dans un Pod (conteneurisé), pas sur l'hôte.
-- Gestion des chevauchements via `concurrencyPolicy` (Allow / Forbid / Replace).
-- Historique conservé via `successfulJobsHistoryLimit` et `failedJobsHistoryLimit`.
-- `startingDeadlineSeconds` : délai maximum pour démarrer une exécution qui a manqué son horaire planifié (par exemple si le contrôleur était indisponible) ; passé ce délai, l'exécution est ignorée.
-- Temps et fuseau : Kubernetes 1.27 ou plus supporte `spec.timeZone` (IANA, ex: `Europe/Paris`). Sinon, fuseau du contrôleur.
+Pour le reste, la tâche ne tourne pas sur l'hôte mais dans un Pod, à partir d'une image. Les chevauchements se gèrent avec `concurrencyPolicy`, les exécutions passées restent visibles sous forme de Jobs (`successfulJobsHistoryLimit`, `failedJobsHistoryLimit`), et `startingDeadlineSeconds` décide si une exécution manquée, pendant une panne du contrôleur par exemple, doit encore être lancée. Sans `timeZone`, l'horaire est interprété dans le fuseau horaire du kube-controller-manager.
 
-Pour réviser la syntaxe cron et les pièges, voyez l'article Linux mentionné plus haut.
+## Un CronJob plus complet
 
----
-
-## Créer un CronJob
-
-1. Choisir une image conteneur qui contient vos dépendances (ou votre appli). Privilégiez des tags immuables (ex: `:1.36` plutôt que `:latest`).
-2. Définir l'horaire `spec.schedule` (style crontab).
-3. Empêcher les doublons avec `spec.concurrencyPolicy: Forbid` (ou `Replace`).
-4. Régler l'historique et les réessais : `successfulJobsHistoryLimit`, `failedJobsHistoryLimit`, `jobTemplate.spec.backoffLimit`.
-5. Gérer le cas "rattrapage" via `spec.startingDeadlineSeconds`.
-6. Définir `resources` (limites / requests), variables d'environnement, ConfigMap/Secret, et un `serviceAccountName` si besoin de permissions.
-
-Exemple un peu plus complet :
+Voici un CronJob plus proche de ce qu'on met en production. Il lance un rapport tous les jours à 2 h, heure de Paris, sans chevauchement, avec une durée maximale, des ressources limitées, un secret et un compte de service :
 
 ```yaml
 apiVersion: batch/v1
@@ -125,22 +107,29 @@ spec:
                 limits:   { cpu: "500m", memory: "512Mi" }
 ```
 
----
+L'image porte un numéro de version précis plutôt que `latest`, pour savoir exactement ce qui tourne à chaque exécution. Le compte de service `job-reporter` n'est nécessaire que si la tâche a besoin de droits particuliers, pour appeler l'API Kubernetes par exemple (avec les règles RBAC correspondantes).
 
-## Options importantes à connaître
+`restartPolicy` ne peut valoir que `OnFailure` ou `Never` dans un Job. Avec `OnFailure`, le conteneur est relancé dans le même Pod ; avec `Never`, chaque échec crée un nouveau Pod, ce qui garde les journaux des tentatives précédentes. La documentation de Kubernetes conseille d'ailleurs `Never` tant qu'on met la tâche au point.
 
-- `schedule` : expression cron standard.
-- `timeZone` (1.27+) : fuseau IANA (ex: `Europe/Paris`). Facilite les changements d'heure.
-- `concurrencyPolicy` : `Allow` (par défaut), `Forbid` (n'autorise pas un nouveau job si le précédent est encore en cours), `Replace` (remplace le précédent).
-- `startingDeadlineSeconds` : délai maximum pour rattraper une exécution manquée.
-- `suspend` : met le CronJob en pause (stoppe les planifications futures, n'arrête pas un job déjà démarré).
-- `successfulJobsHistoryLimit` / `failedJobsHistoryLimit` : nombre de Jobs conservés.
-- `jobTemplate.spec.backoffLimit` : nombre de réessais si le Pod échoue.
-- `jobTemplate.spec.activeDeadlineSeconds` : tue le Job au-delà d'une durée.
+Enfin, le nom d'un CronJob ne doit pas dépasser 52 caractères, car le contrôleur y ajoute 11 caractères pour nommer les Jobs.
 
----
+## Les options importantes
 
-## Exemples utiles
+- `schedule` : horaire au format cron ;
+- `timeZone` : fuseau horaire IANA (`Europe/Paris`), stable depuis Kubernetes 1.27 ;
+- `concurrencyPolicy` : gestion des chevauchements (`Allow` par défaut) ;
+- `startingDeadlineSeconds` : délai, en secondes, au-delà duquel une exécution qui a manqué son horaire est sautée et comptée comme un échec (aucun par défaut) ;
+- `suspend` : mise en pause de la planification quand il vaut `true`, sans effet sur les Jobs déjà lancés ;
+- `successfulJobsHistoryLimit` et `failedJobsHistoryLimit` : nombre de Jobs terminés conservés (3 et 1 par défaut) ;
+- `jobTemplate.spec.backoffLimit` : nombre de nouvelles tentatives avant de considérer le Job en échec (6 par défaut) ;
+- `jobTemplate.spec.activeDeadlineSeconds` : durée maximale du Job, au-delà de laquelle ses Pods sont arrêtés et le Job échoue, même s'il restait des tentatives ;
+- `jobTemplate.spec.ttlSecondsAfterFinished` : délai, en secondes, avant la suppression automatique du Job terminé et de ses Pods.
+
+`concurrencyPolicy` accepte trois valeurs. `Allow` laisse les exécutions se chevaucher. `Forbid` saute la nouvelle exécution si la précédente tourne encore : c'est le bon choix pour une tâche qui ne doit pas tourner deux fois en même temps. `Replace` arrête la précédente pour lancer la nouvelle, ce qui convient à une tâche courte qu'on préfère relancer. Mais aucune de ces valeurs ne garantit une exécution unique : la documentation prévient que, dans certains cas, Kubernetes peut créer deux Jobs pour le même horaire, ou aucun. Les tâches doivent donc pouvoir être relancées sans dégâts (idempotentes).
+
+Attention aussi à `startingDeadlineSeconds`. Avec une valeur inférieure à 10 secondes, le CronJob peut ne jamais se lancer, car le contrôleur ne vérifie les horaires que toutes les 10 secondes. À l'inverse, sans cette option, un contrôleur qui a manqué plus de 100 horaires (un CronJob qui tourne toutes les minutes sur un cluster arrêté pendant deux heures, par exemple) ne lance pas d'exécution de rattrapage et journalise l'erreur `too many missed start times` ; les exécutions suivantes ont lieu normalement. Sur un cluster qui ne tourne pas en continu, mieux vaut donc fixer un délai de rattrapage raisonnable.
+
+## Quelques variantes
 
 Toutes les 5 minutes, sans chevauchement :
 
@@ -150,7 +139,7 @@ spec:
   concurrencyPolicy: Forbid
 ```
 
-Le lundi à 09:00, remplacement du job en cours si retard :
+Chaque lundi à 9 h, en remplaçant le Job précédent s'il tourne encore, et en acceptant jusqu'à 5 minutes de retard :
 
 ```yaml
 spec:
@@ -159,7 +148,7 @@ spec:
   startingDeadlineSeconds: 300
 ```
 
-Job Python avec venv embarqué dans l'image :
+Pour une tâche Python, le code et ses dépendances sont installés dans l'image. Plus besoin de passer par l'interpréteur d'un venv comme sous cron : on lance directement le module.
 
 ```yaml
 containers:
@@ -168,82 +157,58 @@ containers:
     args: ["python", "-m", "app.jobs.recalcule"]
 ```
 
-Export JSON et traitement en CLI (pratique avec jq) :
+## Lancer, suspendre et supprimer un CronJob
+
+Pour lancer une exécution tout de suite, sans attendre l'horaire, on crée un Job à partir du modèle du CronJob :
+
+```bash
+kubectl create job rapport-manuel --from=cronjob/rapport-quotidien
+```
+
+Pour mettre la planification en pause, on passe `spec.suspend` à `true` dans le manifeste et on le réapplique (ou on modifie directement le CronJob avec `kubectl edit cronjob rapport-quotidien`), puis on remet `false` pour reprendre. Les horaires prévus pendant la pause comptent comme manqués : si le CronJob n'a pas de `startingDeadlineSeconds`, il lance une exécution dès qu'on le réactive, pour rattraper l'horaire manqué le plus récent.
+
+Supprimer le CronJob supprime aussi les Jobs et les Pods qu'il a créés :
+
+```bash
+kubectl delete cronjob rapport-quotidien
+```
+
+## Déboguer un CronJob
+
+```bash
+kubectl describe cronjob rapport-quotidien
+kubectl get jobs
+kubectl describe job <job>
+kubectl get pods --selector=job-name=<job>
+kubectl logs <pod>    # ajouter -c <conteneur> s'il y en a plusieurs
+kubectl get events -A | grep -i cronjob
+```
+
+`kubectl describe cronjob` affiche notamment `Concurrency Policy`, `Starting Deadline Seconds`, `Last Schedule Time` (la dernière exécution planifiée, issue du champ `.status.lastScheduleTime`) et les événements récents.
+
+Les Jobs créés par un CronJob s'appellent `<nom-du-cronjob>-<nombre>`, où le nombre est l'heure planifiée exprimée en minutes depuis 1970. Ils sont rattachés au CronJob par leurs `ownerReferences`, mais Kubernetes ne leur ajoute aucun label qui le désigne : pour pouvoir les filtrer, ajoutez vos propres labels dans `jobTemplate.metadata.labels`. Les Pods, eux, portent le label `job-name`, d'où le `--selector` ci-dessus.
+
+Pour avoir une vue d'ensemble des horaires, la sortie JSON de `kubectl` se traite bien avec jq :
 
 ```bash
 kubectl get cronjob -o json | jq '.items[] | {name: .metadata.name, schedule: .spec.schedule}'
 ```
 
----
+Quelques problèmes reviennent souvent. Une image introuvable, un Secret ou un ConfigMap manquant se voient dans les événements du Pod (`Failed to pull image`, `not found`). Un Job qui ne se termine jamais se limite avec `activeDeadlineSeconds`, combiné à `concurrencyPolicy: Forbid` pour ne pas empiler les exécutions. Enfin, si les Jobs terminés s'accumulent, baissez les limites d'historique ou définissez `jobTemplate.spec.ttlSecondsAfterFinished` (le mécanisme de TTL est stable et actif par défaut depuis Kubernetes 1.23).
 
-## Débogage et observabilité
+## Migrer une tâche cron vers Kubernetes
 
-État et événements :
-- `kubectl describe cronjob <name>`
-- `kubectl get jobs | grep <nom-du-cronjob>` et `kubectl describe job/<name>` (Kubernetes n'ajoute pas de label reliant un Job à son CronJob ; les Jobs sont nommés `<nom-du-cronjob>-<timestamp>` et rattachés par `ownerReferences`)
-- `kubectl get events -A | grep -i cronjob`
+La tâche ne voit plus le système de fichiers de l'hôte, ni son `/usr/local/bin` : le script, ses dépendances et ses binaires doivent être dans l'image (ou montés en volume). L'environnement de l'hôte n'est pas transmis non plus : les variables se définissent dans `env`, directement ou depuis un ConfigMap ou un Secret, et les secrets ne doivent jamais apparaître dans les journaux.
 
-Pods et logs :
-- `kubectl get pods --selector=job-name=<job>`
-- `kubectl logs <pod>` (ou `-c <container>` si plusieurs conteneurs)
+Pour les droits, on donne au Pod un compte de service (ServiceAccount) avec les règles RBAC nécessaires, et un `securityContext` pour ne pas faire tourner la tâche en root. Les fichiers à conserver d'une exécution à l'autre vont dans un volume persistant (`PersistentVolumeClaim`) : le système de fichiers du Pod disparaît avec lui, et un `emptyDir` ne vit pas plus longtemps que le Pod.
 
-Champs utiles :
-- `.status.lastScheduleTime` du CronJob
-- `.spec.startingDeadlineSeconds` et la politique de concurrence
-
-Problèmes fréquents :
-- Image introuvable, Secret ou ConfigMap manquant : événements "Failed to pull image" ou "not found".
-- Job qui n'en finit pas : ajuster `activeDeadlineSeconds` et `concurrencyPolicy`.
-- Trop d'objets accumulés : baisser `successfulJobsHistoryLimit` / `failedJobsHistoryLimit` et définir `jobTemplate.spec.ttlSecondsAfterFinished` pour que les Jobs terminés soient supprimés automatiquement (le contrôleur TTL-after-finished est stable et actif par défaut depuis Kubernetes 1.23).
-
----
-
-## Migrer depuis cron (Linux) vers CronJob (K8s)
-
-- Chemins et dépendances : tout doit exister dans l'image (ou via volumes). Pas de `/usr/local/bin` de l'hôte.
-- Environnement : variables à définir via `env`, ConfigMap / Secret. Pas de `$HOME` ou `PATH` implicite comme dans une session interactive.
-- Droits : utilisez un `ServiceAccount` + RBAC adaptés. Évitez `root` si possible (SecurityContext).
-- Fichiers et persistance : écrivez dans un volume (`emptyDir`, `PersistentVolumeClaim`, `configMap` ou `secret` en lecture seule), pas dans le système de fichiers éphémère du Pod si vous devez conserver les résultats.
-- Journalisation : stdout / stderr suffisent le plus souvent. Pour du centralisé, branchez Fluent Bit ou Promtail vers Loki ou ELK.
-
----
-
-## Bonnes pratiques
-
-- Images immuables et petites (Alpine, distroless). Évitez `:latest`.
-- `concurrencyPolicy: Forbid` pour les jobs non idempotents, `Replace` pour les jobs rapides qu'on préfère relancer.
-- Limitez mémoire / CPU et fixez des deadlines pour éviter les runaway jobs.
-- Externalisez la config (ConfigMap / Secret) et ne logguez jamais des secrets.
-- Surveillez l'historique et les événements, alertez sur les pods en `CrashLoopBackOff` ou les jobs en échec.
-- Si votre cluster ne tourne pas en continu (edge), utilisez `startingDeadlineSeconds` pour rattraper les exécutions manquées.
-
----
-
-## FAQ
-
-Puis-je forcer l'exécution immédiate ?
-- Oui : créez un Job "one-shot" à partir du `jobTemplate` de votre CronJob ou utilisez `kubectl create job --from=cronjob/<name> <job-manuel>`.
-
-Comment arrêter temporairement une planification ?
-- Passez `spec.suspend: true`, remettez à `false` pour reprendre.
-
-Comment éviter les doublons ?
-- `concurrencyPolicy: Forbid` et assurez-vous d'avoir des deadlines raisonnables.
-
-Fuseau horaire ?
-- Utilisez `spec.timeZone` si votre version de K8s le supporte (1.27+). Sinon, l'horloge du contrôleur fait foi.
-
----
-
-## Pour aller plus loin
-
-- [Documentation Kubernetes - CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/)
-- [API reference Job/CronJob](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/cron-job-v1/)
-- [Bonnes pratiques Jobs et CronJobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/)
+Côté journaux, écrire sur la sortie standard et la sortie d'erreur suffit le plus souvent : `kubectl logs` les affiche, et un collecteur comme Fluent Bit ou Grafana Alloy (qui remplace Promtail, en fin de vie depuis mars 2026) peut les envoyer vers Loki ou Elasticsearch si vous centralisez vos logs.
 
 ## Voir aussi
 
 - [Linux : Programmer une tâche avec cron]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
-- [K8s : Comment déployer un cluster kubernetes bare-metal]({% post_url 2021-01-27-Comment-déployer-Kubernetes %})
+- [Kubernetes : Comment déployer un cluster k8s bare-metal avec k3s]({% post_url 2021-01-27-Comment-déployer-Kubernetes %})
 - [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %})
-- [Comment transformer un JSON en CSV avec jq]({% post_url 2025-10-19-Comment-transformer-un-JSON-en-CSV-avec-jq %})
+- [Documentation Kubernetes : CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/)
+- [Référence de l'API CronJob](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/cron-job-v1/)
+- [Documentation Kubernetes : Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/)

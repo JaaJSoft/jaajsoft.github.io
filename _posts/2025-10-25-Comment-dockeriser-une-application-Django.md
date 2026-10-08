@@ -1,7 +1,7 @@
 ---
 layout: article
 title: "Comment dockeriser une application Django"
-description: "Dockeriser une application Django pas à pas avec Gunicorn : Dockerfile minimal, lancement en production et docker-compose avec PostgreSQL."
+description: "Dockeriser une application Django pas à pas avec Gunicorn : Dockerfile minimal, lancement en production et Docker Compose avec PostgreSQL."
 tags:
   - python
   - django
@@ -10,28 +10,26 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, nous allons dockeriser une application Django pas à pas, avec Gunicorn.
+Dans ce tutoriel, nous allons dockeriser une application Django pas à pas : réglages de production, image Docker avec Gunicorn, puis Docker Compose avec une base Postgres.
 <!--more-->
 
 Dans cet article :
-- Préparer le projet Django (réglages prod, statiques)
-- Choisir les dépendances (gunicorn, whitenoise, etc.)
-- Écrire un Dockerfile propre
-- Lancer en prod avec Gunicorn
-- Avec docker-compose et Postgres
-- Différences entre développement et production
+- Préparer le projet Django
+- Les dépendances
+- Le Dockerfile
+- Lancer l'image
+- Docker Compose avec Postgres
+- En développement
 
-Pré-requis :
-- Connaissances de base de Python et Django
-- Avoir un projet Django fonctionnel
+Pré-requis : connaître les bases de Django et avoir un projet qui démarre en local. Pour les bases de Docker, l'article [Comment dockeriser une application flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %}) suit la même démarche avec Flask.
 
----
+Versions utilisées : Django 5.2 (LTS), Gunicorn 26, WhiteNoise 6.12, Python 3.12 et Postgres 18.
 
-## Préparer votre projet Django
+## Préparer le projet Django
 
-Avant de dockeriser, assurez-vous d'avoir un projet Django qui démarre localement. Pour la suite, supposons que votre module de configuration s'appelle `config` (créé via `django-admin startproject config .`). Adaptez si nécessaire.
+Pour la suite, on suppose que le module de configuration s'appelle `config` (projet créé avec `django-admin startproject config .`). Adaptez les chemins si le vôtre porte un autre nom.
 
-Réglages recommandés dans `config/settings.py` (ou `settings/production.py` si vous avez une config par environnements) :
+Dans un conteneur, la configuration passe par des variables d'environnement. Voici les réglages à adapter dans `config/settings.py` :
 
 ```python
 # config/settings.py (extrait)
@@ -44,7 +42,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 DEBUG = bool(int(os.getenv("DEBUG", "0")))
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 
-# Static files (servis par WhiteNoise en prod pour simplifier)
+# Fichiers statiques, servis par WhiteNoise
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
@@ -55,13 +53,13 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    # WhiteNoise doit être placé tôt dans la chaîne
+    # WhiteNoise juste après SecurityMiddleware
     "whitenoise.middleware.WhiteNoiseMiddleware",
     # ...
 ]
 
-# Compression/Cache des statiques (Django 4.2+)
-# STATICFILES_STORAGE a été remplacé par STORAGES (et supprimé en Django 5.1)
+# Compression et noms versionnés pour les statiques
+# (STORAGES remplace STATICFILES_STORAGE, supprimé en Django 5.1)
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -71,9 +69,8 @@ STORAGES = {
     },
 }
 
-# Base de données (simple: sqlite par défaut, Postgres via variables d'env)
+# SQLite par défaut, Postgres (ou autre) si DATABASE_URL est définie
 if os.getenv("DATABASE_URL"):
-    # Option 1: via dj-database-url (pratique)
     import dj_database_url
     DATABASES = {
         "default": dj_database_url.parse(os.getenv("DATABASE_URL"), conn_max_age=600)
@@ -87,48 +84,47 @@ else:
     }
 ```
 
-Points clés :
+`SECRET_KEY`, `DEBUG` et `ALLOWED_HOSTS` viennent de l'environnement, avec des valeurs par défaut qui permettent de lancer le projet sans rien configurer (`DEBUG` est alors désactivé). Attention à la valeur `"*"` pour `ALLOWED_HOSTS` : elle accepte n'importe quel en-tête `Host`, ce qui revient à désactiver la vérification que fait Django contre les attaques par en-tête `Host`. En production, listez vos domaines : `ALLOWED_HOSTS=monapp.fr,www.monapp.fr`.
 
-- `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS` doivent venir de l'environnement.
-- Attention : la valeur par défaut `"*"` pour `ALLOWED_HOSTS` est pratique pour démarrer, mais elle est à proscrire en production car elle désactive la protection contre les attaques par en-tête `Host`. En production, renseignez explicitement vos domaines (ex: `ALLOWED_HOSTS=monapp.fr,www.monapp.fr`).
-- `STATIC_ROOT` + WhiteNoise permettent de servir facilement les fichiers statiques sans Nginx. Pour un trafic élevé ou du contenu média, un Nginx ou un stockage externe (S3, GCS) reste conseillé.
-- `DATABASE_URL` vous permet d'activer Postgres ou MySQL en un seul env var (ex: `postgres://user:pass@db:5432/app`).
+WhiteNoise permet à Gunicorn de servir lui-même les fichiers statiques, sans Nginx devant. Sa documentation demande de le placer juste après `SecurityMiddleware`, avant tous les autres middlewares. Le stockage `CompressedManifestStaticFilesStorage` ajoute une empreinte dans le nom des fichiers, pour que les navigateurs puissent les garder en cache indéfiniment. Il en crée aussi des versions compressées au moment du `collectstatic`. Par contre, WhiteNoise ne sert pas les fichiers envoyés par les utilisateurs (`media`) : il leur faut un stockage dédié, S3 ou GCS par exemple.
 
-Avant le build, vérifiez que vos statiques se collectent correctement :
+Avec `DATABASE_URL`, une seule variable suffit pour passer à Postgres ou MySQL, par exemple `postgres://user:pass@db:5432/app`.
+
+Avant de construire l'image, vérifiez que la collecte des fichiers statiques fonctionne :
 
 ```bash
 python manage.py collectstatic --noinput
 ```
 
----
+Avec le stockage "Manifest", cette étape n'a rien d'optionnel : si elle n'a pas été faite, Django ne trouve pas le fichier `staticfiles.json` et, avec `DEBUG` à 0, chaque page qui fait référence à un fichier statique part en erreur 500 avec `ValueError: Missing staticfiles manifest entry for 'admin/css/base.css'`.
 
-## Dépendances utiles
+Enfin, `python manage.py check --deploy` passe en revue les réglages de sécurité attendus en production. Avec les valeurs par défaut ci-dessus, il signale par exemple que la clé `dev-secret-key` est trop faible (`security.W009`) et que les cookies de session et CSRF ne sont pas marqués `Secure`. Lancez-le avec les variables d'environnement de la production.
 
-Ajoutez (au minimum) dans votre `requirements.txt` :
+## Les dépendances
+
+Le fichier `requirements.txt` doit contenir au minimum :
 
 ```
-Django>=4.2
-# Serveur WSGI de prod
+Django~=5.2.0
+# Serveur WSGI de production
 gunicorn
-# Statiques en prod sans nginx
+# Fichiers statiques sans Nginx
 whitenoise
-# Parsing de DATABASE_URL (optionnel mais pratique)
+# Lecture de DATABASE_URL
 dj-database-url
 ```
 
-Si vous voulez utiliser Postgres :
+Pour Postgres, on ajoute le connecteur :
 
 ```
 psycopg[binary]
 ```
 
-> Note : `psycopg` est la version 3 du connecteur Postgres pour Python. C'est la recommandation pour les nouveaux projets. Django fonctionne nativement avec `psycopg` sans changer l'ENGINE (laissez `django.db.backends.postgresql`). Si vous avez déjà un historique avec psycopg2, `psycopg2-binary` continue de fonctionner, mais migrez idéalement vers psycopg 3.
+`psycopg` est la version 3 du connecteur Postgres pour Python, celle que Django recommande. Elle utilise le même `ENGINE` que psycopg2 (`django.db.backends.postgresql`) : rien à changer dans les réglages. L'extra `[binary]` installe une version précompilée qui embarque libpq (y compris pour Alpine) : il n'y a donc rien à compiler. Un projet existant peut garder `psycopg2-binary`, mais la documentation de Django prévient que sa prise en charge sera sans doute retirée un jour.
 
----
+## Le Dockerfile
 
-## Dockerfile minimal
-
-On va partir d'une image officielle Python "slim" (souvent plus simple que alpine pour compiler certaines libs) et préparer un conteneur prêt pour Django.
+On part de l'image officielle `python:3.12-slim`, basée sur Debian, souvent plus simple qu'Alpine quand une dépendance doit être compilée. Créez ce `Dockerfile` à la racine du projet :
 
 ```dockerfile
 # Dockerfile
@@ -137,59 +133,58 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Création d'un user non-root (bonne pratique)
+# Utilisateur sans privilèges pour faire tourner l'application
 RUN useradd -m appuser
 
 WORKDIR /app
 
-# Dépendances système minimales (et nettoyage)
+# Outils de compilation (inutiles si toutes vos dépendances ont une wheel)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Installer les dépendances Python en amont pour profiter du cache Docker
+# Les dépendances d'abord, pour profiter du cache de Docker
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copier le code
+# Puis le code
 COPY . .
 
-# Collecte des statiques à l'image (facilite le run)
-# Ces variables seront surchargées en runtime via docker-compose/env
 ENV DJANGO_SETTINGS_MODULE=config.settings \
-    SECRET_KEY=build-secret \
-    DEBUG=0 \
-    ALLOWED_HOSTS="*"
+    GUNICORN_WORKERS=3
 
-# Nombre de workers Gunicorn paramétrable (valeur par défaut)
-ENV GUNICORN_WORKERS=3
-
+# Collecte des fichiers statiques dans l'image
 RUN python manage.py collectstatic --noinput
 
-# Droits et port
 RUN chown -R appuser:appuser /app
 USER appuser
 EXPOSE 8000
 
-# Commande de démarrage (Gunicorn)
-# Remplacez `config.wsgi:application` par votre chemin WSGI si besoin
-# Forme shell pour interpoler ${GUNICORN_WORKERS}
-CMD ["sh", "-c", "gunicorn config.wsgi:application -b 0.0.0.0:8000 -w ${GUNICORN_WORKERS}"]
+# Remplacez config.wsgi:application par le chemin WSGI de votre projet
+CMD ["sh", "-c", "exec gunicorn config.wsgi:application -b 0.0.0.0:8000 -w ${GUNICORN_WORKERS}"]
 ```
 
-> À propos de `-w` (workers Gunicorn) :
-> - L'option `-w 3` indique à Gunicorn de démarrer 3 processus "workers".
-> - Chaque worker traite les requêtes de façon indépendante. Augmenter le nombre de workers augmente la capacité de traitement concurrente (au prix d'un peu plus de mémoire).
-> - Règle empirique souvent citée : `workers = 2 * CPU + 1`. Ce n'est qu'un point de départ : mesurez et ajustez selon votre charge (I/O, CPU) et votre budget RAM.
-> - Trop peu de workers saturent vite votre app, trop de workers consomment inutilement de la mémoire et peuvent nuire aux performances.
+L'ordre des instructions compte : comme `requirements.txt` est copié et les dépendances installées avant le reste du code, Docker réutilise ces couches tant que `requirements.txt` ne change pas. Une modification du code ne relance donc pas le `pip install`.
 
-Notes :
+Le paquet `build-essential` ne sert que si une de vos dépendances doit être compilée. Celles de cet article ont toutes une version précompilée (wheel), vous pouvez donc retirer ce `RUN` pour alléger l'image.
 
-- Pour SQLite, rien à installer côté système. Pour Postgres, `psycopg[binary]` (psycopg 3) suffit souvent avec l'image `slim`. Sur alpine, il faut en général ajouter `musl-dev`, `gcc`, `postgresql-dev`. Si vous souhaitez la variante optimisée C, utilisez `psycopg[c]` et installez les dépendances de compilation adéquates.
-- On exécute `collectstatic` au build pour accélérer le run. Vous pouvez aussi le faire à l'entrée du conteneur si vos pipelines l'exigent.
-- On expose 8000 (Gunicorn), libre à vous de mapper vers 80 ou 8080 côté hôte.
+Le `collectstatic` est fait pendant le build, l'image contient donc déjà les fichiers statiques compressés. Avec les réglages précédents, la commande se contente des valeurs par défaut. Si vos réglages exigent une clé secrète (par exemple `SECRET_KEY = os.environ["SECRET_KEY"]`), passez une valeur factice à cette seule commande :
 
-Pensez au `.dockerignore` (évite d'envoyer des fichiers inutiles) :
+```dockerfile
+RUN SECRET_KEY=factice python manage.py collectstatic --noinput
+```
+
+Évitez de la mettre dans un `ENV` : ces variables restent dans l'image (`docker inspect` les affiche) et s'appliqueraient au conteneur si vous oubliiez de passer la vraie valeur au lancement.
+
+L'option `-b 0.0.0.0:8000` est nécessaire : par défaut, Gunicorn n'écoute que sur `127.0.0.1`, une adresse injoignable depuis l'extérieur du conteneur. Le mot-clé `exec` a aussi son importance. On passe par `sh -c` pour que `${GUNICORN_WORKERS}` soit remplacé par sa valeur, mais sans `exec`, le shell reste le processus principal du conteneur (le PID 1) et Gunicorn tourne en dessous. Or `docker stop` envoie son signal d'arrêt au PID 1 : le shell ne le transmet pas, Gunicorn ne s'arrête pas proprement et Docker finit par tuer le conteneur au bout de 10 secondes. Avec `exec`, Gunicorn remplace le shell et reçoit directement le signal.
+
+Si votre module de configuration ne s'appelle pas `config`, pensez à adapter `config.wsgi:application`, sinon les workers ne démarrent pas et le log affiche `ModuleNotFoundError: No module named 'config'`.
+
+L'option `-w` fixe le nombre de *workers*. Ce sont des processus indépendants, et avec le type de worker par défaut (synchrone), chacun traite une requête à la fois. Augmenter leur nombre permet de traiter plus de requêtes en parallèle, au prix de plus de mémoire. La documentation de Gunicorn conseille de partir de `2 * nombre de cœurs + 1` et d'ajuster selon la charge, en précisant que 4 à 12 workers suffisent en général, même pour un trafic important.
+
+Nginx n'est pas obligatoire pour démarrer : WhiteNoise sert les statiques et Gunicorn le reste. Gunicorn recommande tout de même de placer devant ses workers synchrones un proxy comme Nginx, qui met en tampon les échanges avec les clients lents : sans lui, quelques connexions lentes suffisent à occuper tous les workers. Un reverse proxy devient aussi utile pour le TLS ou pour héberger plusieurs applications sur la même machine.
+
+Pensez aussi au fichier `.dockerignore`, à côté du Dockerfile, pour ne pas envoyer dans l'image l'historique git, les secrets locaux ou votre base SQLite de développement :
 
 ```
 .git
@@ -197,21 +192,21 @@ Pensez au `.dockerignore` (évite d'envoyer des fichiers inutiles) :
 __pycache__
 *.pyc
 .env
+.venv/
+db.sqlite3
 media/
 node_modules/
 ```
 
----
+## Lancer l'image
 
-## Lancer l'image en production
-
-Build :
+On construit l'image :
 
 ```bash
 docker build -t mon_app_django:latest .
 ```
 
-Run (SQLite, sans DB externe) :
+Puis on la lance en passant la configuration par l'environnement :
 
 ```bash
 docker run -p 8000:8000 \
@@ -221,17 +216,36 @@ docker run -p 8000:8000 \
   mon_app_django:latest
 ```
 
-Vérifiez :
+Sur un projet tout neuf, il n'y a pas de page d'accueil (la racine renvoie une 404), mais l'administration répond par une redirection vers sa page de connexion :
 
 ```bash
-curl http://127.0.0.1:8000/
+curl -I http://127.0.0.1:8000/admin/
 ```
 
----
+Vous devriez obtenir quelque chose comme :
 
-## docker-compose avec Postgres
+```
+HTTP/1.1 302 Found
+Server: gunicorn
+Date: Wed, 07 Oct 2026 20:14:22 GMT
+Connection: close
+Content-Type: text/html; charset=utf-8
+Location: /admin/login/?next=/admin/
+Expires: Wed, 07 Oct 2026 20:14:22 GMT
+Cache-Control: max-age=0, no-cache, no-store, must-revalidate, private
+X-Frame-Options: DENY
+Content-Length: 0
+Vary: Cookie
+X-Content-Type-Options: nosniff
+Referrer-Policy: same-origin
+Cross-Origin-Opener-Policy: same-origin
+```
 
-Pour une stack plus réaliste, utilisons Postgres via `docker-compose.yml` :
+Ici, les migrations ne sont pas appliquées et la base SQLite disparaît avec le conteneur : c'est suffisant pour vérifier que l'image démarre, pas pour s'en servir. Pour une vraie base, on passe à Docker Compose.
+
+## Docker Compose avec Postgres
+
+On décrit les deux services, l'application et Postgres, dans un fichier `docker-compose.yml` :
 
 ```yaml
 # docker-compose.yml
@@ -260,36 +274,38 @@ services:
       ALLOWED_HOSTS: "localhost,127.0.0.1"
       DJANGO_SETTINGS_MODULE: "config.settings"
       DATABASE_URL: "postgres://app:app@db:5432/app"
-      GUNICORN_WORKERS: "4"  # override du nombre de workers au run
+      GUNICORN_WORKERS: "4"  # remplace la valeur par défaut du Dockerfile
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
-    # On utilise la CMD du Dockerfile (forme shell) qui lit GUNICORN_WORKERS
+    # Pas de command : on garde la CMD du Dockerfile, qui lit GUNICORN_WORKERS
 
 volumes:
   pgdata:
 ```
 
-Initialisez la base et un compte admin :
+Le `healthcheck` utilise `pg_isready` pour savoir quand Postgres accepte les connexions, et `condition: service_healthy` fait attendre le service `web` jusque-là.
+
+Attention au volume : depuis Postgres 18, l'image officielle déclare son volume sur `/var/lib/postgresql` et range les données dans un sous-dossier par version (`/var/lib/postgresql/18/docker`). Avec une version 17 ou plus ancienne, il faut monter `/var/lib/postgresql/data`, sinon les données ne survivent pas à la recréation du conteneur.
+
+On crée ensuite le schéma et un compte administrateur, puis on démarre le tout :
 
 ```bash
-# créer/mettre à jour le schéma
+# Créer ou mettre à jour le schéma
 docker compose run --rm web python manage.py migrate
-# créer un superutilisateur
+# Créer un superutilisateur
 docker compose run --rm web python manage.py createsuperuser
-# lancer les services
+# Lancer les services
 docker compose up -d
 ```
 
-Vous pouvez maintenant accéder à votre app sur http://127.0.0.1:8000/ et à l'admin Django sur http://127.0.0.1:8000/admin/.
+`docker compose run` démarre au passage le service `db` dont dépend `web`, et `--rm` supprime le conteneur une fois la commande terminée. L'application répond maintenant sur http://127.0.0.1:8000/ et l'administration sur http://127.0.0.1:8000/admin/.
 
----
+## En développement
 
-## Développement vs production
-
-Serveur de développement : pour un feedback instantané, vous pouvez lancer `runserver` et monter le code en volume :
+Pour développer avec le rechargement automatique du code, on remplace Gunicorn par `runserver` et on monte le dossier du projet dans le conteneur. Ces changements vont dans un fichier `docker-compose.override.yml` :
 
 ```yaml
 # docker-compose.override.yml (exemple dev)
@@ -302,43 +318,14 @@ services:
       - ./:/app
 ```
 
-Collecte des statiques : en dev, ce n'est pas indispensable. En prod, exécutez `collectstatic` (au build ou au déploiement) pour servir via WhiteNoise.
-
-Nginx : non indispensable dans ce guide. Pour la plupart des projets, vous pouvez démarrer sans, puis ajouter Nginx quand vous aurez besoin de TLS, d'assets lourds ou d'un reverse proxy multi-apps.
-
-Rate limiting, cache, sécurité : au-delà de Django, pensez à votre infrastructure (rate limiter avec Redis, durcir votre serveur avec Fail2ban).
-
----
-
-## Dépannage (FAQ)
-
-- Problème d'`ALLOWED_HOSTS` : en prod, mettez le FQDN (ex: `monapp.fr`). En dev, `localhost,127.0.0.1` suffisent.
-- Fichiers statiques manquants (404) : assurez-vous d'avoir lancé `collectstatic`, que WhiteNoise est bien dans le `MIDDLEWARE` et que `STATIC_ROOT` existe.
-- ImportError `config.wsgi` : adaptez le chemin de votre projet (`<nom_du_projet>.wsgi:application`) dans la commande Gunicorn.
-- Postgres ne démarre pas : vérifiez `depends_on` et la santé du service `db`.
-
----
-
-## Conclusion
-
-Vous avez maintenant une base saine pour conteneuriser votre application Django, avec un Dockerfile propre, un serveur WSGI de production, et une orchestration simplifiée via docker-compose.
-
-À partir d'ici, vous pouvez ajouter un reverse proxy (Nginx, Traefik), une CI/CD, des workers asynchrones (Celery + Redis), ainsi que du monitoring et de la journalisation centralisée.
-
----
-
-## Pour aller plus loin
-
-- [Documentation Django (deploy checklist)](https://docs.djangoproject.com/en/stable/howto/deployment/checklist/)
-- [Documentation Gunicorn](https://docs.gunicorn.org/en/stable/)
-- [Documentation WhiteNoise](http://whitenoise.evans.io/)
+Docker Compose lit automatiquement ce fichier en plus de `docker-compose.yml` lors d'un `docker compose up` : il doit donc rester sur les postes de développement et ne jamais se retrouver sur le serveur de production. Avec `DEBUG` à 1, `runserver` sert lui-même les fichiers statiques : le `collectstatic` n'est pas nécessaire.
 
 ## Voir aussi
 
+- [Comment dockeriser une application flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %})
+- [Comment dockeriser une application FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
+- [Accélérer Django avec la compression HTTP]({% post_url 2025-12-13-Accelerer-Django-avec-la-compression-GZip %})
 - [Comment ajouter du cache à une application Django]({% post_url 2025-11-01-Comment-ajouter-du-cache-a-une-application-Django %})
-- [Accélérer Django avec la compression GZip]({% post_url 2025-12-13-Accelerer-Django-avec-la-compression-GZip %})
-- [Déboguer les requêtes SQL et problèmes N+1 dans Django]({% post_url 2025-12-21-Deboguer-les-requetes-SQL-et-problemes-N-plus-1-dans-Django %})
-- [Comment dockeriser une application Flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %})
-- [Comment dockeriser une API web avec FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
-- [Limiter le rate d'une API FastAPI avec Redis]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
-- [Installer et configurer Fail2ban sur Ubuntu/Debian]({% post_url 2025-09-21-Installer-et-configurer-Fail2ban-sur-Ubuntu-Debian %})
+- [Checklist de déploiement de Django](https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/)
+- [Documentation de Gunicorn](https://gunicorn.org/)
+- [Documentation de WhiteNoise](https://whitenoise.readthedocs.io/)

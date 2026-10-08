@@ -72,7 +72,7 @@ Notre fichier csv exporté contient :
 
 Comme on peut le voir, par défaut l'index du dataframe est exporté. Ce qui n'est pas forcément le comportement voulu...
 
-Pour régler ça on passe l'option `index=False` à la méthode :
+Pour régler ça, on passe l'option `index=False` à la méthode :
 
 ```python
 df.to_csv(
@@ -126,8 +126,8 @@ df.to_csv(
 
 ### Chargement des données depuis un csv
 
-Maintenant qu'on sait exporter nos données vers un fichier csv.
-Comment charger les données depuis ce même format ?
+Maintenant qu'on sait exporter nos données vers un fichier csv,
+comment charger les données depuis ce même format ?
 
 Pour cela, nous allons utiliser la fonction `read_csv` de pandas :
 
@@ -135,7 +135,7 @@ Pour cela, nous allons utiliser la fonction `read_csv` de pandas :
 new_df = pd.read_csv("export_without_index.csv", sep=';')
 print(new_df.to_string())
 ```
-On passe comme pour l'export le format de notre séparateur.
+On passe, comme pour l'export, notre séparateur.
 
 ```
    A  B   C   D
@@ -173,8 +173,8 @@ Super, on a notre première persistance de données avec pandas !
 ## Persistance au format Excel
 
 Excel est utilisé partout de nos jours, il peut être pratique d'extraire nos données de notre dataframe au format Excel
-afin de le partager à d'autres équipes.
-Ou à l'inverse d'autres équipes non techniques peuvent nous fournir des données au format Excel.
+afin de les partager avec d'autres équipes.
+Ou, à l'inverse, d'autres équipes non techniques peuvent nous fournir des données au format Excel.
 
 ### Pré-requis
 
@@ -201,7 +201,7 @@ Toutes les options présentées précédemment avec le format csv sont aussi dis
 
 ### Chargement des données depuis un Excel
 
-Pour charger des données depuis un Excel comme avec un csv, on utilise une fonction de pandas `read_excel`.
+Pour charger des données depuis un Excel comme avec un csv, on utilise une fonction de pandas, `read_excel`.
 
 ```python
 excel_df = pd.read_excel(
@@ -231,8 +231,8 @@ Voilà, vous êtes maintenant capable de sauvegarder et charger vos _dataframes_
 
 - [La documentation de Pandas](https://pandas.pydata.org/docs/)
 - [Automatiser le nettoyage de données avec pandas]({% post_url 2025-12-14-Automatiser-le-nettoyage-de-donnees-avec-pandas %})
-- [Comment faire des group by en Python]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
-- [Comment merger deux DataFrame pandas]({% post_url 2025-08-31-Comment-merger-deux-dataframe-pandas %})
-- [Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
-- [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
-- [Comment faire une api avec flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
+- [Python : Comment faire des group by]({% post_url 2025-10-08-Comment-faire-des-group-by-en-python %})
+- [Python : Comment merger deux DataFrame pandas]({% post_url 2025-08-31-Comment-merger-deux-dataframe-pandas %})
+- [Python : Comment sauvegarder des tableaux NumPy]({% post_url 2022-01-25-Comment-sauvegarder-un-tableau-numpy %})
+- [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+- [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})

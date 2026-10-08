@@ -11,540 +11,276 @@ tags:
 author: Pierre Chopinet
 ---
 
-Maintenir un système Linux à jour est crucial pour la sécurité, mais gérer manuellement les mises à jour peut être fastidieux. Ubuntu et Debian offrent des mécanismes pour automatiser les mises à jour de sécurité, garantissant que les correctifs critiques sont appliqués sans intervention humaine. Ce guide vous montre comment configurer et gérer ces mises à jour automatiques en toute sécurité.
+Sur un serveur, un correctif de sécurité ne sert à rien tant qu'il n'est pas installé, et attendre de penser à lancer `apt upgrade` peut laisser une faille ouverte pendant des semaines. Ubuntu et Debian fournissent pour cela le paquet `unattended-upgrades`, qui installe automatiquement les mises à jour de sécurité tous les jours. Dans ce tutoriel, nous allons voir comment l'activer, choisir ce qu'il installe et vérifier qu'il fait bien son travail.
 <!--more-->
 
-Dans ce guide, vous allez apprendre à :
+Dans cet article :
+- Installation et activation
+- Comment les mises à jour sont lancées
+- Choisir les mises à jour installées
+- Exclure certains paquets
+- Gérer les redémarrages
+- Supprimer les paquets devenus inutiles
+- Recevoir un rapport par mail
+- Tester la configuration et lire les logs
+- Désactiver les mises à jour automatiques
 
-- Comprendre les différents types de mises à jour (sécurité, recommandées, toutes)
-- Installer et configurer `unattended-upgrades`
-- Personnaliser le comportement des mises à jour automatiques
-- Configurer les notifications par email
-- Gérer les redémarrages automatiques si nécessaire
-- Vérifier et surveiller les mises à jour appliquées
-- Résoudre les problèmes courants
+Pré-requis : Ubuntu ou Debian, avec un accès root ou `sudo`. Les commandes et les sorties de l'article ont été testées sur Ubuntu 24.04, avec unattended-upgrades 2.9.1.
 
-Pré-requis :
-- Ubuntu 16.04+ ou Debian 9+ (la plupart des distributions récentes)
-- Accès root ou sudo
+## Installation et activation
 
----
-
-## Pourquoi activer les mises à jour automatiques ?
-
-**Avantages**
-
-- **Sécurité renforcée** : les failles de sécurité sont corrigées rapidement, réduisant la fenêtre d'exposition aux attaques.
-- **Gain de temps** : plus besoin de surveiller et d'appliquer manuellement les mises à jour de sécurité.
-- **Conformité** : facilite le respect des politiques de sécurité et de conformité (ISO 27001, PCI-DSS).
-- **Stabilité** : les mises à jour de sécurité sont généralement testées et ne cassent pas le système.
-
-**Précautions**
-
-- **Mises à jour de paquets critiques** : certaines mises à jour peuvent nécessiter un redémarrage (kernel, libc, systemd).
-- **Applications personnalisées** : les mises à jour peuvent potentiellement affecter des configurations spécifiques.
-- **Bande passante** : les téléchargements automatiques consomment de la bande passante.
-
-> Recommandation : activez les mises à jour automatiques de sécurité uniquement (pas toutes les mises à jour) pour minimiser les risques.
-
----
-
-## Vérifier l'état actuel
-
-Avant de commencer, vérifiez si `unattended-upgrades` est déjà installé :
+Sur Ubuntu, `unattended-upgrades` est installé par défaut et les mises à jour de sécurité automatiques sont actives dès l'installation du système. Pour vérifier que le paquet est bien là :
 
 ```bash
-# Vérifier si le paquet est installé
-dpkg -l | grep unattended-upgrades
-
-# Vérifier le statut du service
-systemctl status unattended-upgrades
+dpkg -l unattended-upgrades
 ```
 
-Si le paquet n'est pas installé, vous verrez une sortie vide ou une erreur.
+La dernière ligne doit commencer par `ii`, ce qui signifie que le paquet est installé :
 
----
-
-## Installation de unattended-upgrades
-
-### Sur Ubuntu
-
-Sur Ubuntu, `unattended-upgrades` est généralement préinstallé. Si ce n'est pas le cas :
-
-```bash
-sudo apt update
-sudo apt install unattended-upgrades
+```
+ii  unattended-upgrades 2.9.1+nmu4ubuntu1 all          automatic installation of security upgrades
 ```
 
-### Sur Debian
+Sinon, on l'installe. Sur Debian, on peut y ajouter `apt-listchanges`, qui permet de recevoir par mail les nouveautés importantes des paquets mis à jour (nous y reviendrons) :
 
 ```bash
 sudo apt update
 sudo apt install unattended-upgrades apt-listchanges
 ```
 
-> Note : `apt-listchanges` est optionnel mais recommandé pour voir les changements avant qu'ils ne soient appliqués.
-
----
-
-## Configuration de base (mises à jour de sécurité uniquement)
-
-### Méthode rapide (recommandée pour débuter)
-
-Utilisez l'outil interactif de configuration :
+À l'installation, le paquet active directement les mises à jour automatiques. Pour les activer (ou les désactiver) par la suite, on relance sa configuration :
 
 ```bash
 sudo dpkg-reconfigure -plow unattended-upgrades
 ```
 
-Sélectionnez **Yes** (Oui) pour activer les mises à jour automatiques de sécurité.
+L'option `-plow` demande d'afficher les questions de priorité basse, comme celle de ce paquet. `dpkg-reconfigure` le fait déjà par défaut, mais c'est la commande que donne le README du projet. Répondez *Yes* à la question "Automatically download and install stable updates?". La commande écrit alors le fichier `/etc/apt/apt.conf.d/20auto-upgrades` :
 
-Cela crée automatiquement le fichier `/etc/apt/apt.conf.d/20auto-upgrades` avec le contenu suivant :
-
-```
+```conf
 APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 ```
 
-### Vérification
+La première ligne met à jour la liste des paquets, comme un `apt update`, et la seconde lance `unattended-upgrades`. La valeur est un intervalle en jours : `1` pour tous les jours, `2` pour tous les deux jours, `0` pour désactiver. Pour voir la configuration réellement prise en compte par APT, tous fichiers confondus, on utilise `apt-config` :
 
 ```bash
-cat /etc/apt/apt.conf.d/20auto-upgrades
+apt-config dump APT::Periodic
 ```
 
-Vous devriez voir :
-- `Update-Package-Lists "1"` : met à jour la liste des paquets quotidiennement
-- `Unattended-Upgrade "1"` : active les mises à jour automatiques
+```
+APT::Periodic "";
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+```
 
----
+Le même fichier accepte d'autres options. `APT::Periodic::AutocleanInterval "7";` vide chaque semaine le cache des paquets téléchargés qui ne sont plus disponibles dans les dépôts, comme un `apt-get autoclean`. `APT::Periodic::Download-Upgradeable-Packages "1";` télécharge chaque jour toutes les mises à jour disponibles sans les installer, ce qui accélère un `apt upgrade` manuel.
 
-## Configuration avancée
+## Comment les mises à jour sont lancées
 
-Le fichier principal de configuration est `/etc/apt/apt.conf.d/50unattended-upgrades`.
+Avec systemd, ce sont deux timers d'APT qui font le travail :
 
-Ouvrez-le pour personnaliser les options :
+- `apt-daily.timer` met à jour la liste des paquets et télécharge les mises à jour, à 6 h et à 18 h (avec un délai aléatoire d'au plus 12 heures) ;
+- `apt-daily-upgrade.timer` installe les mises à jour avec `unattended-upgrades` et nettoie le cache, à 6 h (avec un délai aléatoire d'au plus une heure).
+
+Les délais aléatoires évitent que toutes les machines interrogent les miroirs en même temps. Les deux timers lancent le script `/usr/lib/apt/apt.systemd.daily`, qui lit les options `APT::Periodic` vues plus haut. Pour voir leur prochaine exécution (colonne `NEXT`) et la dernière (colonne `LAST`) :
 
 ```bash
-sudo nano /etc/apt/apt.conf.d/50unattended-upgrades
+systemctl list-timers apt-daily.timer apt-daily-upgrade.timer
 ```
 
-### Choisir les sources de mise à jour
+Les timers ont l'option `Persistent=true` : si la machine était éteinte à l'heure prévue, la tâche est lancée au démarrage suivant. C'est pour cela que `unattended-upgrades` tourne parfois juste après le boot, et qu'un `apt install` lancé à ce moment doit attendre qu'il ait fini.
 
-Par défaut, seules les mises à jour de sécurité sont activées. Voici les lignes importantes (décommentez selon vos besoins).
+Attention, le service `unattended-upgrades.service` ne lance pas les mises à jour, comme le rappelle sa description ("Unattended Upgrades Shutdown"). Son statut ne dit donc rien sur les mises à jour quotidiennes. Il ne sert qu'à l'extinction de la machine : si une mise à jour est en cours, il demande à `unattended-upgrades` de s'arrêter et attend que celui-ci ait terminé. Cela fonctionne grâce à l'option `MinimalSteps`, active par défaut, qui fait installer les paquets par petits groupes pour pouvoir s'arrêter proprement entre deux. Et si une installation a quand même été interrompue, `unattended-upgrades` relance `dpkg --force-confold --configure -a` à son passage suivant (option `AutoFixInterruptedDpkg`, elle aussi active par défaut).
 
-Sur Ubuntu :
+Sur une machine sans systemd, c'est le script `/etc/cron.daily/apt-compat` qui prend le relais : il ne fait rien si systemd tourne, et lance sinon le même script `apt.systemd.daily`.
+
+## Choisir les mises à jour installées
+
+Tous les autres réglages se trouvent dans `/etc/apt/apt.conf.d/50unattended-upgrades`. Les lignes qui commencent par `//` sont des commentaires, et la plupart des options y figurent déjà, commentées, avec leur valeur par défaut.
+
+Le README du projet conseille de ne pas modifier ce fichier et de mettre vos réglages dans un fichier lu après lui, par exemple `/etc/apt/apt.conf.d/52unattended-upgrades-local`. Sinon, une nouvelle version du fichier livrée avec le paquet peut entrer en conflit avec vos modifications et bloquer la mise à jour d'`unattended-upgrades` lui-même. Les deux méthodes fonctionnent, et les exemples qui suivent peuvent aller dans l'un ou l'autre fichier.
+
+Sur Ubuntu, les dépôts autorisés sont listés dans `Allowed-Origins`. Voici la liste par défaut (sans ses commentaires) :
 
 ```conf
 Unattended-Upgrade::Allowed-Origins {
-    "${distro_id}:${distro_codename}";           // Mises à jour normales (déconseillé)
-    "${distro_id}:${distro_codename}-security";  // Mises à jour de sécurité (recommandé)
-    "${distro_id}ESMApps:${distro_codename}-apps-security"; // ESM (Ubuntu Pro)
-    "${distro_id}ESM:${distro_codename}-infra-security";     // ESM (Ubuntu Pro)
-//  "${distro_id}:${distro_codename}-updates";   // Mises à jour recommandées
-//  "${distro_id}:${distro_codename}-proposed";  // Paquets en test (NE PAS ACTIVER)
-//  "${distro_id}:${distro_codename}-backports"; // Backports (NE PAS ACTIVER)
+	"${distro_id}:${distro_codename}";
+	"${distro_id}:${distro_codename}-security";
+	"${distro_id}ESMApps:${distro_codename}-apps-security";
+	"${distro_id}ESM:${distro_codename}-infra-security";
+//	"${distro_id}:${distro_codename}-updates";
+//	"${distro_id}:${distro_codename}-proposed";
+//	"${distro_id}:${distro_codename}-backports";
 };
 ```
 
-Sur Debian :
+`${distro_id}` et `${distro_codename}` sont remplacés par le nom de la distribution et le nom de code de sa version : `Ubuntu` et `noble` pour Ubuntu 24.04. La première ligne autorise le dépôt principal de la version : d'après le commentaire du fichier, une mise à jour de sécurité peut avoir besoin d'une nouvelle dépendance qui se trouve dans ce dépôt. Viennent ensuite les mises à jour de sécurité, puis celles de l'ESM (*Expanded Security Maintenance*), disponibles avec Ubuntu Pro. Les lignes commentées correspondent aux mises à jour recommandées (`-updates`), qui corrigent des bugs sans lien avec la sécurité, aux paquets encore en test (`-proposed`, à ne pas activer sur un serveur) et aux backports (`-backports`).
+
+Pour installer aussi les corrections de bugs (ce que je déconseille en production), il suffit de décommenter la ligne `-updates`, ou de l'ajouter dans `52unattended-upgrades-local` :
+
+```conf
+Unattended-Upgrade::Allowed-Origins {
+    "${distro_id}:${distro_codename}-updates";
+};
+```
+
+Dans un fichier séparé, les listes s'ajoutent à celles du fichier d'origine, ce que l'on peut vérifier avec `apt-config dump Unattended-Upgrade::Allowed-Origins` :
+
+```
+Unattended-Upgrade::Allowed-Origins "";
+Unattended-Upgrade::Allowed-Origins:: "${distro_id}:${distro_codename}";
+Unattended-Upgrade::Allowed-Origins:: "${distro_id}:${distro_codename}-security";
+Unattended-Upgrade::Allowed-Origins:: "${distro_id}ESMApps:${distro_codename}-apps-security";
+Unattended-Upgrade::Allowed-Origins:: "${distro_id}ESM:${distro_codename}-infra-security";
+Unattended-Upgrade::Allowed-Origins:: "${distro_id}:${distro_codename}-updates";
+```
+
+Pour remplacer complètement la liste, il faut d'abord la vider avec `#clear` :
+
+```conf
+#clear Unattended-Upgrade::Allowed-Origins;
+Unattended-Upgrade::Allowed-Origins {
+    "${distro_id}:${distro_codename}-security";
+};
+```
+
+Sur Debian, la liste s'appelle `Origins-Pattern` et utilise une autre syntaxe. Voici ses lignes actives par défaut :
 
 ```conf
 Unattended-Upgrade::Origins-Pattern {
-    "origin=Debian,codename=${distro_codename},label=Debian";
-    "origin=Debian,codename=${distro_codename},label=Debian-Security"; // Sécurité (ancien format, Debian 10 et antérieurs)
-    "origin=Debian,codename=${distro_codename}-security,label=Debian-Security"; // Sécurité (format actuel, Debian 11+)
-//  "origin=Debian,codename=${distro_codename}-updates"; // Mises à jour recommandées
+        "origin=Debian,codename=${distro_codename},label=Debian";
+        "origin=Debian,codename=${distro_codename},label=Debian-Security";
+        "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
 };
 ```
 
-> Recommandation : laissez uniquement les lignes avec `-security` activées (sans `//` devant).
+La première ligne correspond au dépôt principal de la version, qui reçoit les mises à jour de chaque version intermédiaire de Debian. Contrairement à Ubuntu, la configuration par défaut de Debian installe donc les mises à jour de la version stable en plus des correctifs de sécurité, comme l'indique le README du projet. Les deux lignes suivantes correspondent au dépôt de sécurité, avec son ancien nom (jusqu'à Debian 10) et son nom actuel (`bookworm-security` par exemple, depuis Debian 11).
 
-### Mettre automatiquement à jour tous les paquets (optionnel)
+## Exclure certains paquets
 
-Si vous souhaitez aussi appliquer les mises à jour non-sécurité (déconseillé en production), décommentez la ligne :
-
-```conf
-// "${distro_id}:${distro_codename}-updates";
-```
-
-Enlevez le `//` :
-
-```conf
-"${distro_id}:${distro_codename}-updates";
-```
-
-### Exclure certains paquets (blacklist)
-
-Si vous voulez éviter la mise à jour automatique de certains paquets (ex: kernel, bases de données) :
+`Package-Blacklist` permet d'exclure des paquets, par exemple une base de données que l'on préfère mettre à jour soi-même, au moment choisi :
 
 ```conf
 Unattended-Upgrade::Package-Blacklist {
-    "linux-image-*";    // Noyau Linux (nécessite un redémarrage)
-    "mysql-server*";    // Serveur MySQL
-    "postgresql*";      // PostgreSQL
-    "nginx";            // Nginx
+    "mysql-server";    // mysql-server, mysql-server-8.0, mysql-server-core-8.0...
+    "postgresql-";     // tous les paquets qui commencent par postgresql-
+    "nginx$";          // seulement le paquet nginx
 };
 ```
 
-> Note : ces motifs sont des expressions régulières Python, pas des jokers shell. Ainsi `linux-image-*` signifie « `linux-image-` suivi de zéro ou plusieurs tirets » (le `*` porte sur le caractère précédent) ; pour matcher n'importe quel suffixe, écrivez plutôt `linux-image-.*` ou `linux-image`.
+Attention, ces motifs sont des expressions régulières Python, comparées au début du nom des paquets, et pas des jokers du shell. `"nginx"` exclurait donc aussi `nginx-common` ou `nginx-core` : pour viser un seul paquet, on termine le motif par `$`. De même, dans `"linux-image-*"`, l'étoile porte sur le tiret qui la précède et non sur la suite du nom. Comme la comparaison se fait sur le début du nom, ce motif exclut quand même tous les paquets qui commencent par `linux-image`, mais `"linux-image"` aurait suffi.
 
-### Redémarrage automatique (avec précaution)
+Un paquet exclu ne reçoit plus aucune mise à jour automatique, pas même ses correctifs de sécurité : il faudra les installer vous-même. Et d'après le README, si un paquet dépend d'un paquet exclu, aucun des deux n'est mis à jour.
 
-Certaines mises à jour (kernel, libc, systemd) nécessitent un redémarrage. Par défaut, le système ne redémarre pas automatiquement.
+## Gérer les redémarrages
 
-Pour activer le redémarrage automatique :
+Une mise à jour du noyau ou de la libc ne prend effet qu'après un redémarrage, ce que signale le fichier `/var/run/reboot-required`. Le nom des paquets concernés est ajouté dans `/var/run/reboot-required.pkgs` :
 
-```conf
-Unattended-Upgrade::Automatic-Reboot "true";
+```bash
+cat /var/run/reboot-required
+cat /var/run/reboot-required.pkgs
 ```
 
-Pour limiter le redémarrage à une plage horaire (ex: 3h du matin) :
+Si le premier fichier n'existe pas, aucun redémarrage n'est nécessaire. Sur Ubuntu, ce sont les paquets concernés qui le créent, avec le message `*** System restart required ***`, qui s'affiche aussi à la connexion. Sur Debian, c'est `unattended-upgrades` qui le crée, vide, après une mise à jour du noyau.
+
+Pour que la machine redémarre toute seule quand c'est nécessaire :
 
 ```conf
 Unattended-Upgrade::Automatic-Reboot "true";
 Unattended-Upgrade::Automatic-Reboot-Time "03:00";
 ```
 
-> Recommandation : activez cela uniquement si vous gérez des serveurs non-critiques ou si vous avez une redondance. Pour les serveurs en production, préférez un redémarrage planifié manuel.
+Le redémarrage se fait sans confirmation, à la fin de l'exécution d'`unattended-upgrades`, si `/var/run/reboot-required` existe. `Automatic-Reboot-Time` donne l'heure du redémarrage : la valeur est passée telle quelle à la commande `shutdown -r` et vaut `now` par défaut. La machine redémarre même si des utilisateurs sont connectés, sauf avec `Unattended-Upgrade::Automatic-Reboot-WithUsers "false";`.
 
-### Supprimer les paquets obsolètes et dépendances inutilisées
+Un redémarrage automatique coupe les services sans prévenir : c'est à réserver aux machines qui peuvent s'arrêter quelques minutes à 3 h du matin, ou qui sont redondées. Sur les serveurs de production, mieux vaut planifier les redémarrages soi-même.
+
+Toutes les mises à jour ne demandent pas de redémarrer la machine. Par contre, un service qui a chargé une bibliothèque mise à jour continue d'utiliser l'ancienne version tant qu'il n'est pas relancé. Depuis Ubuntu 24.04, le paquet `needrestart`, appelé après les mises à jour, redémarre automatiquement les services concernés.
+
+## Supprimer les paquets devenus inutiles
+
+Trois options gèrent le nettoyage après les mises à jour :
 
 ```conf
 Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
-Unattended-Upgrade::Remove-Unused-Dependencies "true";
 Unattended-Upgrade::Remove-New-Unused-Dependencies "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
 ```
 
-Cela équivaut à exécuter `apt autoremove` après chaque mise à jour.
+Les deux premières sont déjà actives par défaut : elles suppriment les anciens noyaux et les dépendances devenues inutiles à cause de la mise à jour. La troisième, désactivée par défaut, supprime toutes les dépendances inutiles, comme un `apt autoremove`.
 
-### Notifications par email
+## Recevoir un rapport par mail
 
-Pour recevoir un email après chaque mise à jour :
+Pour recevoir un mail après les mises à jour :
 
 ```conf
 Unattended-Upgrade::Mail "admin@example.com";
-Unattended-Upgrade::MailReport "on-change"; // Options: always, only-on-error, on-change
+Unattended-Upgrade::MailReport "on-change";
 ```
 
-Pré-requis : installez un agent de messagerie (ex: `postfix`, `sendmail`, `msmtp`) :
+`MailReport` accepte trois valeurs : `always` envoie un mail à chaque exécution, `only-on-error` seulement en cas d'erreur, et `on-change`, la valeur par défaut, seulement s'il s'est passé quelque chose (paquets installés, retenus ou supprimés, ou erreur).
+
+Pour envoyer ses mails, `unattended-upgrades` utilise `/usr/sbin/sendmail`, fourni par un serveur de mail comme Postfix, ou à défaut la commande `mail`. Le plus simple est d'installer Postfix, ainsi que `mailutils` pour avoir la commande `mail` :
 
 ```bash
-sudo apt install mailutils postfix
+sudo apt install postfix mailutils
 ```
 
-Lors de l'installation de `postfix`, choisissez **Internet Site** et entrez votre nom de domaine.
-
-Testez l'envoi d'email :
+Pendant l'installation de Postfix, choisissez *Internet Site* et entrez votre nom de domaine, ou *Internet with smarthost* si vos mails doivent passer par un relais SMTP. Testez ensuite l'envoi :
 
 ```bash
 echo "Test" | mail -s "Test email" admin@example.com
 ```
 
----
+Si `apt-listchanges` est installé et que `sendmail` est disponible, `unattended-upgrades` lui fait aussi envoyer par mail les nouveautés importantes des paquets mis à jour (les fichiers `NEWS.Debian`). Le destinataire, `root` par défaut, se règle dans `/etc/apt/listchanges.conf`.
 
-## Configuration de la fréquence des mises à jour
+## Tester la configuration et lire les logs
 
-Le fichier `/etc/apt/apt.conf.d/20auto-upgrades` contrôle la périodicité.
-
-Ouvrez-le :
+Pas besoin d'attendre le lendemain pour tester sa configuration, on peut lancer `unattended-upgrade` à la main (`unattended-upgrades`, avec un s, est un simple lien vers la même commande) :
 
 ```bash
-sudo nano /etc/apt/apt.conf.d/20auto-upgrades
+sudo unattended-upgrade --dry-run -v
 ```
 
-Exemple de configuration :
-
-```conf
-APT::Periodic::Update-Package-Lists "1";       // Mise à jour de la liste des paquets (tous les jours)
-APT::Periodic::Download-Upgradeable-Packages "1"; // Télécharger les paquets en avance
-APT::Periodic::Unattended-Upgrade "1";         // Appliquer les mises à jour (tous les jours)
-APT::Periodic::AutocleanInterval "7";          // Nettoyer les paquets obsolètes (tous les 7 jours)
-```
-
-Options disponibles :
-- `"0"` : désactivé
-- `"1"` : tous les jours
-- `"7"` : tous les 7 jours
-
-> Recommandation : laissez `"1"` pour les mises à jour de sécurité (quotidiennes).
-
----
-
-## Activer et démarrer le service
-
-### Via systemd (Ubuntu 18.04+, Debian 10+)
-
-```bash
-# Activer le service au démarrage
-sudo systemctl enable unattended-upgrades
-
-# Démarrer le service
-sudo systemctl start unattended-upgrades
-
-# Vérifier le statut
-sudo systemctl status unattended-upgrades
-```
-
-Sortie attendue :
+`--dry-run` simule l'exécution sans rien installer (les paquets sont quand même téléchargés) et `-v` affiche les messages d'information. Sur une machine Ubuntu 24.04 qui avait des mises à jour en attente, voici les lignes principales de la sortie (la liste des paquets est raccourcie) :
 
 ```
-unattended-upgrades.service - Unattended Upgrades Shutdown
-   Loaded: loaded (/lib/systemd/system/unattended-upgrades.service; enabled)
-   Active: active (running)
-```
-
-> Note : ne vous fiez pas au nom du service. `unattended-upgrades.service` (« Unattended Upgrades Shutdown ») ne sert qu'à terminer une mise à jour en cours au moment de l'extinction : il reste « active » sans rien faire au quotidien. La planification réelle est assurée par deux timers systemd : `apt-daily.timer` (mise à jour de la liste des paquets et téléchargement) et `apt-daily-upgrade.timer` (application des mises à jour). Vérifiez-les avec :
-
-```bash
-systemctl list-timers apt-daily.timer apt-daily-upgrade.timer
-```
-
-### Via cron (anciennes versions)
-
-Les anciennes versions utilisent `apt-daily` et `apt-daily-upgrade` via cron :
-
-```bash
-# Vérifier les tâches cron
-ls -l /etc/cron.daily/apt-compat
-```
-
-Pas besoin de configuration supplémentaire si les fichiers existent.
-
----
-
-## Tester manuellement les mises à jour automatiques
-
-Vous pouvez simuler une exécution pour vérifier la configuration.
-
-### Test à blanc (dry-run)
-
-```bash
-sudo unattended-upgrade --dry-run --debug
-```
-
-Cela affiche les paquets qui seraient mis à jour sans les installer.
-
-### Exécution réelle
-
-```bash
-sudo unattended-upgrade --debug
-```
-
-Sortie attendue (exemple) :
-
-```
-Initial blacklisted packages:
-Initial whitelisted packages:
 Starting unattended upgrades script
-Allowed origins are: ['o=Ubuntu,a=jammy-security', ...]
-Packages that will be upgraded: libssl3 openssl
-...
+Allowed origins are: o=Ubuntu,a=noble, o=Ubuntu,a=noble-security, o=UbuntuESMApps,a=noble-apps-security, o=UbuntuESM,a=noble-infra-security
+Initial blacklist:
+Initial whitelist (not strict):
+Option --dry-run given, *not* performing real actions
+Packages that will be upgraded: fonts-opensymbol libfreetype-dev libfreetype6 [...] sudo uno-libs-private ure
+Writing dpkg log to /var/log/unattended-upgrades/unattended-upgrades-dpkg.log
+[...]
+All upgrades installed
+The list of kept packages can't be calculated in dry-run mode.
 ```
 
----
+La ligne `Allowed origins are` montre les dépôts autorisés une fois les variables remplacées et `Initial blacklist` les paquets exclus, ce qui permet de vérifier sa configuration. Pour plus de détails, par exemple pour comprendre pourquoi un paquet n'est pas mis à jour, on remplace `-v` par `--debug`.
 
-## Vérifier les logs des mises à jour
+Chaque exécution, automatique ou manuelle, est journalisée dans `/var/log/unattended-upgrades/`, qui contient trois fichiers :
 
-Les logs sont disponibles dans `/var/log/unattended-upgrades/`.
+- `unattended-upgrades.log` reprend les messages ci-dessus, précédés de la date et de l'heure ;
+- `unattended-upgrades-dpkg.log` contient la sortie de dpkg pendant l'installation des paquets ;
+- `unattended-upgrades-shutdown.log` est le journal du service `unattended-upgrades.service`, qui surveille l'extinction.
 
-### Voir les dernières mises à jour appliquées
-
-```bash
-sudo cat /var/log/unattended-upgrades/unattended-upgrades.log
-```
-
-Exemple de sortie :
-
-```
-2025-12-19 10:15:32,123 INFO Starting unattended upgrades script
-2025-12-19 10:15:35,456 INFO Packages that will be upgraded: libssl3 openssl
-2025-12-19 10:16:12,789 INFO All upgrades installed
-```
-
-### Voir les erreurs
-
-```bash
-sudo cat /var/log/unattended-upgrades/unattended-upgrades-dpkg.log
-```
-
-### Voir l'historique APT complet
-
-```bash
-sudo cat /var/log/apt/history.log
-```
-
----
-
-## Surveiller les redémarrages nécessaires
-
-Après certaines mises à jour (kernel, libc, systemd), un redémarrage est nécessaire.
-
-### Vérifier si un redémarrage est requis
-
-```bash
-cat /var/run/reboot-required
-```
-
-Si le fichier existe, un redémarrage est nécessaire. Son contenu affiche :
-
-```
-*** System restart required ***
-```
-
-### Voir quels paquets nécessitent un redémarrage
-
-```bash
-cat /var/run/reboot-required.pkgs
-```
-
-Exemple de sortie :
-
-```
-linux-image-5.15.0-58-generic
-libc6
-```
-
-### Redémarrer manuellement
-
-```bash
-sudo reboot
-```
-
----
+Pour un historique de toutes les installations faites par APT, manuelles ou automatiques, il y a aussi `/var/log/apt/history.log`. Attention, un test lancé avec `--dry-run` y apparaît lui aussi, avec une ligne `Upgrade:`, alors que rien n'a été installé. Enfin, si vos logs sont centralisés, `Unattended-Upgrade::SyslogEnable "true";` envoie aussi ces messages à syslog, avec la *facility* `daemon` par défaut (modifiable avec `SyslogFacility`).
 
 ## Désactiver les mises à jour automatiques
 
-Si vous souhaitez désactiver temporairement ou définitivement les mises à jour automatiques.
-
-### Via dpkg-reconfigure
-
-```bash
-sudo dpkg-reconfigure -plow unattended-upgrades
-```
-
-Sélectionnez **No** (Non).
-
-### Modifier le fichier de configuration
-
-```bash
-sudo nano /etc/apt/apt.conf.d/20auto-upgrades
-```
-
-Changez les valeurs à `"0"` :
+Le plus simple est de relancer `sudo dpkg-reconfigure -plow unattended-upgrades` et de répondre *No*. La commande remet alors les deux valeurs de `/etc/apt/apt.conf.d/20auto-upgrades` à `0` :
 
 ```conf
 APT::Periodic::Update-Package-Lists "0";
 APT::Periodic::Unattended-Upgrade "0";
 ```
 
-### Désactiver le service
-
-```bash
-sudo systemctl stop unattended-upgrades
-sudo systemctl disable unattended-upgrades
-```
-
----
-
-## Configuration complète recommandée
-
-Voici une configuration équilibrée pour un serveur de production.
-
-`/etc/apt/apt.conf.d/20auto-upgrades` :
-
-```conf
-APT::Periodic::Update-Package-Lists "1";
-APT::Periodic::Download-Upgradeable-Packages "1";
-APT::Periodic::Unattended-Upgrade "1";
-APT::Periodic::AutocleanInterval "7";
-```
-
-`/etc/apt/apt.conf.d/50unattended-upgrades` :
-
-```conf
-Unattended-Upgrade::Allowed-Origins {
-    "${distro_id}:${distro_codename}-security";
-};
-
-Unattended-Upgrade::Package-Blacklist {
-    "linux-image-*";
-    "mysql-server*";
-    "postgresql*";
-    "nginx";
-};
-
-Unattended-Upgrade::AutoFixInterruptedDpkg "true";
-Unattended-Upgrade::MinimalSteps "true";
-Unattended-Upgrade::InstallOnShutdown "false";
-Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
-Unattended-Upgrade::Remove-Unused-Dependencies "true";
-
-Unattended-Upgrade::Automatic-Reboot "false"; // Redémarrage manuel
-Unattended-Upgrade::Automatic-Reboot-Time "03:00"; // Si activé : 3h du matin
-
-Unattended-Upgrade::Mail "admin@example.com";
-Unattended-Upgrade::MailReport "on-change";
-
-Unattended-Upgrade::SyslogEnable "true";
-Unattended-Upgrade::SyslogFacility "daemon";
-```
-
----
-
-## Cheatsheet
-
-Installation :
-
-```bash
-sudo apt install unattended-upgrades
-sudo dpkg-reconfigure -plow unattended-upgrades  # Config interactive
-```
-
-Vérification :
-
-```bash
-sudo systemctl status unattended-upgrades
-sudo unattended-upgrade --dry-run --debug
-cat /var/log/unattended-upgrades/unattended-upgrades.log
-```
-
-Configuration :
-
-```bash
-sudo nano /etc/apt/apt.conf.d/50unattended-upgrades  # Config avancée
-sudo nano /etc/apt/apt.conf.d/20auto-upgrades        # Fréquence
-```
-
-Redémarrage nécessaire :
-
-```bash
-cat /var/run/reboot-required
-cat /var/run/reboot-required.pkgs
-```
-
-Désactiver :
-
-```bash
-sudo systemctl stop unattended-upgrades
-sudo systemctl disable unattended-upgrades
-```
-
----
-
-## Conclusion
-
-Les mises à jour de sécurité automatiques sont essentielles pour maintenir un système Linux sécurisé sans effort manuel constant. En configurant `unattended-upgrades` avec les bonnes options (sécurité uniquement, blacklist des paquets critiques, notifications email), vous réduisez considérablement la surface d'attaque tout en gardant le contrôle sur les mises à jour sensibles. Surveillez les logs régulièrement et planifiez les redémarrages pour garantir un système stable et à jour.
-
----
-
-## Pour aller plus loin
-
-- [Documentation Ubuntu - Mises à jour automatiques](https://help.ubuntu.com/community/AutomaticSecurityUpdates)
-- [Documentation Debian - Unattended Upgrades](https://wiki.debian.org/UnattendedUpgrades)
+On peut aussi modifier ces deux lignes à la main. Par contre, désactiver le service `unattended-upgrades` avec `systemctl` ne suffit pas : comme on l'a vu, ce service ne s'occupe que de l'extinction, et ce sont les timers d'APT qui lancent les mises à jour.
 
 ## Voir aussi
 
-- [Installer et configurer Fail2ban sur Ubuntu/Debian]({% post_url 2025-09-21-Installer-et-configurer-Fail2ban-sur-Ubuntu-Debian %})
-- [Linux : programmer une tâche avec cron]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
-- [Comment changer le hostname en ligne de commande sur Ubuntu ou Debian]({% post_url 2025-09-13-Comment-changer-le-hostname-en-ligne-de-commande-sur-Ubuntu-ou-Debian %})
-- [Augmenter la limite inotify sur Debian/Ubuntu]({% post_url 2026-02-23-Augmenter-limite-inotify-sur-Debian-Ubuntu %})
+- [Installer et configurer Fail2ban sur un serveur Ubuntu/Debian]({% post_url 2025-09-21-Installer-et-configurer-Fail2ban-sur-Ubuntu-Debian %})
+- [Linux : Programmer une tâche avec cron]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
+- [Automatic updates](https://ubuntu.com/server/docs/how-to/software/automatic-updates/), dans la documentation d'Ubuntu Server
+- [UnattendedUpgrades](https://wiki.debian.org/UnattendedUpgrades), sur le wiki Debian
+- [Le README d'unattended-upgrades](https://github.com/mvo5/unattended-upgrades), avec la liste des options

@@ -20,13 +20,13 @@ Dans ce tutoriel, nous allons voir comment déployer un *cluster* kubernetes bar
 
 ## Introduction
 
-Pour ce tutoriel, vous aurez besoin d'un PC, et de plusieurs serveurs que vous voulez mettre en *cluster*. (Ce tutoriel peut fonctionner sur un seul serveur)
+Pour ce tutoriel, vous aurez besoin d'un PC et de plusieurs serveurs que vous voulez mettre en *cluster*. (Ce tutoriel peut fonctionner sur un seul serveur.)
 
-Pour déployer notre *cluster,* nous allons utiliser une version allégée de kubernetes nommée [K3s](https://k3s.io), qui est faite pour les appareils ARM comme un *Raspberry Pi* ou des serveurs peu puissants. C'est une version simplifiée de k8s avec seulement l'essentiel qui est plus simple à installer et maintenir.
+Pour déployer notre *cluster*, nous allons utiliser une version allégée de kubernetes nommée [K3s](https://k3s.io), qui est faite pour les appareils ARM comme un *Raspberry Pi* ou des serveurs peu puissants. C'est une version simplifiée de k8s, avec seulement l'essentiel, qui est plus simple à installer et à maintenir.
 
 ## Préparation des nodes
 
-Sur chacun de vos serveurs, vous allez avoir besoin d'un *user* avec les droits *root*, et de votre clé SSH sur chacun d'entre eux. Il vous faudra sur votre ordinateur le paquet suivant : `openssh-client`, il est par défaut installé sur Ubuntu, mais dans le doute :
+Sur chacun de vos serveurs, vous allez avoir besoin d'un *user* avec les droits *root*, et de votre clé SSH sur chacun d'entre eux. Il vous faudra sur votre ordinateur le paquet `openssh-client`. Il est installé par défaut sur Ubuntu, mais dans le doute :
 ```bash
 sudo apt install openssh-client
 ```
@@ -67,7 +67,7 @@ Enfin, vous devez copier cette clé SSH sur chacun de vos serveurs avec lesquels
 ```bash
 ssh-copy-id user@host
 ```
-Pour tester si la clé SSH a été bien copiée, essayez de vous connecter à ce serveur :
+Pour tester si la clé SSH a bien été copiée, essayez de vous connecter à ce serveur :
 
 ```bash
 ssh user@host
@@ -75,7 +75,7 @@ ssh user@host
 
 ##  Installation de K3sup
 
-Nous allons utiliser [K3sup](https://github.com/alexellis/k3sup) pour installer notre *cluster*, c'est un utilitaire simple et rapide pour installer et mettre à jour K3s.
+Nous allons utiliser [K3sup](https://github.com/alexellis/k3sup) pour installer notre *cluster* : c'est un utilitaire simple et rapide pour installer et mettre à jour K3s.
 Pour installer K3sup sur son PC :
 
 ```bash
@@ -154,7 +154,7 @@ sudo chmod 644 /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update
 sudo apt-get install -y kubectl
 ```
-Code repris depuis la documentation officielle. Remplacez `v1.36` par la version mineure de Kubernetes souhaitée. Sur certaines distributions plus anciennes, le répertoire `/etc/apt/keyrings` n'existe pas par défaut, créez-le avec `sudo mkdir -p -m 755 /etc/apt/keyrings`.
+Code repris depuis la documentation officielle. Remplacez `v1.36` par la version mineure de Kubernetes souhaitée. Sur certaines distributions plus anciennes, le répertoire `/etc/apt/keyrings` n'existe pas par défaut : créez-le avec `sudo mkdir -p -m 755 /etc/apt/keyrings`.
 
 ### Pour d'autres OS
 
@@ -181,11 +181,11 @@ xxxxxxxx2   Ready    control-plane 1d    v1.36.2+k3s1
 xxxxxxxx3   Ready    <none>        1d    v1.36.2+k3s1
 ```
 
-> Voir aussi : [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %}) : pratique avec `kubectl -o json | jq`.
+Pour exploiter la sortie JSON de `kubectl` (option `-o json`) dans des scripts, `jq` est très pratique : voir [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %}).
 
 ## La suite
 
-Maintenant que votre *cluster* est installé, vous pouvez commencer à déployer des services. Attention cependant, K3s ne propose pas de *loadbalancer* et de *storageclass* évolués par défaut, il faudra les installer vous-même. Un article expliquant comment faire devrait sortir prochainement.
+Maintenant que votre *cluster* est installé, vous pouvez commencer à déployer des services. Attention cependant, K3s ne propose pas de *loadbalancer* ni de *storageclass* évolués par défaut : il faudra les installer vous-même. Un article expliquant comment faire devrait sortir prochainement.
 
 ## Sources
 

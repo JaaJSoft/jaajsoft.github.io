@@ -14,35 +14,33 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, on va voir comment ajouter un cache à une application Flask pour accélérer les réponses et réduire la charge sur vos bases de données et API.
+Dans ce tutoriel, nous allons ajouter un cache à une application Flask avec l'extension Flask-Caching, pour répondre plus vite et soulager la base de données ou les API appelées derrière. Nous commencerons par un cache en mémoire pour comprendre le fonctionnement, puis nous passerons à Redis pour la production.
 <!--more-->
 
 Dans cet article :
-
-- Mettre en place Flask-Caching en mémoire pour démarrer rapidement
-- Mettre en place un backend Redis pour la production
-- Cacher des vues, des fonctions coûteuses et gérer l'invalidation
-- Éviter les pièges courants (clés, utilisateurs, workers Gunicorn)
+- Installation de Flask-Caching
+- Un premier cache en mémoire avec SimpleCache
+- Une clé de cache par utilisateur
+- Invalider le cache
+- Passer en production avec Redis
+- Lire et écrire directement dans le cache
+- Exemple complet avec Redis
 
 Pré-requis : être à l'aise avec Flask. Si vous débutez, lisez d'abord [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %}).
 
----
-
 ## Installation de Flask-Caching
-
-Installation de Flask-Caching, l'extension que nous utiliserons dans ce tutoriel.
 
 ```bash
 pip install Flask-Caching
 ```
 
----
+Les exemples de cet article ont été testés avec Flask 3.1.3 et Flask-Caching 2.5.1.
 
-## Premier cache en mémoire avec SimpleCache
+## Un premier cache en mémoire avec SimpleCache
 
-Objectif : mettre en place rapidement un cache en mémoire pour voir le fonctionnement (init, cache de routes, memoize), tout en gardant à l'esprit ses limites en production.
+Le backend `SimpleCache` garde les données en mémoire, dans le processus Python. Il ne demande aucune installation, ce qui en fait un bon point de départ pour voir comment fonctionne l'extension.
 
-> Attention : SimpleCache stocke les données en mémoire dans le processus. Avec Gunicorn (plusieurs workers), chaque worker a son propre cache. Bien pour le dev, à éviter seul en prod.
+Attention, avec Gunicorn et plusieurs *workers*, chaque *worker* est un processus séparé qui a son propre cache : une même page est calculée une fois par *worker*, et une invalidation faite par l'un d'eux ne touche pas les autres. Ce n'est pas gênant en développement, mais en production on passe plutôt à Redis.
 
 ### Initialisation
 
@@ -57,7 +55,9 @@ app.config["CACHE_DEFAULT_TIMEOUT"] = 300  # 5 minutes
 cache = Cache(app)
 ```
 
-### Cacher une route complète
+`CACHE_DEFAULT_TIMEOUT` est la durée de vie par défaut d'une entrée (son TTL), en secondes. Chaque décorateur peut la changer avec son paramètre `timeout`.
+
+### Mettre en cache une route
 
 ```python
 # Met en cache toute la vue pendant 60 secondes
@@ -68,7 +68,11 @@ def server_time():
     return {"server_time": time.time()}
 ```
 
-### Cacher selon la query string
+Pendant 60 secondes, tous les appels à `/time` renvoient la même valeur, sans exécuter la fonction. Notez l'ordre des décorateurs : `@app.route` en premier, puis `@cache.cached`.
+
+### Tenir compte de la query string
+
+Par défaut, la clé de cache est construite à partir du chemin de la requête : `/search?q=flask` et `/search?q=django` partageraient la même entrée. Avec `query_string=True`, les paramètres de l'URL font partie de la clé :
 
 ```python
 # Met en cache en fonction de la query string (?page=, ?q=, ...)
@@ -84,7 +88,11 @@ def search():
     return {"q": request.args.get("q"), "page": request.args.get("page", 1)}
 ```
 
-### Mémoriser une fonction coûteuse (memoize)
+Le premier appel à `/search?q=flask&page=2` prend une seconde, les suivants sont immédiats. Flask-Caching trie les paramètres avant de calculer la clé : `/search?page=2&q=flask` tombe sur la même entrée.
+
+### Mémoriser une fonction coûteuse avec memoize
+
+`@cache.cached` met en cache la réponse d'une vue. Pour mettre en cache le résultat d'une fonction Python selon ses arguments, on utilise `@cache.memoize` :
 
 ```python
 @cache.memoize(timeout=300)
@@ -95,7 +103,7 @@ def compute_stats(user_id: int):
     return {"user_id": user_id, "score": 42}
 ```
 
-### Utiliser la fonction mémoïsée dans une route
+On l'appelle ensuite normalement, par exemple depuis une route :
 
 ```python
 @app.route("/users/<int:user_id>/stats")
@@ -103,20 +111,13 @@ def user_stats(user_id: int):
     return compute_stats(user_id)
 ```
 
-Points clés :
+Le premier appel à `/users/123/stats` prend deux secondes, les suivants sont immédiats. `compute_stats(456)` a sa propre entrée dans le cache.
 
-- `@cache.cached` met en cache la réponse d'une route (vue). Utilisez `query_string=True` si la réponse dépend des paramètres d'URL.
-- `@cache.memoize` met en cache le résultat d'une fonction Python en fonction de ses arguments. Idéal pour encapsuler une requête coûteuse.
+## Une clé de cache par utilisateur
 
----
+Une page personnalisée ne doit pas être servie à tout le monde : si la clé de cache ne contient pas l'identité de l'utilisateur, le premier visiteur voit sa page, et tous les suivants la voient aussi. On peut passer à `key_prefix` une fonction qui construit la clé, ici avec l'identifiant de l'utilisateur connecté.
 
-## Clés personnalisées et cache par utilisateur
-
-Dans certains cas, on veut construire des clés de cache spécifiques au contexte (utilisateur, paramètres) pour servir la bonne donnée à la bonne personne.
-
-Pour des pages personnalisées, évitez d'utiliser le même cache pour tout le monde. On peut ajouter un préfixe par utilisateur (id, rôle, etc.).
-
-L'exemple ci-dessous s'appuie sur [Flask-Login](https://flask-login.readthedocs.io/) pour accéder à `current_user`. Il faut donc l'avoir installé (`pip install flask-login`) et configuré dans votre application pour que cet exemple fonctionne.
+L'exemple s'appuie sur [Flask-Login](https://flask-login.readthedocs.io/) pour accéder à `current_user`. Il faut donc l'avoir installé (`pip install flask-login`) et configuré dans votre application.
 
 ```python
 from flask_login import current_user
@@ -128,17 +129,21 @@ def dashboard():
     return {"hello": getattr(current_user, 'id', 'anon')}
 ```
 
-> Astuce : pour des routes GET avec plusieurs critères, vous pouvez créer une clé unique basée sur la query string triée ou un hash.
+L'utilisateur 123 obtient la clé `dashboard:123`, et les visiteurs non connectés partagent la clé `dashboard:anon`.
+
+Le même problème se pose quand la réponse dépend d'un en-tête, la langue par exemple. `query_string=True` ne regarde que l'URL, il faut donc ajouter la langue à la clé soi-même :
 
 ```python
 from flask import request
+from urllib.parse import urlencode
 import hashlib
 
 def qs_key(prefix: str = "view"):
-    # Clé stable basée sur la query string (ex: view:abc123)
-    raw = request.query_string or b""
-    h = hashlib.sha1(raw).hexdigest()
-    return f"{prefix}:{h}"
+    # Clé stable : langue + paramètres triés (ex: items:fr:3f2a...)
+    lang = request.accept_languages.best_match(["fr", "en"]) or "fr"
+    args = urlencode(sorted(request.args.items(multi=True)))
+    h = hashlib.sha1(args.encode()).hexdigest()
+    return f"{prefix}:{lang}:{h}"
 
 @app.route("/items")
 @cache.cached(timeout=120, key_prefix=lambda: qs_key("items"))
@@ -147,15 +152,13 @@ def list_items():
     return {"items": [1, 2, 3]}
 ```
 
----
+Comme avec `query_string=True`, les paramètres sont triés avant d'être hachés, pour que `?q=flask&page=2` et `?page=2&q=flask` donnent la même clé.
 
-## Invalidation
+## Invalider le cache
 
-Quand et comment expirer ou supprimer des entrées de cache ?
+Quand une donnée change, il faut supprimer l'entrée correspondante pour ne pas servir une version périmée jusqu'à la fin du TTL. Flask-Caching propose trois niveaux.
 
-Trois niveaux :
-
-Vider une clé précise (niveau bas) :
+Supprimer une clé précise :
 
 ```python
 cache.delete("dashboard:123")
@@ -171,19 +174,17 @@ cache.delete_memoized(compute_stats)
 cache.delete_memoized(compute_stats, 123)
 ```
 
-Tout nettoyer :
+Tout vider :
 
 ```python
 cache.clear()
 ```
 
-> Conseil : déclenchez l'invalidation après une écriture en base de données qui impacte la vue ou la fonction. Par exemple, après `POST /users/123`, invalidez `compute_stats(123)`.
-
----
+Le bon moment pour invalider est juste après l'écriture en base qui modifie la donnée : après un `POST /users/123`, on appelle `cache.delete_memoized(compute_stats, 123)`. Évitez de vider tout le cache à chaque modification : une invalidation ciblée suffit, et on n'a pas à tout recalculer.
 
 ## Passer en production avec Redis
 
-En production, on veut utiliser un backend partagé comme Redis pour que tous les workers (et toutes les machines) partagent le même cache.
+En production, on utilise un backend partagé comme Redis : tous les *workers*, et toutes les machines, lisent et écrivent dans le même cache.
 
 Installation :
 
@@ -194,7 +195,7 @@ sudo apt-get install redis-server
 pip install redis
 ```
 
-Configuration Flask-Caching pour Redis :
+Configuration de Flask-Caching pour Redis :
 
 ```python
 from flask import Flask
@@ -212,18 +213,11 @@ app.config.update(
 cache = Cache(app)
 ```
 
-> Avec des conteneurs ou docker compose, référencez le service Redis via son nom de service (`redis:6379`).
+Le reste du code (décorateurs, invalidation) ne change pas. Avec docker compose, `CACHE_REDIS_HOST` prend le nom du service Redis (`redis` par exemple).
 
----
+## Lire et écrire directement dans le cache
 
-## TTLs, tailles et formats
-
-Choisissez des TTL (timeouts) par type de données :
-- Métadonnées quasi statiques : 10 à 60 minutes
-- Listes paginées : 30 à 120 s
-- Détails utilisateurs : 60 à 300 s
-
-Sérialisation : Flask-Caching gère la sérialisation des résultats de fonctions. Cependant, si vous utilisez le cache en mode bas niveau, essayez de stocker du JSON :
+En dehors des décorateurs, l'objet `cache` s'utilise comme un dictionnaire avec une durée de vie :
 
 ```python
 import json
@@ -231,19 +225,13 @@ cache.set("key", json.dumps({"x": 1}), timeout=60)
 value = json.loads(cache.get("key") or "null")
 ```
 
----
+`cache.get()` renvoie `None` si la clé n'existe pas ou a expiré. Passer par JSON n'est pas obligatoire : le backend Redis sérialise les valeurs avec pickle, on peut donc y ranger directement un dictionnaire ou tout objet Python sérialisable. Le JSON a surtout un intérêt si un programme écrit dans un autre langage doit lire le même cache.
 
-## Points d'attention
+Pour le TTL, tout dépend de la fraîcheur attendue : quelques dizaines de secondes pour une liste paginée qui bouge souvent, plusieurs minutes, voire une heure, pour des données qui changent rarement.
 
-- SimpleCache + Gunicorn : le cache est dupliqué par worker. Utilisez Redis en prod.
-- Clés trop générales : vous servez la mauvaise donnée au mauvais utilisateur.
-- Ne pas oublier `query_string=True` si la réponse dépend de la query string.
-- Attention aux invalidations trop agressives (clear global). Préférez `delete_memoized` ciblé.
-- Pour les opérations dépendant d'un header (ex: langue), intégrez la langue dans la clé ou évitez le cache.
+## Exemple complet avec Redis
 
----
-
-## Exemple complet (Redis)
+Pour finir, une petite API qui met en cache la lecture d'un produit et invalide l'entrée quand le produit est modifié :
 
 ```python
 from flask import Flask
@@ -280,26 +268,13 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
 ```
 
----
-
-## Conclusion
-
-Avec très peu de code, Flask-Caching apporte un gain de performance notable sur nos API. Que ce soit avec `SimpleCache` pour le développement, ou Redis en production pour partager le cache entre tous les workers, n'oubliez pas de définir des TTL adaptés et de construire des clés intelligentes adaptées au contexte (utilisateur, paramètres).
-
----
-
-## Pour aller plus loin
-
-- [Documentation Flask-Caching](https://flask-caching.readthedocs.io/)
-- [Documentation Redis](https://redis.io/)
+Le premier `GET /products/7` prend une seconde, les suivants sont immédiats. Après un `PUT /products/7`, le `GET` suivant recharge le produit.
 
 ## Voir aussi
 
+- [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
+- [Python : Mettre en cache des fonctions avec lru_cache]({% post_url 2026-05-25-Python-lru_cache %})
+- [Ajouter un cache à notre application FastAPI avec redis]({% post_url 2025-08-18-Utiliser-fastapi-cache2-avec-FastAPI %})
 - [Comment ajouter du cache à une application Django]({% post_url 2025-11-01-Comment-ajouter-du-cache-a-une-application-Django %})
-- [Comment ajouter du cache à une application Spring Boot]({% post_url 2025-11-08-Comment-ajouter-du-cache-a-une-application-Spring-Boot %})
-- [Limiter le rate d'une API FastAPI avec Redis]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
-- [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
-- [Comment utiliser les sessions avec requests]({% post_url 2025-09-04-Comment-utiliser-les-sessions-avec-requests %})
-- [Comment utiliser l'authentification avec requests]({% post_url 2025-09-05-Comment-utiliser-l-authentification-avec-requests %})
-- [Comment faire une API web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
-- [Comment dockeriser une application Django]({% post_url 2025-10-25-Comment-dockeriser-une-application-Django %})
+- [Documentation de Flask-Caching](https://flask-caching.readthedocs.io/)
+- [Documentation de Redis](https://redis.io/docs/)

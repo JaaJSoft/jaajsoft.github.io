@@ -15,13 +15,13 @@ Dans ce tutoriel, vous allez apprendre à faire une api web en python avec le
 framework Flask. <!--more-->
 Le framework flask est un framework python permettant la réalisation d'un site
 web ou d'une api web. Son principal avantage est d'être simple à utiliser, mais
-sans perdre de fonctionnalités, de plus il peut quasiment tout faire grâce à de
+sans perdre de fonctionnalités. De plus, il peut quasiment tout faire grâce à de
 nombreuses extensions.
 
-L'objectif de ce tutoriel est d'apprendre comment faire :
+L'objectif de ce tutoriel est d'apprendre à :
 
-- Une api web en python
-- Le traitement des requêtes
+- faire une api web en python
+- traiter les requêtes
 
 ## Installation
 
@@ -38,7 +38,7 @@ Depuis un terminal, installation de python3 :
 sudo apt install python3
 ```
 
-Vous aurez ensuite besoin de pip le gestionnaire de package de python, il est
+Vous aurez ensuite besoin de pip, le gestionnaire de paquets de python. Il est
 souvent préinstallé avec python, mais dans le doute :
 
 ```bash
@@ -51,11 +51,16 @@ Maintenant installons *flask* :
 pip3 install flask
 ```
 
-Si vous avez une erreur vous disant que vous n'avez pas assez de permissions,
-faites :
+Sur les distributions récentes (Debian 12, Ubuntu 23.04 et suivantes), pip refuse
+d'installer des paquets dans le python du système, même avec l'option `--user`,
+et affiche l'erreur `externally-managed-environment`. Dans ce cas, créez un
+environnement virtuel dans le dossier de votre projet et installez Flask dedans :
 
 ```bash
-pip3 install --user flask
+sudo apt install python3-venv
+python3 -m venv venv
+source venv/bin/activate
+pip install flask
 ```
 
 ### Windows
@@ -65,8 +70,8 @@ Windows [ici](https://www.python.org/downloads/) et installez-le.
 
 Déplacez-vous dans le dossier où vous avez installé python et faites :
 
-`shift + click droit -> ouvrir une fenêtre powershell` (sur Windows 7 pour les
-réfractaires au changement ça doit être cmd)
+`shift + click droit -> ouvrir une fenêtre powershell` (sur Windows 7, pour les
+réfractaires au changement, ça doit être cmd)
 
 Vous êtes normalement dans un terminal, entrez alors :
 
@@ -76,8 +81,8 @@ Vous êtes normalement dans un terminal, entrez alors :
 
 ### MacOS
 
-N'ayant pas de Mac, je ne peux pas tester l'installation, il faut toutefois
-aussi utiliser python et [PIP](https://pypi.org/project/pip/), et suivre les
+N'ayant pas de Mac, je ne peux pas tester l'installation. Il faut toutefois
+aussi utiliser python et [pip](https://pypi.org/project/pip/), et suivre les
 instructions pour linux afin d'installer *flask*.
 
 ## Une requête HTTP ?
@@ -92,13 +97,12 @@ Source Wikipédia.
 
 Il existe 5 principales méthodes HTTP :
 
-- GET, permet d'accéder à une ressource.
-- HEAD, permet de récupérer l'entête d'une ressource, pour par exemple connaitre
-  la date de sa dernière modification (utile pour le système de cache d'un
-  navigateur)
-- POST, permet d'ajouter une ressource
-- PUT, permet de mettre à jour une ressource
-- DELETE, permet de supprimer une ressource
+- GET : accéder à une ressource
+- HEAD : récupérer l'en-tête d'une ressource, par exemple pour connaître la date
+  de sa dernière modification (utile pour le système de cache d'un navigateur)
+- POST : ajouter une ressource
+- PUT : mettre à jour une ressource
+- DELETE : supprimer une ressource
 
 ## Qu'est-ce qu'une API web ?
 
@@ -109,7 +113,7 @@ Il existe 5 principales méthodes HTTP :
 Source Wikipédia.
 
 À ne pas confondre avec une API REST, qui est une api web avec un ensemble de
-contraintes et de règles prédéfinies à utiliser. Toutes les API web ne sont pas
+contraintes et de règles prédéfinies à respecter. Toutes les API web ne sont pas
 des API REST...
 
 ## Un premier *Endpoint*
@@ -145,7 +149,7 @@ devriez avoir :
 Hello World
 ```
 
-Ou alors avec `curl`
+Ou alors avec `curl` :
 
 ```bash
 curl http://127.0.0.1:5000/
@@ -177,8 +181,8 @@ test_endpoint
 
 Dans la vraie vie, il est parfois (même très souvent) nécessaire de passer des
 paramètres à notre _endpoint_.
-Pour passer des paramètres avec le *routing* on utilise les `<>` avec un simple
-argument de notre fonction
+Pour passer des paramètres avec le *routing*, on utilise les `<>` avec un simple
+argument de notre fonction :
 
 ```python
 @app.route('/test/<id_test>')
@@ -216,8 +220,8 @@ Il est également possible de créer ses propres convertisseurs si nécessaire.
 
 Par défaut, une route déclarée avec `@app.route` ne répond qu'aux requêtes GET
 (Flask ajoute aussi automatiquement HEAD et OPTIONS). Pour choisir précisément
-les méthodes acceptées par l'*endpoint*, on ajoute dans l'annotation `@app.route`
-un paramètre `methods`
+les méthodes acceptées par l'*endpoint*, on ajoute dans le décorateur `@app.route`
+un paramètre `methods` :
 
 ```python
 @app.route('/test', methods=["GET"])
@@ -249,13 +253,13 @@ def test_endpoint_post():
     return data
 ```
 L'objet _request_ convertit automatiquement les données de la requête en dictionnaire python.
-Dans l'autre sens si notre API retourne un dictionnaire, flask se charge de le convertir pour nous en json :
+Dans l'autre sens, si notre API retourne un dictionnaire, flask se charge de le convertir pour nous en json :
 ```bash
 curl -X POST http://127.0.0.1:5000/test -d "param1=jeej"
 {"param1":"jeej"}
 ```
 
-> Attention, `request.form` ne contient que les données envoyées sous forme de
+Attention, `request.form` ne contient que les données envoyées sous forme de
 formulaire (`application/x-www-form-urlencoded` ou `multipart/form-data`). Si le
 client envoie du JSON, il faut utiliser `request.get_json()` pour récupérer les
 données.
@@ -323,9 +327,9 @@ def test2_endpoint_post():
 
 ## Voir aussi
 
-- [Comment utiliser un cache avec Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
+- [Comment ajouter un cache à une application Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
 - [Comment dockeriser une application flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %})
-- [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
-- [Comment créer une CLI en Python]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
-- [Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
+- [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+- [Python : Comment créer une CLI]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
+- [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - [La doc de flask](https://flask.palletsprojects.com/)

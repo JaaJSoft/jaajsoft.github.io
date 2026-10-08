@@ -13,36 +13,62 @@ tags:
   - fichiers
 ---
 
-Dans ce tutoriel, nous allons voir comment passer (uploader) des fichiers à une API web réalisée avec FastAPI : un fichier simple, plusieurs fichiers, des champs de formulaire additionnels, la sauvegarde sur disque et quelques validations utiles.
+Dans ce tutoriel, nous allons voir comment envoyer des fichiers à une API web
+FastAPI : un fichier seul, un fichier accompagné de champs de formulaire,
+plusieurs fichiers, puis comment enregistrer le fichier reçu sur le disque et
+vérifier son type et sa taille.
 <!--more-->
 
-Pré-requis (recommandé) :
+Dans cet article :
+- Installation
+- Le format multipart/form-data
+- Un premier upload
+- Ajouter des champs de formulaire
+- Uploader plusieurs fichiers
+- Sauvegarder le fichier sur disque
+- Valider le type et la taille
+- Le code complet
 
-- Côté serveur : [Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
-- Côté client : [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+Pré-requis : côté serveur,
+[Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %}) ;
+côté client,
+[Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %}).
 
 ## Installation
 
-FastAPI a besoin de la librairie `python-multipart` pour lire les données de
-formulaire et les fichiers envoyés en `multipart/form-data` (c'est ce qu'utilisent
-`File()` et `UploadFile`). Sans elle, FastAPI lève une erreur au démarrage dès
-qu'un endpoint déclare un paramètre `File()` ou `Form()`. Installez-la en même
-temps que FastAPI et uvicorn :
+Pour lire les fichiers et les champs de formulaire, FastAPI a besoin de la
+librairie `python-multipart`. On l'installe avec FastAPI et uvicorn :
 
 ```bash
 pip install fastapi uvicorn python-multipart
 ```
 
-## Pourquoi "multipart/form-data" ?
+Sans elle, l'application ne démarre même pas : dès qu'une route déclare un
+paramètre `File()` ou `Form()`, FastAPI lève l'erreur
+`RuntimeError: Form data requires "python-multipart" to be installed.`
 
-L'envoi de fichiers via HTTP se fait classiquement avec le type de contenu `multipart/form-data`. C'est exactement ce que sait traiter FastAPI lorsqu'on déclare des paramètres de type `File(...)` et `UploadFile`.
+## Le format multipart/form-data
 
-- `bytes` + `File(...)` : lit tout le fichier en mémoire (simple mais à éviter pour les gros fichiers)
-- `UploadFile` + `File(...)` : fournit un objet fichier en streaming (plus efficace), avec les métadonnées `filename` et `content_type`
+Un navigateur qui envoie un formulaire contenant un fichier utilise le type de
+contenu `multipart/form-data` : le corps de la requête est découpé en parties,
+une par champ ou par fichier. C'est ce format que FastAPI attend quand on
+déclare un paramètre avec `File()`.
 
-## Un premier upload (fichier unique)
+On peut récupérer un fichier de deux façons :
 
-Créez un fichier `app.py` :
+- avec le type `bytes`, on reçoit directement tout le contenu du fichier en
+  mémoire, ce qui convient aux petits fichiers ;
+- avec le type `UploadFile`, on reçoit un objet qui donne le nom du fichier
+  (`filename`), son type (`content_type`) et un fichier Python (`file`).
+
+Le contenu d'un `UploadFile` est gardé en mémoire jusqu'à 1 Mo, puis écrit dans
+un fichier temporaire sur le disque, ce qui permet de recevoir de gros fichiers
+sans remplir la RAM. Dans les deux cas, FastAPI reçoit le fichier en entier
+avant d'appeler votre fonction.
+
+## Un premier upload
+
+Créez un fichier `app.py` :
 
 ```python
 from fastapi import FastAPI, UploadFile, File
@@ -60,19 +86,41 @@ async def upload_file(file: UploadFile = File(...)):
     }
 ```
 
-Lancement :
+On lance l'API :
 
 ```bash
 uvicorn app:app --reload
 ```
 
-Test rapide avec `curl` :
+Avec `curl`, l'option `-F` envoie un formulaire en `multipart/form-data`, et le
+`@` indique un fichier à joindre :
 
 ```bash
 curl -F "file=@monimage.png" http://127.0.0.1:8000/uploadfile
+{"filename":"monimage.png","content_type":"image/png","size":55005}
 ```
 
-### Variante: lire en mémoire avec `bytes`
+Le nom du champ (`file`) doit correspondre au nom du paramètre de la fonction.
+
+Même chose en Python avec `requests`, en passant le fichier dans `files` sous la
+forme d'un tuple (nom, fichier ouvert, type) :
+
+```python
+import requests
+
+with open("monimage.png", "rb") as f:
+    resp = requests.post(
+        "http://127.0.0.1:8000/uploadfile",
+        files={"file": ("monimage.png", f, "image/png")},
+    )
+print(resp.json())
+```
+
+```
+{'filename': 'monimage.png', 'content_type': 'image/png', 'size': 55005}
+```
+
+### Variante : lire le contenu avec `bytes`
 
 ```python
 from fastapi import FastAPI, File
@@ -85,11 +133,14 @@ async def upload_bytes(file: bytes = File(...)):
     return {"size": len(file)}
 ```
 
-Avantage: simplicité. Inconvénient: le contenu est entièrement chargé en mémoire.
+C'est plus simple, mais tout le contenu est chargé en mémoire et on perd le nom
+et le type du fichier.
 
 ## Ajouter des champs de formulaire
 
-Il est fréquent d'envoyer des métadonnées avec le fichier (ex: `user_id`, `tags`). Pour cela, combinez `File(...)` et `Form(...)` :
+On envoie souvent des informations avec le fichier (un identifiant
+d'utilisateur, une description...). On les déclare avec `Form()`, à côté du
+`File()` :
 
 ```python
 from fastapi import FastAPI, UploadFile, File, Form
@@ -110,14 +161,18 @@ async def upload_with_meta(
     }
 ```
 
-Côté `curl` :
+Avec `curl`, chaque champ est un `-F` de plus :
 
 ```bash
 curl -F "file=@report.pdf" -F "user_id=123" -F "description=rapport trimestriel" \
   http://127.0.0.1:8000/upload-with-meta
+{"filename":"report.pdf","user_id":123,"description":"rapport trimestriel"}
 ```
 
-Avec `requests` en Python :
+Le champ `user_id` est obligatoire et converti en entier : s'il manque, FastAPI
+répond avec une erreur 422.
+
+Avec `requests`, les champs de formulaire passent dans `data` :
 
 ```python
 import requests
@@ -130,9 +185,14 @@ with open("report.pdf", "rb") as f:
 print(resp.json())
 ```
 
+```
+{'filename': 'report.pdf', 'user_id': 123, 'description': 'rapport trimestriel'}
+```
+
 ## Uploader plusieurs fichiers
 
-Pour accepter plusieurs fichiers, utilisez une liste d'`UploadFile` :
+Pour accepter plusieurs fichiers dans le même champ, on déclare une liste
+d'`UploadFile` :
 
 ```python
 from typing import List
@@ -145,13 +205,16 @@ async def upload_files(files: List[UploadFile] = File(...)):
     return [{"filename": f.filename, "type": f.content_type} for f in files]
 ```
 
-`curl` :
+Côté `curl`, on répète le même nom de champ :
 
 ```bash
 curl -F "files=@a.png" -F "files=@b.png" http://127.0.0.1:8000/uploadfiles
+[{"filename":"a.png","type":"image/png"},{"filename":"b.png","type":"image/png"}]
 ```
 
-`requests` :
+Avec `requests`, `files` devient une liste de tuples qui portent tous le nom
+`files`. L'`ExitStack` enregistre chaque fichier ouvert et garantit qu'ils
+seront tous fermés à la sortie du bloc `with` :
 
 ```python
 import requests
@@ -170,9 +233,14 @@ with ExitStack() as stack:
 print(resp.json())
 ```
 
-## Sauvegarder le fichier sur disque (streaming)
+```
+[{'filename': 'a.png', 'type': 'image/png'}, {'filename': 'b.png', 'type': 'image/png'}]
+```
 
-Avec `UploadFile`, vous pouvez copier le flux directement sans charger le fichier en mémoire :
+## Sauvegarder le fichier sur disque
+
+Avec `UploadFile`, on peut copier le fichier reçu vers sa destination par
+morceaux, sans jamais le charger entièrement en mémoire :
 
 ```python
 import os
@@ -182,22 +250,45 @@ from fastapi import FastAPI, UploadFile, File
 app = FastAPI()
 
 @app.post("/uploadfile/save")
-async def save_file(file: UploadFile = File(...)):
+def save_file(file: UploadFile = File(...)):
     os.makedirs("uploads", exist_ok=True)
     # On assainit le nom fourni par le client pour éviter un "path traversal" :
     # un nom du type "../../etc/passwd" pourrait sinon écrire hors du dossier uploads.
     safe_name = os.path.basename(file.filename)
     dest_path = os.path.join("uploads", safe_name)
     with open(dest_path, "wb") as out:
-        shutil.copyfileobj(file.file, out)  # copie en streaming
+        shutil.copyfileobj(file.file, out)  # copie par morceaux
     return {"saved_as": dest_path}
 ```
 
-> Remarque : si vous avez structuré votre app avec des `routers` (voir l'article sur l'[organisation en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})), placez ces endpoints dans un module dédié (`routers/upload.py`) et incluez-le avec `include_router`.
+```bash
+curl -F "file=@monimage.png" http://127.0.0.1:8000/uploadfile/save
+{"saved_as":"uploads/monimage.png"}
+```
+
+La fonction est déclarée avec `def` et pas `async def` : `open()` et
+`shutil.copyfileobj()` sont des opérations bloquantes, et FastAPI exécute les
+fonctions `def` dans un thread à part, ce qui évite de bloquer les autres
+requêtes pendant la copie.
+
+Le `os.path.basename()` n'est pas là pour faire joli : le nom du fichier est
+choisi par le client, et FastAPI le transmet tel quel. Un client peut donc
+envoyer un nom comme `../../evil.png`, que `basename()` ramène à `evil.png` :
+
+```bash
+curl -F "file=@monimage.png;filename=../../evil.png" http://127.0.0.1:8000/uploadfile/save
+{"saved_as":"uploads/evil.png"}
+```
+
+Si votre application est découpée en plusieurs fichiers, ces routes ont leur
+place dans un module dédié (`app/routers/upload.py`) inclus avec
+`include_router`, voir
+[Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %}).
 
 ## Valider le type et la taille
 
-Exemple simple de validation du type MIME et d'une limite de taille (lecture en mémoire : pour de gros fichiers, préférez vérifier pendant la copie et interrompre au-delà d'un seuil) :
+Voici un exemple simple qui vérifie le type MIME du fichier et refuse les
+fichiers de plus de 10 Mo :
 
 ```python
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -222,42 +313,38 @@ async def upload_validate(file: UploadFile = File(...)):
     return {"filename": file.filename, "size": len(content)}
 ```
 
-> Astuce : pour traiter des CSV après upload, vous pouvez utiliser `pandas.read_csv`. Voir l'article : [Comment sauvegarder un dataframe pandas]({% post_url 2023-12-28-Comment-sauvegarder-un-dataframe-pandas %}).
+Le code 413 signifie que le contenu envoyé est trop gros. Le `seek(0)` remet le
+curseur au début du fichier, afin de pouvoir le relire ensuite (pour le
+sauvegarder, par exemple). Ici, la taille est mesurée en lisant tout le fichier
+en mémoire. Pour de gros fichiers, on peut éviter cette lecture : `UploadFile`
+donne aussi la taille du fichier reçu dans `file.size`, sans rien lire.
 
-## Exemple client complet (requests)
+Attention, `content_type` est le type déclaré par le client, pas le résultat
+d'une analyse du fichier : rien n'empêche d'envoyer un script en le déclarant
+comme une image.
 
-```python
-import requests
-from contextlib import ExitStack
-
-base = "http://127.0.0.1:8000"
-
-# 1) Fichier unique
-with open("monimage.png", "rb") as f:
-    resp = requests.post(f"{base}/uploadfile", files={"file": ("monimage.png", f, "image/png")})
-    print(resp.json())
-
-# 2) Plusieurs fichiers
-paths = [("a.png", "image/png"), ("b.png", "image/png")]
-with ExitStack() as stack:
-    files = [
-        ("files", (name, stack.enter_context(open(name, "rb")), content_type))
-        for name, content_type in paths
-    ]
-    resp = requests.post(f"{base}/uploadfiles", files=files)
-print(resp.json())
-
-# 3) Fichier + métadonnées
-with open("report.pdf", "rb") as f:
-    resp = requests.post(
-        f"{base}/upload-with-meta",
-        files={"file": ("report.pdf", f, "application/pdf")},
-        data={"user_id": 123, "description": "rapport trimestriel"},
-    )
-    print(resp.json())
+```bash
+curl -F "file=@app.py;type=image/png" http://127.0.0.1:8000/uploadfile/validate
+{"filename":"app.py","size":1855}
 ```
 
-## Le code complet (exemple minimal)
+Inversement, `curl` ne devine le type qu'à partir de l'extension, et seulement
+pour quelques formats courants (png, jpg, pdf...). Un fichier `.csv` part en
+`application/octet-stream` et se fait refuser. Il faut alors préciser son type :
+
+```bash
+curl -F "file=@ventes.csv" http://127.0.0.1:8000/uploadfile/validate
+{"detail":"Type non autorisé: application/octet-stream"}
+
+curl -F "file=@ventes.csv;type=text/csv" http://127.0.0.1:8000/uploadfile/validate
+{"filename":"ventes.csv","size":33}
+```
+
+Une fois le fichier accepté, un CSV peut être chargé directement avec
+`pandas.read_csv(file.file)` (voir l'article sur
+[la sauvegarde et le chargement de dataframes Pandas]({% post_url 2023-12-28-Comment-sauvegarder-un-dataframe-pandas %})).
+
+## Le code complet
 
 ```python
 from typing import List, Optional
@@ -292,7 +379,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
     return [{"filename": f.filename, "type": f.content_type} for f in files]
 
 @app.post("/uploadfile/save")
-async def save_file(file: UploadFile = File(...)):
+def save_file(file: UploadFile = File(...)):
     os.makedirs("uploads", exist_ok=True)
     safe_name = os.path.basename(file.filename)  # évite le path traversal
     dest_path = os.path.join("uploads", safe_name)
@@ -316,9 +403,7 @@ async def upload_validate(file: UploadFile = File(...)):
 
 ## Voir aussi
 
-- [Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
+- [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
-- [Comment dockeriser une application FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
-- [Limiter le rate d'une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
-- [Comment faire des requêtes HTTP en python avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
-- [Documentation FastAPI - Request Files](https://fastapi.tiangolo.com/tutorial/request-files/)
+- [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
+- [Request Files](https://fastapi.tiangolo.com/tutorial/request-files/), la documentation de FastAPI sur l'upload de fichiers

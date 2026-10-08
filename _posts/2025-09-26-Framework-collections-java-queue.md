@@ -1,7 +1,7 @@
 ---
 layout: article
 title: Les files (Queue) et Deques en Java
-description: "Les files en Java : Queue et Deque, ArrayDeque, LinkedList, PriorityQueue et BlockingQueue, leurs différences, pièges courants et bonnes pratiques."
+description: "Les files en Java : Queue et Deque, ArrayDeque pour les files et les piles, PriorityQueue, et les files bloquantes pour faire travailler des threads ensemble."
 author: Pierre Chopinet
 tags:
   - java
@@ -10,7 +10,7 @@ tags:
   - deque
 ---
 
-Dans cet article (partie 4 de la série sur les collections), nous allons nous concentrer sur la famille Queue du Framework Collections, ainsi que sur son extension Deque. Nous verrons leurs caractéristiques, les principales implémentations (ArrayDeque, LinkedList, PriorityQueue, BlockingQueue/Deque…), leurs différences, pièges courants et bonnes pratiques d'utilisation.
+Quatrième partie de notre série sur les collections Java : les files. Une `Queue` stocke des éléments jusqu'à ce qu'on les traite, dans leur ordre d'arrivée ou par priorité. Son extension `Deque` permet d'en ajouter et d'en retirer aux deux bouts. Nous allons voir leurs méthodes, les implémentations à utiliser au quotidien (`ArrayDeque`, `PriorityQueue`), puis les files bloquantes qui servent à faire travailler des threads ensemble.
 <!--more-->
 
 1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
@@ -18,71 +18,53 @@ Dans cet article (partie 4 de la série sur les collections), nous allons nous c
 3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
 4. Les files (Queue) et Deques en Java (vous êtes ici)
 5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
-6. Utilisations avancées des collections (article à venir)
+6. Utilisations avancées : [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %}) et [Java : Comment faire des group by]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
 
-## Qu'est-ce qu'une Queue ?
+Les exemples ont été testés avec Java 21.
 
-`Queue` est une sous-interface de `Collection` conçue pour gérer des éléments dans un ordre d'extraction défini, typiquement FIFO (First-In, First-Out).
+## L'interface Queue
 
-Signature :
-
-```java
-public interface Queue<E> extends Collection<E> { /* … */ }
-```
-
-Principes :
-- Ordre d'extraction souvent FIFO (sauf exceptions comme `PriorityQueue`).
-- Pas d'accès par index, on manipule la tête (head) et parfois la queue (tail).
-- Certaines implémentations peuvent avoir une capacité bornée (ex. `ArrayBlockingQueue`).
-
-## Méthodes de l'interface Queue
-
-| Méthode            | Échec si vide/plein | Description                                                                         |
-|--------------------|---------------------|-------------------------------------------------------------------------------------|
-| boolean add(E e)   | Exception           | Enfile (enqueue) l'élément, échoue avec `IllegalStateException` si capacité pleine. |
-| boolean offer(E e) | false               | Enfile sans exception, retourne false si pas de place.                              |
-| E remove()         | Exception           | Défile (dequeue) et retourne la tête, `NoSuchElementException` si vide.             |
-| E poll()           | null                | Défile et retourne la tête, `null` si vide.                                         |
-| E element()        | Exception           | Consulte la tête sans la retirer, exception si vide.                                |
-| E peek()           | null                | Consulte la tête, `null` si vide.                                                   |
-
-Remarques :
-- Préférez `offer`/`poll`/`peek` dans le code robuste, pour éviter la gestion d'exceptions de contrôle.
-- `Queue` n'autorise pas `null` dans la plupart des implémentations (car `null` sert de valeur spéciale pour `poll`/`peek`).
-
-## Qu'est-ce qu'une Deque ?
-
-`Deque` (Double Ended Queue) étend `Queue` pour permettre des opérations en tête et en queue, supportant aussi les usages de pile (LIFO).
-
-Signature :
+`Queue` est une sous-interface de `Collection` faite pour garder des éléments en attente de traitement. Le plus souvent, l'ordre est FIFO (*first in, first out*) : on ajoute les éléments en fin de file et on retire le plus ancien, en tête de file. Ce n'est pas une obligation : une file à priorité, par exemple, fait sortir les éléments selon leur priorité. Il n'y a pas d'accès par index : on ne travaille qu'avec la tête de la file.
 
 ```java
-public interface Deque<E> extends Queue<E> { /* … */ }
+public interface Queue<E> extends Collection<E> { /* ... */ }
 ```
 
-Méthodes principales (équivalents tête/queue) :
+Chaque opération existe en deux versions : l'une lève une exception quand elle ne peut pas aboutir, l'autre retourne une valeur spéciale (`false` ou `null`).
 
-| Ajout                 | Retrait                | Consultation           |
-|-----------------------|------------------------|------------------------|
-| addFirst, offerFirst  | removeFirst, pollFirst | getFirst, peekFirst    |
-| addLast, offerLast    | removeLast, pollLast   | getLast, peekLast      |
+| Opération                    | Version qui lève une exception                              | Version qui retourne une valeur spéciale  |
+|------------------------------|-------------------------------------------------------------|-------------------------------------------|
+| Ajouter en fin de file       | `add(e)` : `IllegalStateException` si la file est pleine    | `offer(e)` : `false` si la file est pleine |
+| Retirer la tête              | `remove()` : `NoSuchElementException` si la file est vide   | `poll()` : `null` si la file est vide     |
+| Consulter la tête sans la retirer | `element()` : `NoSuchElementException` si la file est vide | `peek()` : `null` si la file est vide     |
 
-Aliases utiles :
-- `push(e)` ≡ `addFirst(e)` (usage pile)
-- `pop()` ≡ `removeFirst()`
+La plupart des files n'ont pas de limite de taille, et l'ajout ne peut tout simplement pas échouer. `offer` est prévu pour les files à capacité bornée, où une file pleine est une situation normale et pas une erreur. Pour retirer ou consulter la tête, tout dépend de ce que signifie une file vide dans votre code. Si elle ne devrait jamais l'être, `remove()` et `element()` le signalent par une exception. Sinon, `poll()` et `peek()` évitent un `try`/`catch`.
 
-## Principales implémentations
+En général, les implémentations de `Queue` refusent les éléments `null` : comme `poll()` et `peek()` retournent `null` quand la file est vide, on ne pourrait pas faire la différence avec un élément `null`. `LinkedList` les accepte, mais la documentation de `Queue` déconseille d'en ajouter, même dans ce cas.
 
-### ArrayDeque
+## Deque, une file à deux bouts
 
-- Structure : tableau circulaire redimensionnable (pas de capacité fixe, mais redimensionnements amortis).
-- Opérations en tête/queue en `O(1)`.
-- N'autorise pas `null`.
-- Souvent plus rapide que `LinkedList` pour `Deque`, et préférable à l'ancienne `Stack`.
+`Deque`, qui se prononce "deck" (pour *double ended queue*), étend `Queue` pour ajouter, retirer et consulter des éléments aux deux extrémités. Depuis Java 21, elle étend aussi `SequencedCollection`, comme les listes.
 
-Cas d'usage : file FIFO, pile LIFO, parcours en largeur (BFS), buffers temporaires.
+```java
+public interface Deque<E> extends Queue<E>, SequencedCollection<E> { /* ... */ }
+```
 
-Exemple :
+Chaque opération de `Queue` y existe pour chacun des deux bouts, toujours avec une version qui lève une exception et une version qui retourne une valeur spéciale :
+
+|           | Début de la deque               | Fin de la deque               |
+|-----------|---------------------------------|-------------------------------|
+| Ajouter   | `addFirst(e)`, `offerFirst(e)`  | `addLast(e)`, `offerLast(e)`  |
+| Retirer   | `removeFirst()`, `pollFirst()`  | `removeLast()`, `pollLast()`  |
+| Consulter | `getFirst()`, `peekFirst()`     | `getLast()`, `peekLast()`     |
+
+Les méthodes héritées de `Queue` font de la `Deque` une file FIFO : `offer` ajoute à la fin, `poll` retire au début. Elle peut aussi servir de pile LIFO (*last in, first out*) avec `push(e)`, l'équivalent de `addFirst(e)`, et `pop()`, l'équivalent de `removeFirst()`. La documentation de la vieille classe `Stack`, présente depuis Java 1.0, recommande d'ailleurs d'utiliser une `Deque` à sa place.
+
+## ArrayDeque, pour les files et les piles
+
+`ArrayDeque` est l'implémentation de `Deque` à utiliser par défaut. Elle range ses éléments dans un tableau circulaire qui s'agrandit au besoin, et les ajouts et retraits aux deux extrémités se font en temps constant amorti. D'après sa documentation, elle est probablement plus rapide que `Stack` comme pile, et que `LinkedList` comme file. Elle refuse les éléments `null` et n'est pas thread-safe.
+
+La même `ArrayDeque` peut servir de file (on ajoute à la fin et on retire au début) ou de pile (`push` et `pop` travaillent tous les deux au début) :
 
 ```java
 Deque<String> dq = new ArrayDeque<>();
@@ -93,93 +75,9 @@ dq.push("X");                 // pile => [X, B]
 String top = dq.pop();          // "X"
 ```
 
-### LinkedList (implémente List et Deque)
+`LinkedList` implémente elle aussi `Deque`, en plus de `List`. Elle accepte les `null`, mais chaque élément occupe un nœud en mémoire : elle n'a d'intérêt que si vous avez besoin d'un objet qui soit à la fois une `Deque` et une `List`.
 
-- Liste doublement chaînée.
-- Fournit toutes les opérations `Deque` mais avec un surcoût mémoire et un cache CPU moins favorable.
-- Accès par index coûteux (`O(n)`), mais insertion/retrait aux extrémités efficaces.
-
-Cas d'usage : utile si vous avez absolument besoin d'une `Deque` qui soit aussi une `List`, sinon préférez `ArrayDeque`.
-
-### PriorityQueue (file à priorité)
-
-- Structure : tas binaire (min-heap par défaut).
-- L'élément en tête est le « plus petit » selon l'ordre naturel ou un `Comparator` fourni.
-- Pas FIFO : l'ordre dépend des priorités.
-- N'autorise pas `null`.
-- Iterator non trié (ne pas s'y fier pour l'ordre). Pour itérer trié : dépilez via `poll()` successifs.
-
-Cas d'usage : planification par priorité, Dijkstra, k plus petits éléments, scheduling simple.
-
-Exemple :
-
-```java
-Queue<Integer> pq = new PriorityQueue<>();
-pq.offer(5);
-pq.offer(1);
-pq.offer(3);
-// head -> 1
-while (!pq.isEmpty()) {
-    System.out.print(pq.poll() + " "); // 1 3 5
-}
-```
-
-### Files concurrentes et bloquantes (java.util.concurrent)
-
-- `ConcurrentLinkedQueue` : non bloquante (lock-free), FIFO, non bornée. Excellente pour la haute concurrence en lecture/écriture.
-- `ArrayBlockingQueue` : bornée, basée sur tableau, opérations bloquantes (`put`, `take`), option d'équité.
-- `LinkedBlockingQueue` : (optionnellement) bornée, basée sur liens.
-- `PriorityBlockingQueue` : comme `PriorityQueue` mais thread-safe (non bornée).
-- `DelayQueue` : éléments disponibles après un délai (`Delayed`).
-- `SynchronousQueue` : capacité zéro (handoff direct producteur→consommateur).
-- `LinkedBlockingDeque` : version `Deque` bloquante.
-
-Exemple producteur/consommateur :
-
-```java
-BlockingQueue<String> q = new ArrayBlockingQueue<>(100);
-
-Thread producer = new Thread(() -> {
-    try {
-        for (int i = 0; i < 10_000; i++) {
-            q.put("job-" + i); // bloque si plein
-        }
-    } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
-});
-
-Thread consumer = new Thread(() -> {
-    try {
-        while (true) {
-            String job = q.take(); // bloque si vide
-            process(job);
-        }
-    } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
-});
-
-producer.start();
-consumer.start();
-```
-
-## Pièges courants
-
-- `null` rarement autorisé : préférez des sentinelles explicites ou `Optional` côté API, pas d'éléments `null` dans les queues.
-- `remove` vs `poll` : `remove` lève une exception si la file est vide, `poll` retourne `null`.
-- `PriorityQueue` : ne garantit pas un ordre trié à l'itération, seulement pour la tête. Utiliser `poll()` pour dépiler en ordre.
-- `Comparator` incohérent : avec `PriorityQueue`, un comparateur non transitif ou non cohérent peut produire des comportements surprenants.
-- Capacité non bornée : les queues non bornées peuvent entraîner des fuites de mémoire côté producteur/consommateur. Préférez des files bornées pour réguler le débit.
-
-## Bonnes pratiques
-
-- Déclarez par l'interface : `Queue<T>`, `Deque<T>`.
-- Pour une queue/pile en mémoire : préférez `ArrayDeque`.
-- Évitez `Stack` (héritage historique) : utilisez `Deque` (`ArrayDeque`) pour les piles LIFO.
-- Choisissez entre `offer`/`poll`/`peek` (retours spéciaux) et `add`/`remove`/`element` (exceptions) selon votre style d'erreur.
-- En concurrence : utilisez les `BlockingQueue` pour backpressure (le producteur/consommateur attend quand la file est pleine/vide) et simplicité, ou `ConcurrentLinkedQueue` pour non bloquant.
-- Documentez la politique de priorité si vous exposez une `PriorityQueue` dans une API.
-
-## Exemples utiles
-
-### Parcours en largeur (BFS) avec ArrayDeque
+L'exemple classique de file FIFO est le parcours en largeur d'un graphe : on visite d'abord les voisins directs du nœud de départ, puis les voisins de ces voisins, et ainsi de suite.
 
 ```java
 void bfs(Node start) {
@@ -198,16 +96,79 @@ void bfs(Node start) {
 }
 ```
 
-### Utiliser Deque comme pile
+Chaque nœud retiré de la tête de la file y fait entrer ses voisins à la fin. `visited.add(nb)` retourne `false` si le nœud a déjà été vu, ce qui évite de le remettre dans la file et de tourner en rond quand le graphe contient des cycles.
+
+## PriorityQueue, la file à priorité
+
+`PriorityQueue` ne fait pas sortir les éléments dans leur ordre d'arrivée, mais du plus petit au plus grand, selon leur ordre naturel ou selon le `Comparator` passé au constructeur. Elle s'appuie sur un tas binaire : `offer` et `poll` se font en O(log n) et `peek` en temps constant, mais `contains` et `remove(Object)` en O(n). Elle refuse les `null`.
 
 ```java
-Deque<Integer> stack = new ArrayDeque<>();
-stack.push(10);
-stack.push(20);
-int top = stack.pop(); // 20
+Queue<Integer> pq = new PriorityQueue<>();
+pq.offer(5);
+pq.offer(1);
+pq.offer(3);
+System.out.println(pq.peek()); // 1
+System.out.println(pq);        // [1, 5, 3]
+
+while (!pq.isEmpty()) {
+    System.out.print(pq.poll() + " "); // 1 3 5
+}
 ```
 
-### Timeout avec BlockingQueue
+Comme le montre le `println`, seule la tête de la file est forcément le plus petit élément : le reste du tas n'est que partiellement trié, et un parcours avec une boucle for-each ne suit aucun ordre particulier. Pour récupérer les éléments dans l'ordre, il faut les retirer un par un avec `poll()`, comme ici.
+
+Pour faire sortir d'abord le plus grand élément, on passe `Comparator.reverseOrder()` au constructeur. Attention aussi aux ex aequo : quand plusieurs éléments ont la même priorité, la documentation précise que l'ordre entre eux est arbitraire. Une `PriorityQueue` ne garantit donc pas l'ordre d'arrivée des éléments de même priorité.
+
+C'est la structure qu'on utilise pour traiter des tâches par ordre d'urgence, ou dans l'algorithme de Dijkstra pour choisir à chaque étape le nœud le plus proche du point de départ.
+
+## Les files bloquantes pour faire travailler des threads ensemble
+
+`ArrayDeque` et `PriorityQueue` ne sont pas thread-safe. Le package `java.util.concurrent` propose des files faites pour être partagées entre threads, en particulier les `BlockingQueue`. Certaines de leurs méthodes savent attendre : `put(e)` attend qu'il y ait de la place dans la file, `take()` attend qu'un élément arrive, et `offer(e, délai, unité)` et `poll(délai, unité)` attendent au plus le temps indiqué.
+
+Les principales implémentations sont :
+
+- `ArrayBlockingQueue`, une file bornée basée sur un tableau dont la taille est fixée à la création (une option du constructeur garantit aux threads en attente d'être servis dans leur ordre d'arrivée) ;
+- `LinkedBlockingQueue`, une file basée sur des nœuds chaînés, bornée si on lui donne une capacité, sinon limitée à `Integer.MAX_VALUE` éléments ;
+- `PriorityBlockingQueue`, l'équivalent bloquant de `PriorityQueue`, sans limite de taille ;
+- `DelayQueue`, une file d'éléments `Delayed` qui ne peuvent être retirés qu'une fois leur délai écoulé ;
+- `SynchronousQueue`, une file sans aucune capacité : chaque `put` attend qu'un autre thread fasse un `take`, et l'élément passe directement de l'un à l'autre ;
+- `LinkedBlockingDeque`, la version `Deque` de `LinkedBlockingQueue`.
+
+En dehors des `BlockingQueue`, `ConcurrentLinkedQueue` est une file FIFO non bornée et non bloquante : ses opérations ne prennent pas de verrou, et `poll()` retourne `null` tout de suite si la file est vide. Attention, sa méthode `size()` n'est pas en temps constant : elle doit parcourir toute la file.
+
+L'utilisation typique d'une file bloquante est le modèle producteur/consommateur : un thread produit des tâches, un autre les traite. Une file bornée régule le débit : si le consommateur prend du retard, le producteur reste bloqué sur `put` au lieu d'accumuler des tâches. Avec une file non bornée, un producteur durablement plus rapide que son consommateur ferait grossir la file jusqu'à épuiser la mémoire.
+
+```java
+BlockingQueue<String> q = new ArrayBlockingQueue<>(100);
+
+Thread producer = new Thread(() -> {
+    try {
+        for (int i = 0; i < 10_000; i++) {
+            q.put("job-" + i); // bloque si plein
+        }
+        q.put("FIN");          // prévient le consommateur qu'il n'y a plus rien à traiter
+    } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+});
+
+Thread consumer = new Thread(() -> {
+    try {
+        while (true) {
+            String job = q.take(); // bloque si vide
+            if (job.equals("FIN")) {
+                break;
+            }
+            process(job);
+        }
+    } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+});
+
+producer.start();
+consumer.start();
+```
+
+Une `BlockingQueue` n'a pas de méthode pour signaler qu'il n'y aura plus d'éléments, et elle refuse les `null`. Pour arrêter le consommateur, le producteur envoie donc une valeur spéciale, ici `"FIN"`, que la documentation appelle un objet *poison*. Sans cette valeur, le consommateur attendrait indéfiniment sur `take()` et le programme ne se terminerait jamais.
+
+Quand on ne veut pas attendre indéfiniment, `poll` accepte un délai maximal et retourne `null` s'il n'a rien reçu à temps :
 
 ```java
 BlockingQueue<Task> q = new LinkedBlockingQueue<>(1000);
@@ -218,31 +179,14 @@ try {
 }
 ```
 
-## Quand préférer Queue/Deque, List ou Set ?
+La dernière famille de collections, celle des [maps]({% post_url 2025-10-04-Framework-collections-java-map %}), associe des clés à des valeurs : c'est le sujet de la partie suivante.
 
-- Utilisez `Queue`/`Deque` pour des modèles FIFO/LIFO, pour traiter des éléments dans un certain ordre d'arrivée ou de priorité, et pour des opérations efficaces en tête/queue.
-- Utilisez `List` si l'ordre indexé compte et que les doublons sont permis.
-- Utilisez `Set` si vous devez garantir l'unicité des éléments.
+## Voir aussi
 
-## Conclusion
-
-`Queue` et `Deque` complètent `List` et `Set` en fournissant des structures adaptées au traitement en flux et aux scénarios de producteur/consommateur, avec des implémentations efficaces (ArrayDeque) et des variantes prioritaires et concurrentes.
-Bien choisir l'implémentation et les méthodes utilisées (`offer`/`poll`/`peek` vs `add`/`remove`/`element`) va rendre votre code plus robuste et performant.
-
-Pour aller plus loin dans la série :
-
-1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
-2. [Les listes (List) en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
-3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
-4. Les files (Queue) et Deques en Java (vous êtes ici)
-5. [Les maps (Map) en Java]({% post_url 2025-10-04-Framework-collections-java-map %})
-6. Utilisations avancées des collections (article à venir)
-
-### Pour aller plus loin
-
-- [Pattern matching en Java moderne]({% post_url 2025-10-23-Pattern-matching-en-Java-moderne %})
-- [Queue - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Queue.html)
-- [Deque - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Deque.html)
-- [ArrayDeque - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/ArrayDeque.html)
-- [PriorityQueue - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/PriorityQueue.html)
-- [java.util.concurrent (BlockingQueue…) - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/package-summary.html)
+- [Les listes (List) en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
+- [Les Virtual Threads en Java 21]({% post_url 2026-03-23-Virtual-Threads-en-Java-21 %})
+- [Javadoc de Queue (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Queue.html)
+- [Javadoc de Deque (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Deque.html)
+- [Javadoc d'ArrayDeque (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayDeque.html)
+- [Javadoc de PriorityQueue (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/PriorityQueue.html)
+- [Javadoc de BlockingQueue (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/BlockingQueue.html)

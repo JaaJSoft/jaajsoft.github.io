@@ -1,7 +1,7 @@
 ---
 layout: article
 title: "Comment dockeriser une application FastAPI"
-description: "Dockeriser une API FastAPI avec un Dockerfile multi-étapes et une image finale Alpine, optimisée pour la taille et la vitesse d'installation."
+description: "Dockeriser une API FastAPI avec un Dockerfile multi-étapes et une image Alpine : préparation des dépendances, healthcheck, .dockerignore, build et lancement."
 author: Pierre Chopinet
 tags:
 - python
@@ -15,24 +15,27 @@ tags:
 - devops
 ---
 
-Dans ce tutoriel, nous allons apprendre à dockeriser une API web développée avec FastAPI, en utilisant un Dockerfile multi-étapes (builder + image finale Alpine) optimisé pour la taille et la vitesse d'installation.
+Dans ce tutoriel, nous allons dockeriser une API web FastAPI avec un Dockerfile
+multi-étapes : une première étape prépare les dépendances Python, la seconde
+produit une image Alpine qui ne contient que ce qu'il faut pour faire tourner
+l'API avec uvicorn.
 
 <!--more-->
 
-Objectifs :
+Dans cet article :
+- Structure du projet
+- Le Dockerfile multi-étapes
+- La healthcheck
+- Le fichier .dockerignore
+- Construire et lancer l'image
 
-- Construire une image légère et reproductible
-- Comprendre le multi-stage build (wheels Python en étape de build)
-- Ajouter une healthcheck HTTP vers l'endpoint `/info/status`
-- Démarrer l'API avec `uvicorn`
+Pré-requis : savoir créer une API FastAPI minimale (sinon, commencez par
+[Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %}))
+et avoir installé Docker ([guide officiel](https://docs.docker.com/get-docker/)).
 
-Pré-requis : savoir créer une API FastAPI minimale. Si ce n'est pas encore fait, suivez d'abord ce guide :
+## Structure du projet
 
-[Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
-
-## Structure minimale du projet
-
-À la racine de votre projet, vous pouvez partir d'une structure très simple :
+On part d'un projet minimal, avec trois fichiers à la racine :
 
 ```
 .
@@ -41,13 +44,9 @@ Pré-requis : savoir créer une API FastAPI minimale. Si ce n'est pas encore fai
 └── Dockerfile
 ```
 
-- `app.py` contient l'application FastAPI exposée via une variable `app`.
-- `requirements.txt` liste les dépendances Python.
-- `Dockerfile` décrit la construction de l'image Docker.
-
-### app.py
-
-Nous allons créer deux endpoints : `GET /` pour un "hello world" et `GET /info/status` qui renvoie un JSON attendu par la healthcheck du Dockerfile.
+Le fichier `app.py` contient l'application FastAPI, avec deux routes : `GET /`
+pour le "hello world", et `GET /info/status` que Docker appellera pour vérifier
+que l'API répond.
 
 ```python
 from fastapi import FastAPI
@@ -60,41 +59,45 @@ def root():
 
 @app.get("/info/status")
 def info_status():
-    # La healthcheck du Dockerfile vérifie la présence exacte de "\"status\":\"ok\""
+    # Route appelée par la healthcheck du Dockerfile
     return {"status": "ok"}
 ```
 
-### requirements.txt
+Le fichier `requirements.txt` liste les dépendances :
 
 ```
 fastapi
 uvicorn[standard]
 ```
 
-> Remarque: `uvicorn[standard]` installe les extras recommandés (uvloop, httptools,…) pour de meilleures performances.
+L'extra `standard` d'uvicorn installe notamment uvloop, une boucle
+d'événements plus rapide que celle d'asyncio, et httptools pour analyser les
+requêtes HTTP : uvicorn les utilise automatiquement quand ils sont présents.
+Pour que deux builds donnent la même image, il vaut mieux fixer les versions
+dans ce fichier (`pip freeze` donne celles de votre environnement).
 
-## Dockerfile (multi-étapes)
+## Le Dockerfile multi-étapes
 
-Copiez-collez ce Dockerfile à la racine du projet. Il construit d'abord des wheels (étape builder) puis installe ces wheels dans une image finale propre et compacte.
+Un Dockerfile multi-étapes contient plusieurs `FROM`. Chaque étape part de sa
+propre image, et l'image finale ne garde que la dernière étape, plus ce qu'on y
+copie explicitement depuis les précédentes. On s'en sert ici pour garder les
+outils de compilation hors de l'image finale.
+
+Créez ce `Dockerfile` à la racine du projet :
 
 ```dockerfile
 # ============================================================================
-# Étape 1 : Builder : construire les wheels (.whl) des dépendances Python
-# Objectif : isoler la compilation pour accélérer les builds suivants et obtenir
-# une image finale plus légère et plus propre.
+# Étape 1 : builder, construit les wheels (.whl) des dépendances Python
 # ----------------------------------------------------------------------------
 FROM python:3.13.5-alpine3.22 AS builder
 
 # Dossier de travail dans le conteneur (tous les chemins seront relatifs à /app)
 WORKDIR /app
 
-# Dépendances système nécessaires pour compiler certaines libs Python (c-extensions)
-# Paquets: build-base, gcc, musl-dev, python3-dev, libffi-dev, openssl-dev
+# Outils pour compiler les dépendances qui n'ont pas de wheel pour Alpine
+# (build-base contient gcc, make et les en-têtes de la libc musl)
 RUN apk add --no-cache \
     build-base \
-    gcc \
-    musl-dev \
-    python3-dev \
     libffi-dev \
     openssl-dev
 
@@ -105,7 +108,7 @@ COPY requirements.txt .
 RUN pip wheel --no-cache-dir --wheel-dir /app/wheels -r requirements.txt
 
 # ============================================================================
-# Étape 2 : Image finale (runtime) : minimale et prête à exécuter
+# Étape 2 : image finale, sans les outils de compilation
 # ----------------------------------------------------------------------------
 FROM python:3.13.5-alpine3.22
 
@@ -115,10 +118,10 @@ WORKDIR /app
 # (Optionnel) Installer curl si vous utilisez la healthcheck basée sur curl
 # RUN apk add --no-cache curl
 
-# On copie les wheels produits par l'étape builder
+# On copie les wheels produites par l'étape builder
 COPY --from=builder /app/wheels /app/wheels
 
-# On installe les dépendances à partir des wheels locaux (pas d'accès réseau)
+# On installe les dépendances à partir des wheels locales (pas d'accès réseau)
 COPY requirements.txt .
 RUN pip install --no-cache-dir --no-index --find-links=/app/wheels -r requirements.txt \
     && rm -rf /app/wheels \
@@ -142,11 +145,66 @@ HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-> Note importante : la healthcheck utilise `wget`, fourni par _busybox_ dans l'image Alpine, donc aucune dépendance supplémentaire n'est nécessaire. Si vous préférez `curl`, décommentez son installation (`RUN apk add --no-cache curl`) et utilisez la variante curl indiquée en commentaire dans le Dockerfile.
+La première étape s'appelle `builder` (`AS builder`). On y installe
+`build-base` (gcc, make et les en-têtes de musl, la libc d'Alpine) et les
+en-têtes de libffi et d'OpenSSL, utilisés par certaines dépendances écrites en
+C. Puis `pip wheel` prépare une wheel, un paquet Python prêt à installer, pour
+chaque dépendance. Inutile d'ajouter le paquet Alpine `python3-dev` : il
+contient les en-têtes du Python 3.12 de la distribution, alors que l'image
+officielle `python` embarque déjà ceux de son propre Python 3.13 dans
+`/usr/local/include`.
 
-## (Optionnel) .dockerignore
+Avec le `requirements.txt` de cet article, pip trouve pour toutes les
+dépendances des wheels déjà compilées pour Alpine (musllinux), et ne compile
+rien (vérifié en octobre 2026). Les outils de compilation ne serviront que le
+jour où vous ajouterez une dépendance sans wheel pour Alpine.
 
-Pour éviter d'embarquer des fichiers inutiles dans le build, créez un `.dockerignore` :
+La seconde étape repart de l'image `python` d'origine : les compilateurs
+restent dans l'étape `builder`, et seules les wheels sont copiées.
+`pip install --no-index --find-links` les installe ensuite sans aller chercher
+quoi que ce soit sur PyPI. Les dépendances sont installées avant de copier le
+code : tant que `requirements.txt` ne change pas, Docker réutilise ces couches
+en cache, et une modification de `app.py` ne relance pas l'installation.
+
+Attention, le `rm -rf /app/wheels` fait disparaître les wheels du système de
+fichiers de l'image, mais ne la fait pas maigrir : elles restent stockées dans
+la couche créée par le `COPY --from=builder` (une dizaine de Mo ici), et une
+couche suivante ne peut que les masquer. Pour éviter cette couche, BuildKit, le
+moteur de build par défaut de Docker, permet de monter le dossier de l'étape
+`builder` le temps d'un `RUN`. On remplace alors le `COPY --from=builder` et le
+`RUN pip install` par :
+
+```dockerfile
+COPY requirements.txt .
+RUN --mount=type=bind,from=builder,source=/app/wheels,target=/tmp/wheels \
+    pip install --no-cache-dir --no-index --find-links=/tmp/wheels -r requirements.txt \
+    && find /usr/local -type d -name __pycache__ -exec rm -rf {} +
+```
+
+Enfin, `CMD` lance uvicorn sur `0.0.0.0` : par défaut il n'écoute que sur
+`127.0.0.1`, et l'API ne serait alors pas joignable depuis l'extérieur du
+conteneur. Si votre application est découpée en plusieurs fichiers, comme dans
+l'article
+[Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %}),
+adaptez le module à lancer (`app.main:app` au lieu de `app:app`).
+
+## La healthcheck
+
+L'instruction `HEALTHCHECK` demande à Docker d'appeler `/info/status` toutes
+les 60 secondes. `wget`, fourni par busybox dans l'image Alpine, renvoie un code
+d'erreur si l'API ne répond pas ou répond avec une erreur HTTP : pas besoin
+d'installer curl. Après 3 échecs consécutifs (`--retries=3`), le conteneur est
+marqué `unhealthy`.
+
+Si vous préférez curl, décommentez la ligne `RUN apk add --no-cache curl` et
+utilisez la variante donnée en commentaire, qui vérifie en plus le contenu de la
+réponse.
+
+## Le fichier .dockerignore
+
+`COPY . .` copie tout le dossier du projet dans l'image. Pour ne pas y embarquer
+un environnement virtuel, l'historique git ou un fichier `.env` contenant des
+secrets, créez un fichier `.dockerignore` à côté du Dockerfile :
 
 ```
 __pycache__
@@ -169,50 +227,49 @@ wheels
 
 ## Construire et lancer l'image
 
-Depuis la racine du projet (là où se trouve le Dockerfile) :
+Depuis la racine du projet (là où se trouve le Dockerfile) :
 
 ```bash
 docker build -t fastapi-app:latest .
 ```
 
-Lancez le conteneur en mappant le port 8000 :
+On lance le conteneur en mappant son port 8000 sur le port 8000 de la machine :
 
 ```bash
 docker run --rm -p 8000:8000 --name fastapi-app fastapi-app:latest
 ```
 
-Vous pouvez maintenant tester :
-
-- Navigateur : http://127.0.0.1:8000/
-- Swagger UI : http://127.0.0.1:8000/docs
-- ReDoc : http://127.0.0.1:8000/redoc
-
-Via `curl` :
+L'API répond alors sur `http://127.0.0.1:8000/`, avec sa documentation sur
+`/docs` (Swagger UI) et `/redoc` (ReDoc) :
 
 ```bash
 curl http://127.0.0.1:8000/
-# Hello World
+"Hello World"
 
-curl -s http://127.0.0.1:8000/info/status
-# {"status":"ok"}
+curl http://127.0.0.1:8000/info/status
+{"status":"ok"}
 ```
 
-Pour vérifier la healthcheck Docker :
+Pour voir l'état de la healthcheck :
 
+{% raw %}
 ```bash
 docker inspect --format='{{json .State.Health}}' fastapi-app | jq
-# Vous devriez voir Status: healthy après quelques secondes si /info/status renvoie {"status":"ok"}
 ```
+{% endraw %}
 
-## Aller plus loin
+Le champ `Status` vaut `starting` jusqu'au premier contrôle réussi, puis
+`healthy`. Depuis la version 27, Docker lance un contrôle toutes les 5 secondes
+pendant la `start-period` : le conteneur passe donc à `healthy` environ 5
+secondes après son démarrage. Avec une version plus ancienne, le premier
+contrôle n'a lieu qu'au bout de l'`interval`, soit 60 secondes ici.
 
-- Article précédent : [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
+## Voir aussi
+
+- [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
 - [Organiser une application FastAPI en plusieurs fichiers]({% post_url 2025-08-17-Organiser-une-application-FastAPI-en-plusieurs-fichiers %})
-- [Limiter le rate d'une API FastAPI avec Redis (fastapi-limiter)]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
-- [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %})
+- [Comment dockeriser une application flask]({% post_url 2023-02-10-Comment-dockeriser-une-application-flask %})
 - [Comment dockeriser une application Django]({% post_url 2025-10-25-Comment-dockeriser-une-application-Django %})
-- Ajoutez un reverse proxy (Nginx, Traefik) devant votre API.
-- Utilisez des variables d'environnement et des secrets.
-- Intégrez un CI/CD pour builder et pousser automatiquement vos images.
-
-Bon build et bonne mise en prod !
+- [Comment manipuler du JSON en ligne de commande avec jq]({% post_url 2025-09-17-Comment-utiliser-jq %})
+- [FastAPI in Containers - Docker](https://fastapi.tiangolo.com/deployment/docker/), la documentation de FastAPI
+- [La référence du Dockerfile](https://docs.docker.com/reference/dockerfile/)

@@ -16,21 +16,21 @@ Dans ce tutoriel, nous allons apprendre comment _dockeriser_ son api _flask_
 avec _docker_ et _gunicorn_.
 <!--more-->
 
-L'objectif de ce tutoriel est d'apprendre à :
+L'objectif de ce tutoriel est de :
 
-- Comprendre les bases de _docker_
-- _Dockeriser_ son api _flask_
+- comprendre les bases de _docker_
+- _dockeriser_ son api _flask_
 
 ## Flask
 
-Pré-requis, savoir développer une application _flask_ "simple". Si ce n'est pas le
-cas n'hésitez pas à aller voir notre tutoriel sur le sujet :
+Pré-requis : savoir développer une application _flask_ "simple". Si ce n'est pas le
+cas, n'hésitez pas à aller voir notre tutoriel sur le sujet :
 
 [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
 
 ## Docker
 
-### Docker qu'est-ce que c'est ?
+### Docker, qu'est-ce que c'est ?
 
 D'après [Wikipedia](https://fr.wikipedia.org/wiki/Docker_(logiciel)) :
 > Docker est une plateforme permettant de lancer certaines applications dans des
@@ -52,7 +52,7 @@ Autrement dit : _Docker_ permet de faire abstraction de son OS, et de pouvoir
 partager le même environnement entre sa machine de développement et son/ses
 serveurs en production.
 
-Pour installer _docker_, suivez le guide officiel [ici](https://docs.docker.com/get-docker/)
+Pour installer _docker_, suivez le guide officiel [ici](https://docs.docker.com/get-docker/).
 
 ## Gunicorn
 
@@ -100,15 +100,15 @@ Maintenant tout doit être bon du côté de _python_, on attaque _docker_ !
 
 Pour créer notre conteneur docker, nous avons besoin de définir comment
 construire une image _docker_. Pour cela, nous allons utiliser un fichier
-nommé `dockerfile`.
+nommé `Dockerfile`.
 
 Un Dockerfile est un fichier texte qui contient toutes les commandes à exécuter
 pour construire une image.
 Créez ce fichier à la racine de votre projet.
 
 Nous allons baser notre image docker sur _Alpine_, une distribution légère dédiée
-au
-conteneur docker. Cette distribution permet de réduire sensiblement la taille
+aux
+conteneurs docker. Cette distribution permet de réduire sensiblement la taille
 des images _docker_.
 
 ```dockerfile
@@ -116,7 +116,7 @@ FROM python:3.12-alpine
 ```
 
 On choisit l'emplacement de notre application (nommé le dossier de travail par
-la suite), à partir de la racine du système de fichier virtuel du conteneur :
+la suite), à partir de la racine du système de fichiers virtuel du conteneur :
 
 ```dockerfile
 WORKDIR /app
@@ -143,11 +143,11 @@ nécessaires dans notre _docker_, et certains sont même dangereux à embarquer
 dans le conteneur, comme des fichiers de _CI_ contenant des _tokens_ de
 déploiement.
 
-Pour régler ce petit problème, il est possible comme avec _git_ de créer un
+Pour régler ce petit problème, il est possible, comme avec _git_, de créer un
 fichier pour blacklister des fichiers. Au même niveau que votre _Dockerfile_,
-créez un fichier nommé : `.dockerignore`
+créez un fichier nommé `.dockerignore`.
 
-Ajoutez dedans tous les fichiers à ne pas inclure dans le conteneur, dans mon
+Ajoutez dedans tous les fichiers à ne pas inclure dans le conteneur. Dans mon
 cas, je retire mes fichiers relatifs à _git_ :
 
 ```
@@ -156,7 +156,7 @@ cas, je retire mes fichiers relatifs à _git_ :
 README.md
 ```
 
-Enfin, j'installe les dépendances définies précédemment :
+Ensuite, j'installe les dépendances définies précédemment :
 
 ```dockerfile
 RUN pip3 install -r requirements.txt
@@ -182,9 +182,9 @@ notre cas, notre script de lancement.
 CMD ["./run.sh"]
 ```
 
-Et voilà notre dockerfile est terminé.
+Et voilà, notre dockerfile est terminé.
 
-## Le dockerfile complet :
+## Le dockerfile complet
 
 ```dockerfile
 FROM python:3.12-alpine
@@ -205,7 +205,7 @@ CMD ["./run.sh"]
 
 ## Test de notre docker
 
-Maintenant, il va falloir _build_ et tester notre image
+Maintenant, il va falloir _build_ et tester notre image :
 
 ```bash
 docker build -t mon_app .
@@ -218,7 +218,7 @@ On lance notre application sur le port 5000 de notre OS en le mappant sur le
 docker run -p 5000:8000 mon_app
 ```
 
-Pour tester que tout marche bien, on teste une des routes flask définie dans le
+Pour vérifier que tout marche bien, on teste une des routes flask définies dans le
 tutoriel précédent :
 
 ```bash
@@ -230,14 +230,14 @@ test_endpoint_get
 
 Dans ce tutoriel, vous aurez appris à conteneuriser votre application python et
 à
-la rendre prête pour être mise en production. Il ne reste plus qu'à la publier
+la rendre prête à être mise en production. Il ne reste plus qu'à la publier
 et/ou à la déployer quelque part.
 
 ## Voir aussi
 
 - [Documentation Docker](https://docs.docker.com/get-started/)
-- [Comment utiliser un cache avec Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
+- [Comment ajouter un cache à une application Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
 - [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
 - [Python : Comment faire des requêtes HTTP avec requests]({% post_url 2020-05-22-Comment-faire-des-requetes-http-en-python-avec-requests %})
 - [Comment dockeriser une application Django]({% post_url 2025-10-25-Comment-dockeriser-une-application-Django %})
-- [Comment dockeriser une API FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})
+- [Comment dockeriser une application FastAPI]({% post_url 2025-08-16-Comment-dockeriser-une-api-web-avec-FastAPI %})

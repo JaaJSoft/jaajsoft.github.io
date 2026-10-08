@@ -12,30 +12,29 @@ tags:
 author: Pierre Chopinet
 ---
 
-Accélérer une app Django ne passe pas uniquement par le code : un bon cache peut diviser la charge serveur par 10 et réduire drastiquement la latence. Dans ce guide, on passe en revue les niveaux de cache offerts par Django, avec des exemples concrets pour chaque usage.
+Une page qui refait les mêmes requêtes SQL à chaque affichage fait travailler le serveur pour rien. Le framework de cache de Django permet de garder le résultat à plusieurs niveaux : la page entière, un morceau de template ou une simple valeur calculée. Dans ce tutoriel, nous allons configurer un backend de cache, utiliser chacun de ces niveaux, puis voir comment invalider le cache proprement.
 <!--more-->
 
 Dans cet article :
-- Choisir le backend de cache adapté (mémoire locale, fichier, base de données, Memcached, Redis)
-- Configurer `CACHES` (par défaut + Redis/Memcached)
-- Utiliser les différents niveaux de cache : per-view, per-site (middleware), fragments de template, API bas niveau
-- Invalider proprement : TTL, suppression ciblée, versioning, signaux
-- Gérer les cas réels (DRF, pages par utilisateur, i18n), pièges et bonnes pratiques
+- Choisir un backend de cache
+- Mettre une vue en cache
+- Le cache de tout le site
+- Mettre en cache un fragment de template
+- L'API bas niveau
+- Invalider le cache
+- Contenu par utilisateur, langues et pagination
+- Django REST Framework
+- Vérifier que le cache fonctionne
 
-Pré-requis :
-- Django 4.2+ (ou 5.x)
-- Notions de vues et templates
-
----
+Pré-requis : connaître les vues et les templates Django. Les exemples ont été testés avec Django 5.2.
 
 ## Choisir un backend de cache
 
-Django propose plusieurs backends. Voici quand utiliser quoi, avec configuration minimale.
+Le backend se configure dans le réglage `CACHES` (sans configuration, Django utilise le cache en mémoire locale). `TIMEOUT` y fixe la durée de vie par défaut des entrées, en secondes (300 si on ne le précise pas). `KEY_PREFIX` est ajouté devant toutes les clés, pour éviter les collisions quand plusieurs projets partagent le même serveur de cache.
 
 ### Mémoire locale
 
-- Avantages : zéro dépendance, très simple, rapide.
-- Limites : non partagé entre processus ou containers, pas persistant.
+Aucune dépendance, et c'est très rapide :
 
 ```python
 # settings.py
@@ -49,25 +48,27 @@ CACHES = {
 }
 ```
 
+Par contre, chaque processus a son propre cache : avec 4 workers Gunicorn, vous avez 4 caches indépendants, et rien n'est partagé entre deux conteneurs. C'est très bien pour le développement, à éviter en production.
+
 ### Fichier
 
-- Avantages : persistant, simple.
-- Limites : I/O disque, moins adapté à forte concurrence.
+Le cache survit aux redémarrages, au prix d'accès disque :
 
 ```python
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
-        "LOCATION": BASE_DIR / "django_cache",  # dossier existant et accessible
+        "LOCATION": BASE_DIR / "django_cache",  # dossier créé au besoin
         "TIMEOUT": 600,
     }
 }
 ```
 
+L'utilisateur du serveur doit pouvoir écrire dans ce dossier, qui ne doit se trouver ni dans `MEDIA_ROOT` ni dans `STATIC_ROOT` : les valeurs sont sérialisées avec pickle, et la documentation de Django prévient qu'un attaquant qui accède à ces fichiers pourrait aller jusqu'à exécuter du code.
+
 ### Base de données
 
-- Avantages : pas de service externe.
-- Limites : met plus de charge sur la DB, latences supérieures à Redis/Memcached.
+Pas de service en plus à installer, mais chaque accès au cache devient une requête SQL :
 
 ```python
 # 1) Créer la table
@@ -84,8 +85,7 @@ CACHES = {
 
 ### Memcached
 
-- Avantages : mémoire partagée très rapide, mature.
-- Limites : valeurs limitées en taille (environ 1 Mo par défaut), pas de types riches.
+Memcached est un serveur de cache en mémoire, partagé par tous les processus qui s'y connectent. Django le pilote avec la bibliothèque `pymemcache` (ou `pylibmc`) :
 
 ```python
 CACHES = {
@@ -99,10 +99,22 @@ CACHES = {
 }
 ```
 
-### Redis (recommandé pour la plupart des apps)
+Attention à la taille des valeurs : par défaut, Memcached refuse tout ce qui dépasse 1 Mo, et pymemcache lève alors `MemcacheServerError: b'object too large for cache'`.
 
-- Avantages : partagé, rapide, TTL, incr/decr, locks. Très courant en prod.
-- Limites : dépendance externe, gestion/ops.
+### Redis
+
+Redis est partagé entre processus et serveurs, gère l'expiration des clés et propose des opérations en plus (verrous, compteurs...). C'est le backend que je vous conseille pour la plupart des applications. Django en fournit un depuis la version 4.0, basé sur la bibliothèque `redis` (`pip install redis`) :
+
+```python
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
+    }
+}
+```
+
+Le paquet `django-redis` reste utile pour ses fonctions supplémentaires : suppression par motif, compression des valeurs, ou encore l'option `IGNORE_EXCEPTIONS` :
 
 ```python
 # pip install django-redis
@@ -114,7 +126,7 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             # Compression optionnelle
             # "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
-            # Ne pas crasher si Redis est indisponible (log et fallback)
+            # Ne pas planter si Redis est indisponible
             "IGNORE_EXCEPTIONS": True,
         },
         "TIMEOUT": 300,
@@ -123,22 +135,17 @@ CACHES = {
 }
 ```
 
-> Depuis Django 4.0, un backend Redis natif est fourni : `django.core.cache.backends.redis.RedisCache` (basé sur `redis-py`), sans dépendance supplémentaire. `django-redis` reste utile pour des fonctionnalités avancées comme `delete_pattern`, les compresseurs ou les clients Redis personnalisés.
+Sans cette option, et avec le backend natif, un Redis injoignable fait lever `redis.exceptions.ConnectionError` à chaque accès au cache, et la page part en erreur 500. Avec `IGNORE_EXCEPTIONS`, le cache se comporte comme un cache vide : `get` renvoie `None` et l'application continue de répondre, plus lentement.
 
-En partant du choix du backend, voyons l'approche la plus simple à mettre en place côté vues.
+## Mettre une vue en cache
 
----
-
-## Cache per-view (le plus simple à adopter)
-
-Idéal pour des pages identiques pour tous (ex: page d'accueil publique).
+Le cache par vue est le plus simple à mettre en place. Il convient aux pages identiques pour tout le monde, une page d'accueil publique par exemple :
 
 ```python
 # views.py
 from django.views.generic import TemplateView
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page, cache_control
-from django.views.decorators.vary import vary_on_headers
 
 @method_decorator(cache_page(60 * 15), name="dispatch")  # 15 min
 @method_decorator(cache_control(public=True), name="dispatch")
@@ -146,33 +153,39 @@ class HomeView(TemplateView):
     template_name = "home.html"
 ```
 
-Routes :
 ```python
 # urls.py
 from django.urls import path
 from .views import HomeView
+
 urlpatterns = [
     path("", HomeView.as_view(), name="home"),
 ]
 ```
 
-- `cache_page(timeout, key_prefix=None)` crée ou retourne la réponse depuis le cache.
-- `cache_control(public=True)` ajoute des en-têtes HTTP utiles côté CDN et navigateur.
-- Pour varier par langue ou agent, utilisez `vary_on_headers` :
+`cache_page` garde la réponse complète pendant 15 minutes. La clé est construite à partir de l'URL, query string comprise : `/articles/?page=2` et `/articles/?page=3` sont deux entrées différentes. Le décorateur ajoute aussi les en-têtes `Cache-Control` et `Expires`, et `cache_control(public=True)` autorise les caches intermédiaires (CDN, proxy) à garder la page. La réponse contient alors :
+
+```
+Cache-Control: public, max-age=900
+```
+
+Si le contenu dépend d'un en-tête de la requête, `vary_on_headers` l'ajoute à l'en-tête `Vary` et Django garde une version de la page par valeur de cet en-tête :
 
 ```python
-@method_decorator(vary_on_headers("Accept-Language"), name="dispatch")
+from django.views.decorators.vary import vary_on_headers
+
+@method_decorator(vary_on_headers("User-Agent"), name="dispatch")
 class HomeView(...):
     ...
 ```
 
-> Attention : pour des pages dépendantes de l'utilisateur connecté, le per-view naïf n'est pas adapté (risque de servir la page d'un autre). Voir la section "Par utilisateur".
+Pour la langue, rien à faire : avec `USE_I18N = True` (la valeur d'un nouveau projet), la langue active fait déjà partie de la clé, tout comme le fuseau horaire avec `USE_TZ = True`.
 
----
+Attention, une page qui dépend de l'utilisateur connecté ne doit pas passer telle quelle par `cache_page` : on risque de servir la page d'un utilisateur à un autre (voir plus bas).
 
-## Cache per-site (middlewares)
+## Le cache de tout le site
 
-Met en cache toutes les réponses (GET/HEAD) si possible. Pratique pour un site essentiellement statique.
+Pour mettre en cache toutes les pages d'un site public, Django fournit deux middlewares :
 
 ```python
 # settings.py (ordre important)
@@ -186,7 +199,9 @@ CACHE_MIDDLEWARE_SECONDS = 600
 CACHE_MIDDLEWARE_KEY_PREFIX = "mysite"
 ```
 
-Exclure certaines vues :
+L'ordre n'est pas une faute de frappe. `UpdateCacheMiddleware` enregistre la réponse, et les middlewares traitent les réponses de bas en haut : en tête de liste, il passe en dernier, après ceux qui modifient l'en-tête `Vary` (sessions, compression, langue). `FetchFromCacheMiddleware` cherche la page pendant le traitement de la requête, qui se fait de haut en bas : il doit lui aussi passer après eux.
+
+Seules les réponses 200 aux requêtes `GET` et `HEAD` sont mises en cache, une par URL et par query string. Pour exclure une vue :
 
 ```python
 # views.py
@@ -197,15 +212,11 @@ def admin_dashboard(request):
     ...
 ```
 
-> Le per-site convient aux contenus publics. Évitez pour des pages personnalisées par utilisateur (ou utilisez un CDN avec règles précises).
+`never_cache` ajoute `Cache-Control: max-age=0, no-cache, no-store, must-revalidate, private`, et le middleware ne garde pas la réponse. Comme le cache par vue, le cache par site ne convient qu'aux pages identiques pour tous.
 
-Quand seule une portion d'une page est coûteuse, on peut cibler ce périmètre via le cache de fragments dans les templates.
+## Mettre en cache un fragment de template
 
----
-
-## Cache de fragments dans les templates
-
-Parfait pour une sidebar, un bloc de navigation coûteux, ou un composant externe.
+Quand seule une partie de la page coûte cher (une barre latérale, un menu calculé), on met en cache ce fragment avec la balise `cache` :
 
 {% raw %}
 ```django
@@ -227,14 +238,11 @@ Parfait pour une sidebar, un bloc de navigation coûteux, ou un composant extern
 ```
 {% endraw %}
 
-- La clé de cache inclut ici `user.pk` pour différencier par utilisateur.
-- Gardez les fragments assez gros pour amortir le coût, mais pas trop (évitez d'avoir un trop grand nombre de clés de cache différentes qui pourraient surcharger la mémoire).
+La balise prend une durée en secondes, un nom de fragment, puis autant d'arguments que nécessaire pour distinguer les versions : ici une par utilisateur, grâce à `user.pk`. Chaque combinaison d'arguments crée une entrée dans le cache : évitez donc les arguments qui prennent un très grand nombre de valeurs différentes.
 
----
+## L'API bas niveau
 
-## API bas niveau : cache.get / set / get_or_set
-
-Quand vous gérez vos propres clés et objets.
+Pour mettre en cache le résultat d'un calcul plutôt qu'un morceau de HTML, on utilise directement l'objet `cache` :
 
 ```python
 # services.py
@@ -244,39 +252,36 @@ KEY = "stats:homepage"
 
 def get_home_stats():
     def _compute():
-        # Simule un calcul/IO lourd
+        # Simule un calcul coûteux
         return {"articles": 42, "users": 1337}
 
     # get_or_set calcule et stocke si absent
     return cache.get_or_set(KEY, _compute, timeout=300)
 ```
 
-Opérations utiles :
+`get_or_set` accepte une fonction en valeur par défaut : elle n'est appelée que si la clé est absente du cache.
+
+Les autres opérations courantes, avec ce qu'elles renvoient :
 
 ```python
 cache.set("foo", {"x": 1}, timeout=60)
-val = cache.get("foo")                       # -> {"x": 1}
-cache.add("foo", 2, timeout=60)              # n'écrase pas si existe déjà
-cache.incr("counter", delta=1)               # lève ValueError si "counter" n'existe pas
-cache.decr("counter", delta=2)
-cache.delete("foo")
+cache.get("foo")                     # {'x': 1}
+cache.add("foo", 2, timeout=60)      # False : add n'écrase pas une clé existante
+cache.set("counter", 10)
+cache.incr("counter", delta=1)       # 11 (ValueError si la clé n'existe pas)
+cache.decr("counter", delta=2)       # 9
+cache.delete("foo")                  # True (False si la clé n'existait pas)
 cache.delete_many(["k1", "k2"])
-cache.get("k", default=None, version=2)      # versioning
-# Mettre à jour le TTL (si supporté)
-try:
-    cache.touch("stats:homepage", timeout=120)
-except NotImplementedError:
-    pass
+cache.touch("counter", timeout=120)  # True : nouvelle durée de vie
 ```
 
-> Sérialisation : Django sérialise les données en utilisant Pickle par défaut. Avec Redis, vous pouvez configurer un compresseur pour réduire la taille (voir `OPTIONS["COMPRESSOR"]`).
+`touch` renvoie `False` si la clé n'existe pas. `incr` et `decr` ne sont atomiques que si le backend sait le faire nativement (Memcached par exemple) ; sinon Django lit la valeur puis réécrit le résultat.
 
----
+Les valeurs sont sérialisées avec pickle : on peut stocker tout objet Python sérialisable, des dictionnaires comme des listes d'objets de modèle. Avec django-redis, l'option `COMPRESSOR` vue plus haut réduit la place qu'elles occupent.
 
-## Invalidation : TTL, suppression ciblée, versioning, signaux
+## Invalider le cache
 
-- TTL : fixez des `TIMEOUT` réalistes (ex: 5 à 15 minutes pour du contenu éditorial).
-- Suppression ciblée quand une ressource change :
+Le plus simple reste une durée de vie réaliste, 5 à 15 minutes pour du contenu éditorial par exemple. Quand une ressource change, on supprime sa clé :
 
 ```python
 from django.core.cache import cache
@@ -285,27 +290,48 @@ def invalidate_article(article_id: int):
     cache.delete(f"article:{article_id}")
 ```
 
-Par motif (Redis + django-redis) :
+Avec django-redis, on peut aussi supprimer toutes les clés qui correspondent à un motif :
 
 ```python
-from django_redis import get_redis_connection
+from django.core.cache import cache
 
-r = get_redis_connection("default")
-for key in r.scan_iter("user:*"):
-    r.delete(key)
-# ou plus simple si disponible:
-# cache.delete_pattern("user:*")
+cache.delete_pattern("user:*")  # renvoie le nombre de clés supprimées
 ```
 
-Versioning de clés, pratique lors d'un déploiement changeant le format :
+Attention à ne pas passer directement par le client Redis (`get_redis_connection("default").scan_iter("user:*")`) : Django range les clés sous la forme `préfixe:version:clé`, ici `myapp:1:user:42`, et ce motif ne trouve rien. `delete_pattern` ajoute lui-même le préfixe et la version.
+
+Pour un fragment de template, `make_template_fragment_key` retrouve la clé à partir du nom du fragment et de ses arguments :
 
 ```python
-CACHE_VERSION = 2  # settings.py
-# utilisation
-cache.get("home", version=CACHE_VERSION)
+from django.core.cache import cache
+from django.core.cache.utils import make_template_fragment_key
+
+# fragment "sidebar" de l'utilisateur 42
+cache.delete(make_template_fragment_key("sidebar", [42]))
 ```
 
-Signaux : invalider au `post_save` ou `post_delete`.
+Lors d'un déploiement qui change le format des données en cache, le plus simple est de changer de version. Le réglage `VERSION` s'applique à toutes les clés, et les valeurs écrites avec l'ancienne version sont ignorées :
+
+```python
+# settings.py
+CACHES = {
+    "default": {
+        # ...
+        "VERSION": 2,
+    }
+}
+```
+
+Pour une seule clé, on peut passer `version=` à `get` et `set`, ou utiliser `incr_version` :
+
+```python
+cache.set("home", "ancien format")
+cache.incr_version("home")    # 2
+cache.get("home")             # None
+cache.get("home", version=2)  # 'ancien format'
+```
+
+Enfin, les signaux permettent d'invalider le cache dès qu'un objet est enregistré ou supprimé :
 
 ```python
 # signals.py
@@ -319,13 +345,25 @@ def invalidate_article_cache(sender, instance, **kwargs):
     cache.delete(f"article:{instance.pk}")
 ```
 
----
+Le receiver n'est enregistré que si le module `signals` est importé. Comme le recommande la documentation, on l'importe dans la méthode `ready()` de la configuration de l'application :
 
-## Patterns courants : utilisateurs, i18n et pagination
+```python
+# apps.py
+from django.apps import AppConfig
+
+class BlogConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "blog"
+
+    def ready(self):
+        from . import signals  # noqa: F401
+```
+
+## Contenu par utilisateur, langues et pagination
 
 ### Par utilisateur
 
-Évitez de mettre en cache la page complète. Cachez les fragments ou des données :
+Pour une page qui dépend de l'utilisateur, évitez de mettre en cache la page complète. Réservez le cache à des fragments ou à des données, avec l'identifiant de l'utilisateur dans la clé :
 
 ```python
 from django.core.cache import cache
@@ -335,9 +373,10 @@ def get_user_dashboard(user):
     return cache.get_or_set(key, lambda: compute_dashboard(user), 300)
 ```
 
-Pour des vues per-view conditionnelles, variez sur cookies ou headers avec prudence :
+Si vous tenez à mettre la page entière en cache, `vary_on_cookie` crée une version par valeur de l'en-tête `Cookie`, donc en pratique une par session :
 
 ```python
+from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_cookie
 
 @cache_page(300)
@@ -346,13 +385,13 @@ def public_but_personalized(request):
     ...
 ```
 
-> L'ordre des décorateurs compte : `cache_page` doit être au-dessus (le plus externe) pour prendre en compte l'en-tête `Vary: Cookie` posé par `vary_on_cookie` et inclure le cookie dans la clé de cache. Dans l'ordre inverse, la clé ignore le cookie et vous risquez de servir la page d'un utilisateur à un autre.
+L'ordre des décorateurs compte : `cache_page` doit être au-dessus, pour voir l'en-tête `Vary: Cookie` posé par `vary_on_cookie` et inclure le cookie dans la clé. Dans l'ordre inverse, la clé ignore le cookie : sur une vue qui affiche un nom lu dans un cookie, Bob reçoit alors la page mise en cache pour Alice.
 
-> Attention : `vary_on_cookie` multiplie les variantes dans le cache (risque d'explosion du nombre de clés). Préférez les fragments ciblés.
+Même dans le bon ordre, une entrée par session peut vite faire beaucoup de clés : les fragments ciblés restent préférables. Et de façon générale, ne mettez pas de données sensibles (jetons, informations personnelles) dans un cache partagé.
 
-### Internationalisation
+### Langues
 
-Variez sur `Accept-Language` ou utilisez des clés incluant le code langue :
+Comme vu plus haut, les caches par vue et par site tiennent déjà compte de la langue active. Avec l'API bas niveau, ajoutez le code de la langue dans la clé :
 
 ```python
 from django.utils.translation import get_language
@@ -361,7 +400,7 @@ key = f"home:{get_language()}"
 
 ### Pagination et tri
 
-Incluez les paramètres de requête dans la clé (ou laissez le middleware/vary s'en charger) :
+Les caches par vue et par site incluent la query string dans la clé. Avec l'API bas niveau, c'est à vous d'y mettre les paramètres :
 
 ```python
 page = request.GET.get("page", "1")
@@ -369,34 +408,31 @@ sort = request.GET.get("sort", "-date")
 key = f"list:{page}:{sort}"
 ```
 
----
+Attention, ces valeurs viennent de l'utilisateur. Avec Memcached, une clé qui contient un espace ou dépasse 250 caractères lève `InvalidCacheKey` (les autres backends se contentent d'un avertissement `CacheKeyWarning`). Validez les paramètres avant de construire la clé, ou hachez-la.
 
-## Django REST Framework (DRF)
+## Django REST Framework
 
-Les options de cache présentées plus haut fonctionnent aussi avec DRF. Par exemple, mettre en cache les listes publiques est souvent rentable :
+Les décorateurs vus plus haut fonctionnent aussi avec DRF. Pour mettre en cache une liste publique :
 
 ```python
 # viewsets.py
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_headers
 from .models import Product
 from .serializers import ProductSerializer
 
 @method_decorator(cache_page(60 * 5), name="list")
-@method_decorator(vary_on_headers("Accept-Language"), name="list")
 class ProductViewSet(ReadOnlyModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 ```
 
----
+Seule l'action `list` est mise en cache : le détail d'un produit est recalculé à chaque appel. La négociation de contenu est prise en compte : DRF ajoute `Accept` à l'en-tête `Vary`, et la réponse JSON comme la page HTML de l'API navigable ont chacune leur entrée dans le cache (testé avec DRF 3.18).
 
-## Observabilité, tests et mise au point
+## Vérifier que le cache fonctionne
 
-- `django-debug-toolbar` possède un panneau "Cache" utile en dev.
-- Loggez les hits et miss autour d'un bloc coûteux :
+En développement, Django Debug Toolbar a un panneau "Cache" qui liste les appels au cache de chaque requête. Dans le code, on peut aussi tracer les succès et les échecs autour d'un calcul coûteux :
 
 ```python
 import logging
@@ -416,68 +452,13 @@ def expensive():
     return val
 ```
 
-- Mesurez : un profilage simple (ex: `django-silk`, `cProfile`) permet de vérifier les gains.
-
----
-
-## Pièges et bonnes pratiques
-
-- Ne mettez pas en cache des données sensibles (tokens, infos personnelles) dans un cache partagé.
-- Invalidez au plus près des changements de données (signaux) et gardez des TTL raisonnables.
-- Évitez les clés déduites de l'URL brute si elle contient des IDs sensibles. Préférez des clés explicites.
-- Prenez garde aux variantes (`Vary`) non maîtrisées : `vary_on_cookie` peut exploser le nombre d'entrées.
-- Pour les déploiements multi-process ou containers, évitez `LocMemCache` car chaque process aura son propre cache isolé.
-- Avec Memcached, évitez de dépasser ~1 Mo par valeur ; sérialisez des données légères.
-
----
-
-## Cheatsheet
-
-Config Redis :
-```python
-CACHES = {"default": {"BACKEND": "django_redis.cache.RedisCache", "LOCATION": "redis://..."}}
-```
-
-Per-view :
-```python
-@method_decorator(cache_page(900), name="dispatch")
-class MyView(TemplateView): ...
-```
-
-Per-site (middlewares) : `UpdateCacheMiddleware` en premier, `FetchFromCacheMiddleware` en dernier.
-
-Fragment :
-{% raw %}
-```django
-{% load cache %}{% cache 600 name arg %}...{% endcache %}
-```
-{% endraw %}
-
-Bas niveau :
-```python
-cache.get/set/get_or_set/delete/incr/decr/touch
-```
-
-Invalidation ciblée : `cache.delete("k")`, motif Redis `scan_iter("prefix:*")`.
-
----
-
-## Conclusion
-
-Le cache Django offre plusieurs leviers complémentaires : commencez par le per-view sur vos pages publiques, ajoutez du fragment cache pour les blocs coûteux, utilisez Redis comme backend partagé, et mettez en place une stratégie d'invalidation claire. Vous gagnerez en latence, en coûts infra, et en sérénité.
-
----
-
-## Pour aller plus loin
-
-- [Documentation officielle Django (cache)](https://docs.djangoproject.com/en/stable/topics/cache/)
-- [django-redis](https://github.com/jazzband/django-redis)
+Pour mesurer le gain réel, un profileur (`cProfile`, django-silk) avant et après la mise en cache vaut mieux qu'une impression.
 
 ## Voir aussi
 
+- [Comment ajouter un cache à une application Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
 - [Comment ajouter du cache à une application Spring Boot]({% post_url 2025-11-08-Comment-ajouter-du-cache-a-une-application-Spring-Boot %})
-- [Comment utiliser un cache avec Flask]({% post_url 2025-09-14-Comment-utiliser-un-cache-avec-Flask %})
-- [Limiter le rate d'une API FastAPI avec Redis]({% post_url 2025-09-20-Limiter-le-rate-d-une-API-FastAPI-avec-Redis %})
-- [Comment dockeriser une application Django]({% post_url 2025-10-25-Comment-dockeriser-une-application-Django %})
-- [Accélérer Django avec la compression GZip]({% post_url 2025-12-13-Accelerer-Django-avec-la-compression-GZip %})
 - [Déboguer les requêtes SQL et problèmes N+1 dans Django]({% post_url 2025-12-21-Deboguer-les-requetes-SQL-et-problemes-N-plus-1-dans-Django %})
+- [Accélérer Django avec la compression HTTP]({% post_url 2025-12-13-Accelerer-Django-avec-la-compression-GZip %})
+- [Documentation de Django sur le cache](https://docs.djangoproject.com/en/5.2/topics/cache/)
+- [django-redis](https://github.com/jazzband/django-redis)

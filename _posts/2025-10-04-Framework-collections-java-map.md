@@ -1,7 +1,7 @@
 ---
 layout: article
 title: Les maps (Map) en Java
-description: "Les maps en Java : interface Map, HashMap, LinkedHashMap et TreeMap, clés, equals et hashCode, gestion des null, performances et bonnes pratiques."
+description: "Les maps en Java : interface Map, parcours, merge et computeIfAbsent, HashMap, LinkedHashMap et TreeMap, cache LRU, clés stables et ConcurrentHashMap."
 author: Pierre Chopinet
 tags:
   - java
@@ -9,7 +9,7 @@ tags:
   - map
 ---
 
-Dans cet article (partie 5 de la série sur les collections), nous allons nous concentrer sur la famille Map du Framework Collections. Nous verrons ses principes (association clé/valeur), les principales implémentations (HashMap, LinkedHashMap, TreeMap, etc.), leurs différences, pièges courants et bonnes pratiques d'utilisation.
+Cinquième partie de notre série sur les collections Java, consacrée aux maps. Une `Map` associe des clés à des valeurs, comme un annuaire associe un nom à un numéro de téléphone. Nous allons voir comment la remplir et la parcourir, les méthodes arrivées avec Java 8 (`merge`, `computeIfAbsent`...) qui évitent bien des `if`, et comment choisir entre `HashMap`, `LinkedHashMap`, `TreeMap` et les autres implémentations.
 <!--more-->
 
 1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
@@ -17,100 +17,174 @@ Dans cet article (partie 5 de la série sur les collections), nous allons nous c
 3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
 4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
 5. Les maps (Map) en Java (vous êtes ici)
-6. Utilisations avancées des collections (article à venir)
+6. Utilisations avancées : [Introduction aux Streams en Java]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %}) et [Java : Comment faire des group by]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})
 
-## Qu'est-ce qu'une Map ?
+Les exemples ont été testés avec Java 21.
 
-`Map<K, V>` n'étend pas `Collection` : c'est une famille à part qui gère des associations clé/valeur. Chaque clé est unique au sein de la map et pointe vers au plus une valeur.
+## L'interface Map
 
-Signature :
+`Map<K, V>` n'étend pas `Collection` : c'est une famille à part, qui associe des clés de type `K` à des valeurs de type `V`. Une clé n'apparaît qu'une seule fois dans la map et n'est associée qu'à une valeur. Une même valeur peut par contre être associée à plusieurs clés.
 
 ```java
-public interface Map<K, V> { /* … */ }
+public interface Map<K, V> { /* ... */ }
 ```
 
-Principes :
-- Unicité des clés (la notion d'égalité dépend de l'implémentation : equals/hashCode, ordre trié, identité…).
-- Une clé peut être associée à null selon l'implémentation.
-- La plupart des implémentations ne sont pas thread-safe par défaut (sauf `ConcurrentHashMap`, `Collections.synchronizedMap`, etc.).
-
-## Méthodes clés de Map
-
-| Méthode                                        | Description                                                                           |
-|------------------------------------------------|---------------------------------------------------------------------------------------|
-| V put(K key, V value)                          | Ajoute/remplace la valeur de key. Retourne l'ancienne valeur ou null.                 |
-| V get(Object key)                              | Récupère la valeur associée, ou null si absente.                                      |
-| V getOrDefault(Object key, V defaultValue)     | Récupère la valeur, ou defaultValue si absente.                                       |
-| boolean containsKey(Object key)                | true si la clé est présente.                                                          |
-| boolean containsValue(Object value)            | true si au moins une entrée a cette valeur.                                           |
-| V remove(Object key)                           | Supprime la clé et retourne l'ancienne valeur.                                        |
-| boolean remove(Object key, Object value)       | Supprime seulement si la clé est associée à value.                                    |
-| V replace(K key, V value)                      | Remplace seulement si présente. Retourne l'ancienne valeur ou null.                   |
-| boolean replace(K key, V oldVal, V newVal)     | Remplace conditionnellement.                                                          |
-| void replaceAll(BiFunction<K,V,V> f)           | Remplace chaque valeur par f.apply(k, v).                                             |
-| V putIfAbsent(K key, V value)                  | Met la valeur seulement si absente (ou associée à null selon implémentation).         |
-| V compute(K key, BiFunction<K,V,V> remap)      | Recalcule la valeur à partir de l'ancienne. Supprime si remap retourne null.          |
-| V computeIfAbsent(K key, Function<K,V> m)      | Calcule et insère seulement si absente.                                               |
-| V computeIfPresent(K key, BiFunction<K,V,V> m) | Recalcule seulement si présente. Supprime si m retourne null.                         |
-| V merge(K key, V value, BiFunction<V,V,V> f)   | Si absente, put(value). Sinon, remplace par f.apply(old, value). null => suppression. |
-| Set<K> keySet()                                | Vue des clés.                                                                         |
-| Collection<V> values()                         | Vue des valeurs.                                                                      |
-| Set<Map.Entry<K,V>> entrySet()                 | Vue des entrées (clé/valeur).                                                         |
-
-Remarques :
-- Les vues `keySet`, `values`, `entrySet` sont liées à la map : modifier la vue modifie la map (et inversement).
-- Les opérations de type `compute*` et `merge` sont très utiles pour éviter les if/put répétitifs et sont atomiques sur `ConcurrentHashMap`.
-
-### Parcourir une Map
-
-- Parcourir les paires clé/valeur (le plus courant) :
+On ajoute une association avec `put` et on la lit avec `get` :
 
 ```java
+Map<String, Integer> ages = new HashMap<>();
+ages.put("alice", 30);
+ages.put("bob", 25);
+ages.put("alice", 31);                             // remplace 30 par 31 (et retourne 30)
+
+System.out.println(ages.get("alice"));             // 31
+System.out.println(ages.get("carl"));              // null : la clé est absente
+System.out.println(ages.getOrDefault("carl", 0));  // 0
+System.out.println(ages.containsKey("bob"));       // true
+System.out.println(ages);                          // {bob=25, alice=31}
+```
+
+Le dernier affichage montre `bob` avant `alice` : une `HashMap` ne garantit aucun ordre de parcours, ni l'ordre d'insertion ni un autre. Si l'ordre compte, `LinkedHashMap` garde l'ordre d'insertion et `TreeMap` trie les clés.
+
+`get` retourne `null` quand la clé est absente, mais aussi quand elle est associée à la valeur `null`, que `HashMap` accepte. Dans ce cas, `getOrDefault` retourne aussi `null`, puisque la valeur par défaut ne sert que si la clé est absente : seul `containsKey` permet de faire la différence.
+
+Les principales méthodes de l'interface (signatures simplifiées) :
+
+| Méthode                                          | Description                                                                                                   |
+|--------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| `V put(K key, V value)`                          | Associe la valeur à la clé. Retourne l'ancienne valeur, ou `null`                                             |
+| `V get(Object key)`                              | Retourne la valeur associée à la clé, ou `null`                                                               |
+| `V getOrDefault(Object key, V defaultValue)`     | Retourne la valeur associée à la clé, ou defaultValue si la clé est absente                                   |
+| `boolean containsKey(Object key)`                | Indique si la clé est présente                                                                                |
+| `boolean containsValue(Object value)`            | Indique si au moins une clé est associée à cette valeur (en parcourant toute la map)                          |
+| `V remove(Object key)`                           | Supprime la clé et retourne l'ancienne valeur                                                                 |
+| `boolean remove(Object key, Object value)`       | Supprime la clé seulement si elle est associée à value                                                        |
+| `V replace(K key, V value)`                      | Remplace la valeur seulement si la clé est présente                                                           |
+| `boolean replace(K key, V oldValue, V newValue)` | Remplace la valeur seulement si elle vaut oldValue                                                            |
+| `void replaceAll(BiFunction<K, V, V> f)`         | Remplace chaque valeur par le résultat de f(clé, valeur)                                                      |
+| `V putIfAbsent(K key, V value)`                  | Associe la valeur seulement si la clé est absente ou associée à `null`                                        |
+| `V computeIfAbsent(K key, Function<K, V> f)`     | Si la clé est absente, calcule sa valeur avec f et l'ajoute. Retourne la valeur associée à la clé             |
+| `V computeIfPresent(K key, BiFunction<K, V, V> f)` | Si la clé est présente, recalcule sa valeur avec f. Supprime la clé si f retourne `null`                    |
+| `V compute(K key, BiFunction<K, V, V> f)`        | Calcule la nouvelle valeur à partir de l'ancienne (ou de `null`). Supprime la clé si f retourne `null`        |
+| `V merge(K key, V value, BiFunction<V, V, V> f)` | Si la clé est absente, l'associe à value, sinon remplace la valeur par f(ancienne, value). `null` supprime la clé |
+| `Set<K> keySet()`                                | Vue sur les clés                                                                                              |
+| `Collection<V> values()`                         | Vue sur les valeurs                                                                                           |
+| `Set<Map.Entry<K, V>> entrySet()`                | Vue sur les paires clé/valeur                                                                                 |
+
+## Parcourir une map
+
+Une map ne se parcourt pas directement : on parcourt l'une de ses trois vues, `keySet()` pour les clés, `values()` pour les valeurs ou `entrySet()` pour les paires clé/valeur. Quand on a besoin des clés et des valeurs, on passe par `entrySet()` :
+
+```java
+Map<String, Integer> scores = new HashMap<>(Map.of("alice", 42, "bob", 8, "carl", 15));
+
 for (Map.Entry<String, Integer> e : scores.entrySet()) {
     System.out.println(e.getKey() + " => " + e.getValue());
 }
 ```
 
-- Parcourir seulement les clés :
+Ce qui donne, dans l'ordre (non garanti) de la `HashMap` :
+
+```
+bob => 8
+alice => 42
+carl => 15
+```
+
+`scores.forEach((k, v) -> System.out.println(k + " => " + v))` fait la même chose en une ligne. Parcourir les clés puis appeler `get` pour chacune fonctionne aussi, mais fait une recherche de plus par clé :
 
 ```java
+// À éviter si on a besoin des valeurs :
 for (String k : scores.keySet()) {
     Integer v = scores.get(k);
 }
 ```
 
-- Remplacer des valeurs en place :
+Pour modifier toutes les valeurs en place, on utilise `replaceAll`. Et comme les trois vues ne sont pas des copies mais restent reliées à la map, supprimer un élément d'une vue le supprime de la map : c'est la façon la plus simple de retirer des entrées selon une condition.
 
 ```java
 scores.replaceAll((k, v) -> v == null ? 0 : v * 2);
+System.out.println(scores); // {bob=16, alice=84, carl=30}
+
+scores.values().removeIf(v -> v < 20);
+System.out.println(scores); // {alice=84, carl=30}
 ```
 
-- Compter les fréquences avec `merge` :
+Comme pour les listes, appeler `remove` sur la map pendant une boucle for-each sur l'une de ses vues lève une `ConcurrentModificationException`. Pour supprimer pendant un parcours, on utilise `removeIf` sur une vue, ou la méthode `remove()` de l'itérateur.
+
+## merge, computeIfAbsent et les autres méthodes de Java 8
+
+Avant Java 8, compter des mots demandait de vérifier à chaque fois si le mot était déjà dans la map :
 
 ```java
-for (String mot : mots) {
-    freqs.merge(mot, 1, Integer::sum);
+Integer n = freqs.get(mot);
+if (n == null) {
+    freqs.put(mot, 1);
+} else {
+    freqs.put(mot, n + 1);
 }
 ```
 
-## Principales implémentations
+`merge` fait la même chose en une ligne. Si la clé est absente, elle l'associe à la valeur donnée, sinon elle remplace la valeur actuelle par le résultat de la fonction, appliquée à l'ancienne valeur et à la nouvelle :
 
-### HashMap
+```java
+String texte = "Le chat voit le chien, le chien dort.";
 
-- Structure : table de hachage (buckets + arbres rouge-noir au-delà d'un seuil de collisions depuis Java 8).
-- Ordre d'itération non garanti et susceptible de changer.
-- Opérations de base (`get`, `put`, `remove`) en O(1).
-- Accepte une clé null et des valeurs null (plusieurs).
-- Paramètres importants : capacité initiale, facteur de charge (load factor, 0.75 par défaut).
+Map<String, Integer> freqs = new HashMap<>();
+for (String mot : texte.split("\\W+")) {
+    if (mot.isEmpty()) continue;
+    freqs.merge(mot.toLowerCase(), 1, Integer::sum);
+}
+System.out.println(freqs); // {dort=1, voit=1, chat=1, le=3, chien=2}
+```
 
-Cas d'usage : choix par défaut pour une map non ordonnée.
+Attention avec un texte en français : par défaut, `\W` considère les lettres accentuées comme des séparateurs, et `"L'été arrive à grands pas".split("\\W+")` donne `[L, t, arrive, grands, pas]`. Le préfixe `(?U)`, qui active les classes de caractères Unicode, règle le problème : `split("(?U)\\W+")` donne bien `[L, été, arrive, à, grands, pas]`.
 
-### LinkedHashMap
+`computeIfAbsent` calcule et ajoute la valeur seulement si la clé est absente, et retourne dans tous les cas la valeur associée à la clé. On peut donc enchaîner directement un `add` pour remplir une map de listes :
 
-- Même base que HashMap + liste doublement chaînée pour l'ordre d'insertion ou d'accès.
-- Ordre d'itération prévisible ; peut servir de LRU simple avec `accessOrder=true` et `removeEldestEntry`.
+```java
+List<String> noms = List.of("alice", "bob", "Anna", "claire", "Bruno");
 
-Exemple LRU 100 entrées :
+Map<Character, List<String>> index = new HashMap<>();
+for (String nom : noms) {
+    char k = Character.toUpperCase(nom.charAt(0));
+    index.computeIfAbsent(k, key -> new ArrayList<>()).add(nom);
+}
+System.out.println(index); // {A=[alice, Anna], B=[bob, Bruno], C=[claire]}
+```
+
+C'est un regroupement par clé, que les Streams savent aussi faire avec `Collectors.groupingBy` (voir [les group by en Java]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %})).
+
+Les autres méthodes suivent la même logique : `putIfAbsent` n'ajoute la valeur que si la clé est absente, `computeIfPresent` ne recalcule la valeur que si la clé est présente, et `compute` la recalcule dans tous les cas. Pour `compute`, `computeIfPresent` et `merge`, une fonction qui retourne `null` supprime la clé de la map.
+
+## Les implémentations
+
+| Implémentation      | Ordre de parcours                   | Clé `null`                   | `get`, `put`, `remove` |
+|---------------------|-------------------------------------|------------------------------|------------------------|
+| `HashMap`           | Aucun ordre garanti                 | Acceptée                     | O(1)                   |
+| `LinkedHashMap`     | Ordre d'insertion (ou d'accès)      | Acceptée                     | O(1)                   |
+| `TreeMap`           | Trié par clé                        | Refusée avec l'ordre naturel | O(log n)               |
+| `EnumMap`           | Ordre de déclaration des constantes | Refusée                      | O(1)                   |
+| `ConcurrentHashMap` | Aucun ordre garanti                 | Refusée, comme les valeurs `null` | O(1)              |
+| `Hashtable`         | Aucun ordre garanti                 | Refusée, comme les valeurs `null` | O(1)              |
+
+`HashMap` est le choix par défaut. Elle range ses entrées dans un tableau de cases selon le `hashCode` de leur clé, et `get`, `put` et `remove` se font en temps constant, à condition que les `hashCode` des clés soient bien répartis. Depuis Java 8, une case qui accumule trop de collisions (8 entrées) est transformée en arbre rouge-noir, ce qui limite la casse quand la fonction de hachage est mauvaise.
+
+Quand le nombre d'entrées dépasse 75 % du nombre de cases (le facteur de charge par défaut, 0,75), la table double de taille et toutes les entrées sont redistribuées. Si vous connaissez à l'avance le nombre d'entrées, autant créer la map à la bonne taille, mais attention : le paramètre de `new HashMap<>(n)` est un nombre de cases, pas un nombre d'entrées. Pour 100 entrées, `new HashMap<>(100)` crée une table de 128 cases, qui passe à 256 cases au 97e ajout. Depuis Java 19, `HashMap.newHashMap(100)` calcule la bonne capacité à partir du nombre d'entrées attendu.
+
+`LinkedHashMap` ajoute à la table de hachage une liste doublement chaînée qui relie les entrées dans leur ordre d'insertion. Remettre une clé déjà présente avec `put` ne change pas sa place. Une `LinkedHashMap` peut aussi suivre l'ordre d'accès, ce qui permet d'écrire un cache LRU en quelques lignes.
+
+`TreeMap` garde ses entrées triées par clé dans un arbre rouge-noir, selon l'ordre naturel des clés ou selon le `Comparator` passé au constructeur. Ses opérations se font en O(log n), et elle permet de chercher par plage de clés.
+
+`EnumMap` est réservée aux clés d'un même `enum`. C'est un simple tableau indexé par la position de la constante dans l'enum, plus compact et en général plus rapide qu'une `HashMap`. L'article sur [les enums en Java]({% post_url 2026-04-13-Les-Enums-en-Java-bien-plus-que-des-constantes %}) montre comment l'utiliser.
+
+Il existe aussi deux implémentations plus spécialisées. `WeakHashMap` ne retient pas ses clés : quand une clé n'est plus référencée ailleurs dans le programme, le ramasse-miettes peut la libérer, et son entrée disparaît de la map. On peut ainsi associer des informations à des objets sans les empêcher d'être libérés. `IdentityHashMap` compare les clés avec `==` au lieu de `equals` : deux objets égaux mais distincts y sont deux clés différentes. Elle enfreint volontairement le contrat de `Map` et ne sert que dans des cas précis, comme la copie d'un graphe d'objets, où il faut retenir les objets déjà traités.
+
+`ConcurrentHashMap` et `Hashtable`, faites pour les programmes multithreads, sont présentées plus bas, dans la section sur les threads.
+
+## Un cache LRU avec LinkedHashMap
+
+Un cache LRU (*Least Recently Used*) a une taille limitée, et quand il est plein, il supprime l'entrée qui n'a pas servi depuis le plus longtemps. `LinkedHashMap` fait presque tout le travail. Le troisième paramètre de son constructeur, `accessOrder`, lui fait suivre l'ordre d'accès plutôt que l'ordre d'insertion : chaque lecture ou écriture d'une entrée la place en dernière position. Enfin, après chaque ajout, la map appelle sa méthode `removeEldestEntry` et supprime la première entrée (la plus ancienne) si cette méthode retourne `true` :
 
 ```java
 class LruCache<K, V> extends LinkedHashMap<K, V> {
@@ -126,109 +200,22 @@ class LruCache<K, V> extends LinkedHashMap<K, V> {
         return size() > maxEntries;
     }
 }
-
-Map<String, String> cache = new LruCache<>(100);
 ```
 
-### TreeMap (SortedMap/NavigableMap)
-
-- Structure : arbre rouge-noir, tri selon l'ordre naturel ou un `Comparator` passé au constructeur.
-- Opérations en O(log n), itération triée.
-- Ne supporte pas les clés null avec l'ordre naturel.
-- API Navigable : `firstKey`, `lastKey`, `lowerEntry`, `floorKey`, `ceilingEntry`, `subMap`, `headMap`, `tailMap`…
-
-Cas d'usage : besoin de tri, de recherches par plage, de bornes.
-
-### Hashtable (legacy)
-
-- Ancienne map synchronisée, à éviter au profit de `ConcurrentHashMap` ou `Collections.synchronizedMap`.
-- N'accepte pas null (ni clé ni valeur).
-
-### ConcurrentHashMap
-
-- Map concurrente haute performance.
-- Pas de null (ni clé ni valeur) pour éviter des ambiguïtés (`get` ne peut pas retourner null pour « absent » vs « valeur null »).
-- Opérations atomiques utiles : `compute*`, `merge`, `putIfAbsent`.
-- Bonne évolutivité sous contention (depuis Java 8 : opérations CAS sans verrou et synchronisation fine au niveau des bins, plus de segments comme en Java 7).
-
-Cas d'usage : partage de données entre threads avec très peu de blocages.
-
-### WeakHashMap
-
-- Les clés sont faiblement référencées : si une clé n'est plus référencée ailleurs, l'entrée peut être collectée par le GC.
-- Typiquement utilisé pour des caches de métadonnées non essentiels.
-
-### IdentityHashMap
-
-- L'égalité des clés est basée sur l'identité (`==`) et non `equals`.
-- Très spécialisé (frameworks, graphes d'objets, déduplication par identité).
-
-### EnumMap
-
-- Map optimisée pour des clés d'un même type `enum`.
-- Très compacte, itération dans l'ordre de déclaration des constantes.
-- N'accepte pas les clés null (les valeurs null sont permises).
-
-## Égalité, hashCode et clés correctes
-
-- Pour les maps basées sur le hachage (`HashMap`, `LinkedHashMap`), les clés doivent respecter le contrat `equals`/`hashCode` : deux clés égales (equals==true) doivent avoir le même hashCode.
-- Clés immuables recommandées (String, Integer, UUID, objets valeur immuables). Évitez les clés mutables insérées puis modifiées, qui « perdront » leur case de hachage.
-- Attention aux types numériques différents (Integer vs Long) : `equals` retournera false, même si la valeur apparente est la même.
-
-## Nulls, ordre et vues
-
-- `HashMap`/`LinkedHashMap` acceptent une clé null et des valeurs null.
-- `TreeMap` avec ordre naturel n'accepte pas de clé null.
-- `ConcurrentHashMap` n'accepte aucun null.
-- Les vues `keySet`, `values`, `entrySet` sont dynamiques : supprimer via `iterator.remove()` sur `entrySet` est le moyen sûr pour retirer en cours d'itération.
-
-## Complexités et performances
-
-- `HashMap` : `get`/`put`/`remove` ≈ O(1) ; pires cas O(n) mais mitigés par l'arborisation des buckets en cas de nombreuses collisions.
-- `LinkedHashMap` : proche de `HashMap` + léger surcoût d'ordre.
-- `TreeMap` : `get`/`put`/`remove` ≈ O(log n) ; itération triée.
-- `ConcurrentHashMap` : très bonne scalabilité, opérations atomiques utiles.
-
-## Bonnes pratiques
-
-- Choisir la bonne clé : immuable, avec des `equals`/`hashCode` corrects.
-- Définir une capacité initiale si vous connaissez la taille cible pour limiter les réallocations.
-- Préférer `getOrDefault`, `computeIfAbsent`, `merge` aux séquences if/contains/put fragiles.
-- Ne pas itérer avec `keySet` si vous avez besoin des valeurs : utilisez `entrySet()`.
-- Pour un cache LRU simple, `LinkedHashMap` + `accessOrder=true` + `removeEldestEntry`.
-- En concurrence : privilégier `ConcurrentHashMap`. Évitez `Hashtable`.
-
-## Pièges courants
-
-- Modifier une clé après insertion (mutable) : accès et suppression deviennent impossibles via la clé modifiée.
-- Confondre `containsKey` et `containsValue` (souvent, on veut `containsKey`).
-- Supposer un ordre stable avec `HashMap` : non garanti, ne basez pas votre logique dessus.
-- Utiliser null avec `ConcurrentHashMap` : interdit.
-- Oublier que `entrySet`, `keySet`, `values` sont des vues : certaines opérations modifient directement la map.
-
-## Exemples
-
-### Comptage de mots avec merge
+Avec un cache de deux entrées :
 
 ```java
-Map<String, Integer> freqs = new HashMap<>();
-for (String mot : texte.split("\\W+")) {
-    if (mot.isEmpty()) continue;
-    freqs.merge(mot.toLowerCase(), 1, Integer::sum);
-}
+Map<String, String> cache = new LruCache<>(2);
+cache.put("a", "A");
+cache.put("b", "B");
+cache.get("a");                     // "a" devient l'entrée utilisée le plus récemment
+cache.put("c", "C");                // trois entrées : "b", la moins récemment utilisée, est supprimée
+System.out.println(cache.keySet()); // [a, c]
 ```
 
-### Index inversé (clé = lettre initiale)
+## Rechercher par plage avec TreeMap
 
-```java
-Map<Character, List<String>> index = new HashMap<>();
-for (String nom : noms) {
-    char k = Character.toUpperCase(nom.charAt(0));
-    index.computeIfAbsent(k, key -> new ArrayList<>()).add(nom);
-}
-```
-
-### TreeMap et recherches par plage
+`TreeMap` implémente `NavigableMap`, qui permet de naviguer dans l'ordre des clés : `firstKey()` et `lastKey()` pour la première et la dernière clé, `lowerEntry()`, `floorKey()`, `ceilingEntry()` et leurs variantes pour la clé juste avant ou juste après une clé donnée, `headMap()`, `tailMap()` et `subMap()` pour une plage de clés.
 
 ```java
 NavigableMap<Integer, String> m = new TreeMap<>();
@@ -238,7 +225,45 @@ m.put(30, "trente");
 System.out.println(m.subMap(10, true, 20, true)); // {10=dix, 20=vingt}
 ```
 
-### Map immuable avec Map.of / Map.ofEntries
+`floorEntry` est pratique pour classer une valeur dans des tranches. Ici, chaque clé est la note minimale d'une mention :
+
+```java
+NavigableMap<Integer, String> mentions = new TreeMap<>();
+mentions.put(0, "insuffisant");
+mentions.put(10, "passable");
+mentions.put(12, "assez bien");
+mentions.put(14, "bien");
+mentions.put(16, "très bien");
+
+System.out.println(mentions.floorEntry(13).getValue()); // assez bien
+```
+
+`floorEntry(13)` retourne l'entrée de la plus grande clé inférieure ou égale à 13, ici 12.
+
+## Les clés doivent être stables
+
+Les règles vues pour les éléments d'un `HashSet` dans [la partie sur les ensembles]({% post_url 2025-09-25-Framework-collections-java-set %}) s'appliquent aux clés d'une `HashMap` (un `HashSet` s'appuie d'ailleurs sur une `HashMap` dont il n'utilise que les clés). Les méthodes `equals` et `hashCode` des clés doivent être cohérentes entre elles, et une clé ne doit pas être modifiée tant qu'elle est dans la map : si son `hashCode` change, la map ne la retrouve plus. Les meilleures clés sont des objets immuables, comme `String`, `Integer`, `UUID` ou les records.
+
+Attention aussi aux types numériques. `get` accepte n'importe quel `Object`, si bien que le code suivant compile, mais un `Integer` n'est jamais égal à un `Long`, même s'ils ont la même valeur :
+
+```java
+Map<Long, String> clients = new HashMap<>();
+clients.put(42L, "Alice");
+System.out.println(clients.get(42));   // null : 42 est un Integer, pas un Long
+System.out.println(clients.get(42L));  // Alice
+```
+
+## Maps et threads
+
+`HashMap`, `LinkedHashMap` et `TreeMap` ne sont pas synchronisées. Pour partager une map entre plusieurs threads, on utilise en général `ConcurrentHashMap`. Ses lectures ne prennent pas de verrou, ses écritures ne bloquent pas toute la table, et ses méthodes `putIfAbsent`, `compute`, `computeIfAbsent`, `computeIfPresent` et `merge` sont atomiques : deux threads qui font un `merge` sur la même clé au même moment ne perdent pas de mise à jour. Ce n'est pas le cas des implémentations par défaut de ces méthodes dans l'interface `Map`, qui ne garantissent rien en cas d'accès concurrents.
+
+`ConcurrentHashMap` refuse les clés et les valeurs `null` : un `get` qui retourne `null` signifie donc toujours que la clé est absente. Pas besoin d'appeler `containsKey`, dont un autre thread pourrait de toute façon changer la réponse entre les deux appels.
+
+`Collections.synchronizedMap(new HashMap<>())` synchronise chaque méthode d'une map ordinaire, avec la même limite que `synchronizedList` : les parcours doivent se faire dans un bloc `synchronized` sur la map. Quant à `Hashtable`, présente depuis Java 1.0, c'est l'ancêtre synchronisé de `HashMap`. Sa documentation recommande d'utiliser `HashMap` à sa place si l'on n'a pas besoin de synchronisation, et `ConcurrentHashMap` sinon.
+
+## Maps non modifiables
+
+Comme pour les listes et les ensembles, des fabriques créent des maps non modifiables (`Map.of` et `Map.ofEntries` depuis Java 9, `Map.copyOf` depuis Java 10) :
 
 ```java
 // Map.of : jusqu'à 10 paires clé/valeur
@@ -259,31 +284,21 @@ Map<String, Integer> scores = Map.ofEntries(
 Map<String, Integer> unmodifiable = Map.copyOf(scores);
 ```
 
-Notes :
-- Map.of / Map.ofEntries / Map.copyOf rejettent les clés ou valeurs null (NullPointerException).
-- Map.of rejette les clés dupliquées (IllegalArgumentException).
-- Les maps retournées sont non modifiables ; si les valeurs sont mutables, elles peuvent toujours changer indépendamment.
+Ces trois méthodes refusent les clés et les valeurs `null` (`NullPointerException`), et `Map.of` et `Map.ofEntries` refusent les clés en double (`IllegalArgumentException: duplicate key`). La map elle-même ne peut pas changer, mais si ses valeurs sont des objets modifiables, une liste par exemple, rien n'empêche de modifier ces objets.
 
-## Conclusion
+Leur ordre de parcours n'est pas spécifié, et en pratique il change d'une exécution à l'autre : `System.out.println(Map.of("alice", 30, "bob", 25, "carl", 41))` affiche tantôt `{carl=41, alice=30, bob=25}`, tantôt `{bob=25, alice=30, carl=41}`. Pour un ordre fixe, construisez plutôt une `LinkedHashMap` avec des `put` successifs.
 
-`Map` est la brique clé pour modéliser des associations clé/valeur en Java. En choisissant l'implémentation adaptée (rapidité vs ordre vs tri vs concurrence) et en appliquant de bonnes pratiques (clés immuables, API compute/merge), vous éviterez la plupart des pièges et écrirez un code plus clair et plus performant.
+Pour exposer une map interne en lecture seule sans la copier, `Collections.unmodifiableMap(map)` retourne une vue non modifiable, qui suit les changements de la map d'origine.
 
-Pour aller plus loin dans la série :
+Voilà pour la dernière famille de collections. La série continue avec les utilisations avancées : les [Streams]({% post_url 2026-03-30-Introduction-aux-Streams-en-Java %}), qui permettent de traiter les collections sans écrire de boucles, et les [group by en Java]({% post_url 2026-01-11-Comment-faire-des-group-by-en-Java %}), qui produisent justement des maps.
 
-1. [Introduction aux collections Java]({% post_url 2020-11-12-Framework-collections-java-intro %})
-2. [Les listes (List) en Java]({% post_url 2025-09-19-Framework-collections-java-list %})
-3. [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
-4. [Les files (Queue) et Deques en Java]({% post_url 2025-09-26-Framework-collections-java-queue %})
-5. Les maps (Map) en Java (vous êtes ici)
-6. Utilisations avancées des collections (article à venir)
+## Voir aussi
 
-### Pour aller plus loin
-
-- [Map - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Map.html)
-- [HashMap - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/HashMap.html)
-- [LinkedHashMap - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/LinkedHashMap.html)
-- [TreeMap/NavigableMap - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/TreeMap.html)
-- [ConcurrentHashMap - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html)
-- [WeakHashMap - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/WeakHashMap.html)
-- [IdentityHashMap - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/IdentityHashMap.html)
-- [EnumMap - Javadoc Java 17](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/EnumMap.html)
+- [Les ensembles (Set) en Java]({% post_url 2025-09-25-Framework-collections-java-set %})
+- [Les enums en Java]({% post_url 2026-04-13-Les-Enums-en-Java-bien-plus-que-des-constantes %})
+- [Records en Java : simplifier vos DTOs]({% post_url 2026-01-10-Records-en-Java-simplifier-vos-DTOs %})
+- [Javadoc de Map (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Map.html)
+- [Javadoc de HashMap (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/HashMap.html)
+- [Javadoc de LinkedHashMap (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/LinkedHashMap.html)
+- [Javadoc de TreeMap (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/TreeMap.html)
+- [Javadoc de ConcurrentHashMap (Java 21)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html)

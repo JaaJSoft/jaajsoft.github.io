@@ -17,40 +17,40 @@ Dans ce tutoriel, nous allons voir les différentes étapes de création d'un *b
 
 ## Création de votre compte
 
-La première étape est de... créer un compte discord évidemment. Pas besoin d'un compte développeur en particulier, un simple compte comme celui que vous utilisez est suffisant. Si vous n'en avez pas encore vous pouvez vous rendre sur https://discord.com/ pour en créer un.
+La première étape est de... créer un compte discord évidemment. Pas besoin d'un compte développeur en particulier, un simple compte comme celui que vous utilisez est suffisant. Si vous n'en avez pas encore, vous pouvez vous rendre sur https://discord.com/ pour en créer un.
 
-De l'extérieur un *bot* discord fonctionne comme un simple compte. Dans les faits, ce n'est pas directement votre compte qui va être le *bot*. Depuis votre compte, vous allez pouvoir créer et gérer différentes applications et ajouter un *bot* à ces applications. Libre à vous d'utiliser votre compte personnel pour vos bots, ou de créer un compte spécifique.
+De l'extérieur, un *bot* discord fonctionne comme un simple compte. Dans les faits, ce n'est pas directement votre compte qui va être le *bot*. Depuis votre compte, vous allez pouvoir créer et gérer différentes applications et ajouter un *bot* à ces applications. Libre à vous d'utiliser votre compte personnel pour vos bots, ou de créer un compte spécifique.
 
 ### Créer votre *bot*
-Pour créer une application il faut vous rendre sur cette page https://discord.com/developers/applications (vous devriez y être connecté). Comme vous pouvez le voir (image ci-dessous), j'ai déjà une application nommée "Le Melting *bot*". Normalement, vous ne devriez en avoir aucune, les différentes applications que vous aurez créées vont s'afficher ici. Cliquez sur *New Application* entourée en rouge sur l'image.
+Pour créer une application, il faut vous rendre sur cette page https://discord.com/developers/applications (vous devriez y être connecté). Comme vous pouvez le voir (image ci-dessous), j'ai déjà une application nommée "Le Melting Bot". Normalement, vous ne devriez en avoir aucune. Les différentes applications que vous aurez créées vont s'afficher ici. Cliquez sur *New Application* entourée en rouge sur l'image.
 
 ![interface création d'application](/assets/images/2020-03-19-bot-discord/approuge.png){: width="1928" height="965"}
 
-Donnez le nom que vous désirez à votre application. Allez ensuite dans l'onglet *bot* puis cliquez sur *Add bot* et... Voilà, il est créé. À partir de là, vous pouvez changer le nom de votre *bot* ou lui mettre une image de profil à votre guise. Dans ce tutoriel, en ces temps de confinement lié au coronavirus, notre *bot* d'exemple s'appellera "On peut sortir ?". Ce sera un *bot* très simple qui répondra "non" dès que quelqu'un demandera si on peut sortir.
+Donnez le nom que vous désirez à votre application. Allez ensuite dans l'onglet *Bot* puis cliquez sur *Add bot* et... Voilà, il est créé. À partir de là, vous pouvez changer le nom de votre *bot* ou lui mettre une image de profil à votre guise. Dans ce tutoriel, en ces temps de confinement lié au coronavirus, notre *bot* d'exemple s'appellera "On peut sortir ?". Ce sera un *bot* très simple qui répondra "non" dès que quelqu'un demandera si on peut sortir.
 
-Vous devriez avoir en dessous du nom de votre *bot* écrit *token*. Affichez-le, c'est cet identifiant qui vous permettra de prendre le contrôle de votre *bot* depuis l'API. Gardez le secret ! Je vous laisse explorer de vous-même l'interface pour découvrir les différentes fonctionnalités.
+En dessous du nom de votre *bot*, vous devriez voir son *token*. Affichez-le, c'est cet identifiant qui vous permettra de prendre le contrôle de votre *bot* depuis l'API. Gardez-le secret ! Je vous laisse explorer de vous-même l'interface pour découvrir les différentes fonctionnalités.
 
 ### Ajouter votre *bot* à un serveur
 
-Pour inviter votre *bot* à un serveur, vous aurez besoin de deux choses, de son identifiant (client id) et de ses autorisations sur le serveur. Pour le premier, c'est très simple, allez dans l'onglet *General Information* et copiez le numéro en dessous de client id.
-Pour les autorisations, allez dans l'onglet *bot*, tout en bas dans *bot* Permissions. Cochez les permissions dont vous aurez besoin pour votre *bot*. Dans notre cas, nous avons uniquement besoin de *send messages*, mais on peut imaginer toutes sortes de *bot* qui peuvent gérer les membres, envoyer des fichiers, etc. Copiez ensuite le nombre qui est généré.
-Enfin, remplacez CLIENTID et PERMISSION dans ce lien par les deux numéros que vous venez de trouver. https://discord.com/oauth2/authorize?&client_id=CLIENTID&scope=bot&permissions=PERMISSION
+Pour inviter votre *bot* à un serveur, vous aurez besoin de deux choses : son identifiant (client id) et ses autorisations sur le serveur. Pour le premier, c'est très simple : allez dans l'onglet *General Information* et copiez le numéro en dessous de client id.
+Pour les autorisations, allez dans l'onglet *Bot*, tout en bas dans *Bot Permissions*. Cochez les permissions dont vous aurez besoin pour votre *bot*. Dans notre cas, nous avons uniquement besoin de *send messages*, mais on peut imaginer toutes sortes de *bots* qui peuvent gérer les membres, envoyer des fichiers, etc. Copiez ensuite le nombre qui est généré.
+Enfin, remplacez CLIENTID et PERMISSION dans ce lien par les deux numéros que vous venez de trouver : https://discord.com/oauth2/authorize?&client_id=CLIENTID&scope=bot&permissions=PERMISSION
 
-Dans notre exemple le lien donne https://discord.com/oauth2/authorize?&client_id=690163488760529032&scope=bot&permissions=2048
+Dans notre exemple, le lien donne https://discord.com/oauth2/authorize?&client_id=690163488760529032&scope=bot&permissions=2048
 
-Ouvrez tout simplement ce lien dans votre navigateur, vous pourrez alors choisir dans quel serveur l'ajouter. (Et oui, vous pouvez ajouter notre exemple à votre serveur bande de petits coquins). Vous devriez normalement voir le message indiquant la venue de votre *bot*.
+Ouvrez tout simplement ce lien dans votre navigateur, vous pourrez alors choisir dans quel serveur l'ajouter. (Eh oui, vous pouvez ajouter notre exemple à votre serveur, bande de petits coquins.) Vous devriez normalement voir le message indiquant la venue de votre *bot*.
 
 > Mais il est tout nul, il ne fait rien ce *bot* :'(
 
-Oui, on y vient, dans la partie suivante, nous verrons comment piloter notre *bot* grâce à une bibliothèque qui utilise l'API de discord.
+Oui, on y vient. Dans la partie suivante, nous verrons comment piloter notre *bot* grâce à une bibliothèque qui utilise l'API de discord.
 
 ## Hello Discord
 
-Dans ce tutoriel, nous allons utiliser java, gradle et Intellij pour coder notre *bot*. À savoir qu'il est possible de coder un *bot* discord dans de nombreux langages (python, javascript, C++, etc.). Libre à vous d'utiliser votre langage favori. Vous pouvez trouver toutes les bibliothèques conformes à l'API discord ici : https://discord.com/developers/docs/topics/community-resources.
+Dans ce tutoriel, nous allons utiliser java, gradle et IntelliJ pour coder notre *bot*. À noter qu'il est possible de coder un *bot* discord dans de nombreux langages (python, javascript, C++, etc.). Libre à vous d'utiliser votre langage favori. Vous pouvez trouver toutes les bibliothèques conformes à l'API discord ici : https://discord.com/developers/docs/topics/community-resources.
 
 ### Création du projet et importation de la bibliothèque JDA
 
-Créez un projet gradle avec Intellij, comme dit au début de ce tutoriel, je suppose que vous avez l'habitude de programmer donc je ne vais pas m'attarder là-dessus.
+Créez un projet gradle avec IntelliJ. Comme dit au début de ce tutoriel, je suppose que vous avez l'habitude de programmer, donc je ne vais pas m'attarder là-dessus.
 
     plugins {
       id 'java'
@@ -99,14 +99,14 @@ public class Application extends ListenerAdapter {
     }
 }
 ```
-À partir de là, le code est assez explicite. Quand on reçoit un message, on regarde si le contenu correspond à "On peut sortir ?", on envoie ensuite dans le channel du message "Non. #RestezChezVous". Exécutez votre application et testez-la sur votre serveur. Dans notre exemple ça donne ça :
+À partir de là, le code est assez explicite. Quand on reçoit un message, on regarde si le contenu contient "On peut sortir ?" et, si oui, on envoie dans le channel du message "Non. #RestezChezVous". Exécutez votre application et testez-la sur votre serveur. Dans notre exemple, ça donne ça :
 
-![messages du *bot*](/assets/images/2020-03-19-bot-discord/sortiiiir.PNG){: width="370" height="135"}
+![messages du bot](/assets/images/2020-03-19-bot-discord/sortiiiir.PNG){: width="370" height="135"}
 
 
 Voilà ! Votre *bot* discord est créé et fonctionnel. JDA propose beaucoup de fonctionnalités que je vous laisse découvrir dans sa documentation https://ci.dv8tion.net/job/JDA/javadoc/. Je vous recommande également d'aller lire le *readme* du code source. Il explique plus en détail comment utiliser la bibliothèque.
 
-Comme dit au début du tutoriel, nous n'allons pas nous attarder sur comment coder le comportement du *bot* en java. Libre à vous d'aller lire la documentation des différentes bibliothèques et choisir laquelle utiliser.
+Comme dit au début du tutoriel, nous n'allons pas nous attarder sur comment coder le comportement du *bot* en java. Libre à vous d'aller lire la documentation des différentes bibliothèques et de choisir laquelle utiliser.
 
 ## Déployer votre *bot*
 
@@ -121,10 +121,10 @@ Tout à fait. Dans notre exemple, nous allons utiliser le plugin *shadow* de gra
 	  configurations = [project.configurations.compile]
 	}
 
-Pour ma part, j'ai ensuite copié ce fichier sur un serveur linux et je l'ai lancé la commande :
+Pour ma part, j'ai ensuite copié ce fichier sur un serveur linux et je l'ai lancé avec la commande :
 
 ```bash
 java -jar OnPeutSortir-1.0-SNAPSHOT-all.jar TOKEN &
 ```
 
- Voilà ! Vous êtes libre de faire connaitre votre superbe *bot* au monde entier à présent.
+Voilà ! Vous êtes libre de faire connaitre votre superbe *bot* au monde entier à présent.

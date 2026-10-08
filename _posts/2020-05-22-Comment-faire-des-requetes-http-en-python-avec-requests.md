@@ -11,11 +11,11 @@ tags:
 author: Pierre Chopinet
 ---
 
-Dans ce tutoriel, vous allez apprendre à faire des requêtes HTTP en Python en utilisant la bibliothèque requests. <!--more--> L'objectif de ce tutoriel est d'apprendre comment faire :
+Dans ce tutoriel, vous allez apprendre à faire des requêtes HTTP en Python en utilisant la bibliothèque requests. <!--more--> L'objectif de ce tutoriel est d'apprendre à :
 
-- Faire des requêtes HTTP (GET, POST, PUT, DELETE, HEAD)
-- Passer des paramètres d'URL (params), un corps de requête (data vs json) et des headers
-- Traiter le résultat d'une requête (texte, JSON, encodage)
+- faire des requêtes HTTP en Python (GET, HEAD, POST, PUT, DELETE)
+- traiter le résultat d'une requête
+- modifier les headers d'une requête
 
 ## Installation
 
@@ -31,7 +31,7 @@ Depuis un terminal, installation de python3 :
 sudo apt install python3
 ```
 
-Vous aurez ensuite besoin de pip le gestionnaire de package de python, il est souvent préinstallé avec python, mais dans le doute :
+Vous aurez ensuite besoin de pip, le gestionnaire de paquets de python. Il est souvent préinstallé avec python, mais dans le doute :
 
 ```bash
 sudo apt install python3-pip
@@ -43,10 +43,16 @@ Maintenant installons *requests* :
 pip3 install requests
 ```
 
-Si vous avez une erreur vous disant que vous n'avez pas assez de permissions, faites :
+Sur les distributions récentes (Debian 12, Ubuntu 23.04 et suivantes), pip refuse
+d'installer des paquets dans le python du système, même avec l'option `--user`,
+et affiche l'erreur `externally-managed-environment`. Dans ce cas, créez un
+environnement virtuel dans le dossier de votre projet et installez *requests* dedans :
 
 ```bash
-pip3 install --user requests
+sudo apt install python3-venv
+python3 -m venv venv
+source venv/bin/activate
+pip install requests
 ```
 
 ### Windows
@@ -55,7 +61,7 @@ Sur Windows, ça se complique un peu, commencez par télécharger python3 pour W
 
 Déplacez-vous dans le dossier où vous avez installé python et faites :
 
-`shift + click droit -> ouvrir une fenêtre powershell` (sur Windows 7 pour les réfractaires au changement ça doit être cmd)
+`shift + click droit -> ouvrir une fenêtre powershell` (sur Windows 7, pour les réfractaires au changement, ça doit être cmd)
 
 Vous êtes normalement dans un terminal, entrez alors :
 
@@ -65,7 +71,7 @@ Vous êtes normalement dans un terminal, entrez alors :
 
 ### MacOS
 
-N'ayant pas de Mac, je ne peux pas tester l'installation, il faut toutefois aussi utiliser python et [PIP](https://pypi.org/project/pip/), et suivre les instructions pour linux afin d'installer la bibliothèque *requests*.
+N'ayant pas de Mac, je ne peux pas tester l'installation. Il faut toutefois aussi utiliser python et [pip](https://pypi.org/project/pip/), et suivre les instructions pour linux afin d'installer la bibliothèque *requests*.
 
 ## Une requête HTTP ?
 
@@ -75,11 +81,11 @@ Source Wikipédia
 
 Il existe 5 principales méthodes HTTP :
 
-- GET, permet d'accéder à une ressource.
-- HEAD, permet de récupérer l'en-tête d'une ressource, par exemple pour connaître la date de sa dernière modification (utile pour le système de cache d'un navigateur)
-- POST, permet d'ajouter une ressource
-- PUT, permet de mettre à jour une ressource
-- DELETE, permet de supprimer une ressource
+- GET : accéder à une ressource
+- HEAD : récupérer l'en-tête d'une ressource, par exemple pour connaître la date de sa dernière modification (utile pour le système de cache d'un navigateur)
+- POST : ajouter une ressource
+- PUT : mettre à jour une ressource
+- DELETE : supprimer une ressource
 
 ## Requêtes basiques
 
@@ -119,11 +125,11 @@ Ce qui permet d'avoir les informations suivantes sur la ressource :
 ```text
 {'Connection': 'keep-alive', 'Content-Length': '10575', 'Server': 'GitHub.com', 'Content-Type': 'text/html; charset=utf-8', 'Strict-Transport-Security': 'max-age=31556952', 'Last-Modified': 'Fri, 20 Mar 2020 09:39:39 GMT', 'ETag': 'W/"5e748f5b-9528"', 'Access-Control-Allow-Origin': '*', 'Expires': 'Fri, 22 May 2020 09:46:06 GMT', 'Cache-Control': 'max-age=600', 'Content-Encoding': 'gzip', 'X-Proxy-Cache': 'MISS', 'X-GitHub-Request-Id': '7DD0:5D0B:292B1C:3342F8:5EC79D05', 'Accept-Ranges': 'bytes', 'Date': 'Fri, 22 May 2020 09:36:06 GMT', 'Via': '1.1 varnish', 'Age': '0', 'X-Served-By': 'cache-cdg20727-CDG', 'X-Cache': 'MISS', 'X-Cache-Hits': '0', 'X-Timer': 'S1590140167.863279,VS0,VE107', 'Vary': 'Accept-Encoding', 'X-Fastly-Request-ID': '7bccbb14a86614bdc56df3295ea37e17a144569b'}
 ```
-Très peu clair pour un humain, mais cela permet pour un navigateur d'avoir des informations très utiles sur la ressource demandée.
+Très peu clair pour un humain, mais cela permet à un navigateur d'avoir des informations très utiles sur la ressource demandée.
 
 ### Requête POST
 
-Et finalement la requête *post* qui s'utilise de la même manière qu'une requête *get* sauf que les paramètres sont passés dans le corps de la requête et pas avec l'url.
+La requête *post* s'utilise de la même manière qu'une requête *get*, sauf que les paramètres sont passés dans le corps de la requête et pas dans l'URL.
 Pour passer un json en paramètre dans le _body_ :
 ```python
 import requests
@@ -133,11 +139,7 @@ response = requests.post("https://httpbin.org/post", json=data)
 print(response.status_code)
 ```
 
-Explication : `params=` ajoute des paramètres dans l'URL, `data=` envoie un formulaire (application/x-www-form-urlencoded) et `json=` envoie un JSON (application/json). Choisissez le bon champ selon ce que l'API attend.
-
-Exemples :
-
-- Formulaire (data)
+Le paramètre à utiliser dépend de ce qu'attend l'API : `params=` ajoute les paramètres dans l'URL, `data=` envoie un formulaire et `json=` envoie du JSON. *requests* choisit le header `Content-Type` en conséquence, ce qu'on peut vérifier sur la requête envoyée :
 
 ```python
 import requests
@@ -145,17 +147,13 @@ import requests
 form = {"username": "bob", "password": "secret"}
 r = requests.post("https://httpbin.org/post", data=form)
 print(r.request.headers["Content-Type"])  # application/x-www-form-urlencoded
-```
-- Corps JSON (json)
-
-```python
-import requests
 
 payload = {"username": "bob"}
 r = requests.post("https://httpbin.org/post", json=payload)
 print(r.request.headers["Content-Type"])  # application/json
 ```
-- Upload de fichier (multipart/form-data)
+
+Pour envoyer un fichier, on utilise `files=`, la requête part alors en `multipart/form-data` :
 
 ```python
 import requests
@@ -178,12 +176,7 @@ print(response.status_code)  # ex: 200
 print(response.json())
 ```
 
-> Note : En REST, PUT remplace généralement la ressource entière. Pour une mise à jour partielle, utilisez plutôt PATCH. Selon les API, la réponse peut être 200 (avec un corps JSON) ou 204 No Content.
->
-> Explication :
-> - PUT est idempotent : répéter la même requête ne change pas l'état après la première.
-> - Avec `requests`, `json=` sérialise l'objet Python et ajoute l'en-tête `Content-Type: application/json` automatiquement. `data=` enverrait un formulaire.
-> - Certaines API exigent un contrôle de concurrence optimiste via `ETag`/`If-Match` pour éviter d'écraser des modifications.
+En REST, PUT remplace la ressource entière : on envoie donc tous ses champs. Pour une mise à jour partielle, on utilise plutôt PATCH (`requests.patch`). Selon les API, la réponse est un 200 avec la ressource modifiée, ou un 204 sans contenu.
 
 ### Requête DELETE (supprimer une ressource)
 
@@ -194,19 +187,14 @@ url = "https://jsonplaceholder.typicode.com/posts/1"
 response = requests.delete(url)
 
 print(response.status_code)  # ex: 200 ou 204
-print(response.text)         # souvent vide (No Content)
+print(response.text)
 ```
 
-> Note : Beaucoup d'API renvoient 204 No Content pour un DELETE réussi.
->
-> Explication :
-> - DELETE est idempotent : un second appel sur la même ressource renvoie souvent `204` (aucun changement) ou `404` si elle n'existe plus.
-> - Le corps de la réponse est souvent vide. Vérifiez `response.status_code` ou utilisez `response.raise_for_status()`.
-> - Selon les API, l'opération peut être asynchrone et renvoyer `202 Accepted`.
+Beaucoup d'API répondent à un DELETE réussi par un 204 No Content, avec un corps vide : on se contente alors de vérifier le code de retour.
 
-## Timeout et gestion des erreurs (basique)
+## Timeout et gestion des erreurs
 
-Utilisez toujours un `timeout` pour éviter qu'un appel ne bloque indéfiniment, et pensez à `raise_for_status()` pour déclencher une exception en cas d'erreur HTTP (4xx/5xx).
+Par défaut, *requests* n'a pas de timeout : si le serveur ne répond jamais, votre programme reste bloqué. Pensez à toujours passer un `timeout` (en secondes), et à appeler `raise_for_status()`, qui lève une exception si le serveur renvoie une erreur (code 4xx ou 5xx) :
 
 ```python
 import requests
@@ -224,8 +212,6 @@ except HTTPError as e:
 except RequestException as e:
     print(f"Erreur réseau: {e}")
 ```
-
-> Astuce : fixez un `timeout` (ex. 5-10s) sur toutes vos requêtes côté client.
 
 ## Traiter le résultat d'une requête vers une API REST
 
@@ -296,11 +282,13 @@ if response.status_code == 200:
 ```
 Ce code affiche le nom de tous les utilisateurs. On teste si le *status_code* est 200 pour ne traiter le résultat que si la requête est un succès. Il existe plusieurs codes de retour décrits [ici](https://fr.wikipedia.org/wiki/Liste_des_codes_HTTP).
 
+Pour une réponse texte, `response.text` décode le contenu avec l'encodage annoncé par le serveur dans le header `Content-Type`. Si les accents s'affichent mal, c'est souvent que le serveur n'annonce pas d'encodage : on peut alors le forcer avant de lire le texte, avec `response.encoding = "utf-8"`.
+
 ## Changer les headers de la requête
 
 Dans certains cas, il peut être utile de changer les headers d'une requête pour se faire passer pour un navigateur web et accéder à certains contenus dont l'accès est restreint depuis un script.
 
-Par exemple ici pour se faire passer pour Mozilla Firefox :
+Par exemple ici pour se faire passer pour Internet Explorer 11 :
 
 ```python
 import requests
@@ -313,7 +301,7 @@ Pour personnaliser encore plus ses *User-Agent*, il existe une bibliothèque pro
 
 ## Télécharger un fichier (streaming)
 
-Pour les fichiers volumineux, activez `stream=True` et écrivez par blocs pour éviter de tout charger en mémoire.
+Pour un petit fichier, `response.content` (le contenu brut, en octets) suffit. Pour un fichier volumineux, on active `stream=True` et on écrit le fichier par blocs, pour ne pas tout charger en mémoire :
 
 ```python
 import requests
@@ -327,14 +315,12 @@ with requests.get(url, stream=True, timeout=10) as r:
                 f.write(chunk)
 ```
 
-> Astuce : pour de petits contenus, `response.content` (bytes) suffit. `response.text` décode les bytes avec `response.encoding`, deviné à partir du charset annoncé dans le header Content-Type. Sans charset, requests retombe sur ISO-8859-1 pour les contenus `text/*` ou tente une détection automatique (`apparent_encoding`). Si le texte s'affiche mal, forcez l'encodage avec `response.encoding = "utf-8"` avant d'accéder à `response.text`.
-
 ## Voir aussi
 
-- Documentation officielle requests: [https://requests.readthedocs.io](https://requests.readthedocs.io/)
-- [Python : Comment créer une CLI (interface en ligne de commande)]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
+- [Python : Comment utiliser les sessions avec requests]({% post_url 2025-09-04-Comment-utiliser-les-sessions-avec-requests %})
+- [Python : Comment utiliser les différents modes d'authentification avec requests]({% post_url 2025-09-05-Comment-utiliser-l-authentification-avec-requests %})
 - [Python : Comment faire une api web avec Flask]({% post_url 2021-04-20-Comment-faire-une-api-web-en-python %})
 - [Python : Comment faire une api web avec FastAPI]({% post_url 2025-08-15-Comment-faire-une-api-web-avec-FastAPI %})
-- [Python : Comment utiliser les différents modes d'authentification avec requests]({% post_url 2025-09-05-Comment-utiliser-l-authentification-avec-requests %})
-- [Python : Comment utiliser les sessions avec requests pour optimiser vos appels HTTP]({% post_url 2025-09-04-Comment-utiliser-les-sessions-avec-requests %})
+- [Python : Comment créer une CLI]({% post_url 2025-12-28-Comment-creer-une-CLI-en-python %})
+- [La documentation de requests](https://requests.readthedocs.io/)
 

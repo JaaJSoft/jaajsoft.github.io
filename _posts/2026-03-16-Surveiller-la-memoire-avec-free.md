@@ -1,7 +1,7 @@
 ---
 layout: article
 title: "free : surveiller et comprendre l'utilisation mémoire sous Linux"
-description: "Surveiller la mémoire sous Linux avec free : lire la sortie, comprendre buff/cache et available, options utiles et aller plus loin avec /proc/meminfo."
+description: "Surveiller la mémoire sous Linux avec free : lire sa sortie, comprendre buff/cache et available, utiliser ses options et aller plus loin avec /proc/meminfo."
 author: Pierre Chopinet
 tags:
   - linux
@@ -14,105 +14,60 @@ tags:
   - memoire
 ---
 
-Un processus qui se fait tuer par l'OOM killer, une application qui rame sans raison apparente, un serveur qui swap en permanence : la plupart de ces problèmes commencent par un manque de visibilité sur l'utilisation mémoire. `free` est la commande la plus rapide pour obtenir un instantané de la mémoire vive et du swap sous Linux.
+Quand un serveur rame ou qu'un processus se fait tuer par l'OOM killer, la première chose à regarder est la mémoire. La commande `free` donne en une seconde l'état de la RAM et du swap, encore faut-il savoir lire ses colonnes : la plupart des fausses alertes viennent d'une mauvaise lecture de la colonne `free`.
 <!--more-->
 
-Objectifs de l'article :
-- Comprendre la sortie de `free` et la signification de chaque colonne
-- Distinguer mémoire utilisée, buffers, cache et mémoire réellement disponible
-- Savoir diagnostiquer rapidement un problème de mémoire
-- Découvrir des cas pratiques du quotidien (monitoring, alertes, scripts)
-- Comprendre les pièges courants liés au cache et au swap
+Dans cet article :
+- Lire la sortie de free
+- Pourquoi la colonne free est presque toujours basse
+- Les options utiles
+- Trouver les processus qui consomment la mémoire
+- Le swap
+- Vider le cache, une fausse bonne idée
+- Aller plus loin avec /proc/meminfo
 
----
+## Lire la sortie de free
 
-## L'essentiel en 30 secondes
-
-État de la mémoire en un coup d'oeil :
+On lance presque toujours `free` avec l'option `-h`, pour avoir des tailles lisibles :
 
 ```bash
 free -h
 ```
 
-Sortie typique :
+Voici ce que donne la commande sur une machine de 16 Go qui fait tourner un processus gourmand et qui vient de lire un gros fichier :
 
 ```
                total        used        free      shared  buff/cache   available
-Mem:            15Gi       6.2Gi       1.3Gi       512Mi       8.1Gi       8.8Gi
-Swap:          4.0Gi       0.0Gi       4.0Gi
+Mem:            15Gi       5.7Gi       2.7Gi        13Mi       7.7Gi        10Gi
+Swap:             0B          0B          0B
 ```
 
-Le chiffre qui compte vraiment, c'est **`available`** (ici 8.8 Gi), pas `free`. Si `available` est proche de zéro et que le swap est fortement utilisé, votre machine manque de mémoire. Le reste de cet article vous explique pourquoi.
+La colonne `free` indique seulement 2,7 Gi de libre, alors que la machine a en réalité 10 Gi de disponible pour lancer de nouvelles applications. Le chiffre à regarder est `available`, pas `free`.
 
----
+Ce que contient chaque colonne de la ligne `Mem` :
 
-## Comprendre la sortie de free
+| Colonne      | Contenu                                                                     |
+|--------------|-----------------------------------------------------------------------------|
+| `total`      | Mémoire utilisable au total                                                 |
+| `used`       | Mémoire utilisée par les processus et le noyau, qui ne peut pas être libérée |
+| `free`       | Mémoire qui ne sert à rien du tout                                          |
+| `shared`     | Mémoire partagée, principalement les systèmes de fichiers `tmpfs`           |
+| `buff/cache` | Buffers du noyau et cache de pages (contenu des fichiers lus ou écrits)      |
+| `available`  | Estimation de la mémoire utilisable par une nouvelle application sans swapper |
 
-### Les colonnes de la ligne Mem
+Le calcul de `used` dépend de la version de procps-ng, le projet qui fournit `free`. Depuis la version 4.0.1 (Debian 12, Ubuntu 24.04), `used` vaut `total - available`. Les versions plus anciennes (Ubuntu 22.04 par exemple) calculaient `total - free - buffers - cache`. Sur une machine récente, `used + free + buff/cache` ne tombe donc plus exactement sur `total`, c'est normal. Pour connaître votre version : `free --version`.
 
-| Colonne      | Signification                                                                                     |
-|--------------|---------------------------------------------------------------------------------------------------|
-| `total`      | Mémoire physique totale installée                                                                 |
-| `used`       | Mémoire utilisée (total - free - buffers - cache)                                                 |
-| `free`       | Mémoire totalement inutilisée                                                                     |
-| `shared`     | Mémoire partagée (principalement tmpfs)                                                           |
-| `buff/cache` | Mémoire utilisée par les buffers du noyau et le cache de pages                                    |
-| `available`  | Estimation de la mémoire disponible pour démarrer de nouvelles applications, sans toucher au swap |
+La ligne `Swap` est plus simple : taille totale du swap, partie utilisée et partie libre. Sur la machine de l'exemple, il n'y a pas de swap du tout, ce qui est fréquent sur les VM des hébergeurs cloud.
 
-> **Attention** : ne confondez pas `free` et `available`. Une machine avec 1 Go de `free` mais 8 Go de `buff/cache` a en réalité ~9 Go de mémoire disponible, car le noyau peut libérer le cache à tout moment si une application en a besoin.
+## Pourquoi la colonne free est presque toujours basse
 
-### La ligne Swap
+Linux utilise la RAM inutilisée comme cache disque : quand un fichier est lu, son contenu reste en mémoire pour que la lecture suivante soit instantanée. C'est ce cache qui fait grimper `buff/cache` et baisser `free` au fil du temps. Dès qu'une application a besoin de mémoire, le noyau libère une partie de ce cache.
 
-| Colonne | Signification                   |
-|---------|---------------------------------|
-| `total` | Taille totale du swap configuré |
-| `used`  | Swap actuellement utilisé       |
-| `free`  | Swap encore disponible          |
+Une machine avec peu de `free` et beaucoup de `buff/cache` se porte donc très bien. Tout le cache n'est pas libérable pour autant (les fichiers stockés dans un `tmpfs`, comptés dans `shared`, ne peuvent pas être évincés) et le noyau garde une petite réserve : c'est pour cela que `available` est un peu inférieur à `free + buff/cache`.
 
-Du swap utilisé n'est pas forcément un problème. Le noyau déplace en swap les pages mémoire rarement accédées pour libérer de la RAM pour le cache et les applications actives. C'est un problème uniquement quand le système swap activement (thrashing), ce qui se traduit par un ralentissement notable.
+Si quelqu'un vous dit que "le serveur n'a plus de RAM", regardez `available`. Tant que la mémoire disponible reste au-dessus de 10-15 % du total, il n'y a probablement pas de problème de mémoire.
 
----
-
-## free vs le vrai état de la mémoire
-
-### Pourquoi « free » est faible même quand tout va bien
-
-Linux utilise la RAM libre comme cache de pages pour accélérer les lectures/écritures disque. C'est un comportement normal et souhaitable. Une machine avec peu de mémoire `free` mais beaucoup de `buff/cache` fonctionne parfaitement : le noyau libérera le cache dès qu'une application aura besoin de mémoire.
-
-```bash
-# Ces deux commandes montrent la différence
-free -h          # Mémoire "free" souvent faible
-grep -i available /proc/meminfo  # Mémoire réellement disponible
-```
-
-> **Conseil** : si quelqu'un dit « le serveur n'a plus de RAM », vérifiez la colonne `available`. Si elle est au-dessus de 10-15 % du total, il n'y a probablement pas de problème mémoire.
-
-### Buffers vs cache
-
-- **Buffers** : cache des métadonnées du système de fichiers (table d'inodes, entrées de répertoires, superblocs). En général quelques centaines de Mo.
-- **Cache** : cache du contenu des fichiers (pages lues depuis le disque). Peut atteindre plusieurs Go sur une machine avec beaucoup de RAM.
-
-Les deux sont libérables par le noyau quand la mémoire est nécessaire. C'est pour ça que `available ≈ free + buff/cache` (en simplifiant, car certains caches ne sont pas libérables).
-
----
-
-## Options de free
-
-```bash
-free -h              # Tailles lisibles (Gi, Mi, Ki)
-free -h -s 5         # Rafraîchir toutes les 5 secondes
-free -h -c 10        # Afficher 10 fois puis quitter (combiner avec -s)
-free -h -s 2 -c 5    # 5 mesures toutes les 2 secondes
-free -m              # Afficher en mébioctets (Mio)
-free -g              # Afficher en gibioctets (Gio)
-free -b              # Afficher en octets
-free --si            # Utiliser les puissances de 10 (Go, Mo) au lieu de 2 (Gio, Mio)
-free -w              # Séparer buffers et cache en deux colonnes distinctes
-free -t              # Ajouter une ligne Total (Mem + Swap)
-free -l              # Afficher les statistiques low/high memory (surtout utile sur systèmes 32 bits)
-```
-
-L'option `-w` (wide) est particulièrement utile pour distinguer les buffers du cache quand on diagnostique un problème :
+Pour voir séparément les buffers et le cache, on utilise l'option `-w` (*wide*) :
 
 ```bash
 free -wh
@@ -120,156 +75,78 @@ free -wh
 
 ```
                total        used        free      shared     buffers       cache   available
-Mem:            15Gi       6.2Gi       1.3Gi       512Mi       320Mi       7.8Gi       8.8Gi
-Swap:          4.0Gi          0B       4.0Gi
+Mem:            15Gi       5.7Gi       2.7Gi        13Mi        21Mi       7.7Gi        10Gi
+Swap:             0B          0B          0B
 ```
 
----
+Les `buffers` correspondent aux blocs bruts du disque gardés en mémoire par le noyau, en pratique surtout des métadonnées de systèmes de fichiers. Ils restent petits. Le `cache` regroupe le cache de pages (le contenu des fichiers) et la partie récupérable des caches internes du noyau, dont les caches d'inodes et d'entrées de répertoires. C'est lui qui peut atteindre plusieurs Go.
 
-## Cas pratiques
-
-### Diagnostiquer un serveur qui rame
+## Les options utiles
 
 ```bash
-# Vue d'ensemble rapide
-free -h
-
-# Si available est faible, identifier les processus gourmands
-ps aux --sort=-%mem | head -15
-
-# Version plus lisible avec les colonnes essentielles
-ps -eo pid,user,%mem,%cpu,rss,command --sort=-%mem | head -15
+free -h              # Tailles lisibles (Ki, Mi, Gi)
+free --si -h         # Puissances de 10 (M, G) au lieu de puissances de 2 (Mi, Gi)
+free -m              # En mébioctets
+free -g              # En gibioctets (arrondi, souvent trop grossier)
+free -w              # Buffers et cache dans deux colonnes séparées
+free -t              # Ajoute une ligne Total (RAM + swap)
+free -h -s 2         # Rafraîchit l'affichage toutes les 2 secondes
+free -h -s 10 -c 30  # 30 mesures espacées de 10 secondes, puis s'arrête
 ```
 
-La colonne `RSS` (Resident Set Size) de `ps` indique la mémoire physique réellement occupée par chaque processus en Ko.
+`-h` utilise des puissances de 2 (1 Gi = 1 073 741 824 octets) alors que `--si` utilise des puissances de 10 (1 G = 1 000 000 000 octets), soit environ 7 % d'écart sur les gigas. La même machine affiche ainsi `15Gi` avec `-h` et `16G` avec `--si -h`. Les barrettes de RAM étant vendues en puissances de 2, `-h` colle mieux à ce qui est installé dans la machine.
 
-### Surveiller la mémoire en continu
+Pour suivre l'évolution de la mémoire en continu, `free -h -s 2` dépanne, mais `top`, `htop` ou `vmstat 1` donnent plus d'informations.
+
+## Trouver les processus qui consomment la mémoire
+
+Si `available` est bas, il faut trouver qui mange la mémoire. `ps` sait trier les processus par consommation :
 
 ```bash
-# Rafraîchissement toutes les 2 secondes, indéfiniment
-free -h -s 2
-
-# 30 mesures toutes les 10 secondes (5 minutes de monitoring)
-free -h -s 10 -c 30
+ps -eo pid,user,%mem,rss,command --sort=-%mem | head -15
 ```
 
-> Pour un monitoring plus riche en temps réel, `top`, `htop` ou `vmstat 1` offrent davantage de détails.
+La colonne `RSS` (*Resident Set Size*) donne la mémoire physique occupée par chaque processus, en Kio. En interactif, `htop` avec un tri sur la colonne `MEM%` fait la même chose.
 
-### Script d'alerte mémoire
+Pour être prévenu avant que la machine ne tombe à court de mémoire, un petit script suffit :
 
 ```bash
 #!/usr/bin/env bash
-# Alerte si la mémoire disponible descend sous un seuil
+# Affiche une alerte si la mémoire disponible passe sous un seuil (en %)
 
-SEUIL_PCT=10
+SEUIL_PCT=${1:-10}
 
-total=$(free -m | awk '/^Mem:/ {print $2}')
-available=$(free -m | awk '/^Mem:/ {print $7}')
+read -r total available < <(free -m | awk '/^Mem:/ {print $2, $7}')
 pct=$((available * 100 / total))
 
 if [ "$pct" -lt "$SEUIL_PCT" ]; then
-    echo "ALERTE : seulement ${available} Mo disponibles (${pct}% de ${total} Mo)"
+    echo "ALERTE : seulement ${available} Mo disponibles (${pct} % de ${total} Mo)"
 fi
 ```
 
-Ce script peut être lancé via cron toutes les minutes pour une surveillance simple.
+`$2` et `$7` sont les colonnes `total` et `available` de la ligne `Mem:`. Le script n'écrit rien tant que tout va bien. On peut le lancer toutes les minutes avec cron (voir [Linux : Programmer une tâche avec cron]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})), qui vous enverra sa sortie par mail si un MTA est configuré. À défaut, remplacez le `echo` par un appel à votre outil de notification.
 
-### Vider le cache manuellement
+## Le swap
 
-```bash
-# Vider le cache de pages (page cache)
-sudo sync && echo 3 | sudo tee /proc/sys/vm/drop_caches
+Du swap utilisé n'est pas forcément mauvais signe. Le noyau déplace dans le swap les pages mémoire dont personne ne se sert, pour garder plus de RAM pour le cache et les applications actives. Ce qui pose problème, c'est quand le système passe son temps à écrire et relire le swap (on parle de *thrashing*) : là, tout ralentit.
 
-# Valeurs possibles :
-# 1 = page cache uniquement
-# 2 = dentries et inodes
-# 3 = page cache + dentries + inodes
-```
-
-> **Attention** : vider le cache ne libère pas réellement de la mémoire pour les applications : le cache **est** de la mémoire disponible. Cette opération est surtout utile pour des benchmarks (mesurer les performances sans cache) ou pour diagnostiquer un problème de cache spécifique. En production, laissez le noyau gérer le cache.
-
-### Vérifier si le système utilise le swap activement
+Pour faire la différence, il faut regarder l'activité du swap avec `vmstat` :
 
 ```bash
-# Voir le swap utilisé
-free -h
-
-# Détail : activité swap en temps réel
-vmstat 1 5
+vmstat 1 3
 ```
 
-Dans la sortie de `vmstat`, les colonnes `si` (swap in) et `so` (swap out) indiquent le nombre de pages échangées par seconde. Si ces valeurs sont régulièrement supérieures à zéro, le système swap activement - c'est à ce moment que les performances se dégradent.
-
 ```
-procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
- r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
- 2  0  10240  13200  32040 812000    0    0    12     8  150  300  5  2 93  0  0
- 1  0  10240  12800  32040 812400    0    0     0     4  140  280  3  1 96  0  0
-```
-
-Ici `si=0` et `so=0` : pas de swap actif, tout va bien.
-
-### Comparer la mémoire avant/après le lancement d'une application
-
-```bash
-# Avant
-free -m | awk '/^Mem:/ {print "Avant : " $7 " Mo disponibles"}'
-
-# Lancer l'application
-./mon-application &
-
-# Attendre que l'application se stabilise
-sleep 10
-
-# Après
-free -m | awk '/^Mem:/ {print "Après : " $7 " Mo disponibles"}'
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 0  0      0 2810440  22364 8062448    0    0   574 24871  410    1  3  6 90  1  0  0
+ 0  0      0 2810336  22364 8062452    0    0     0     0  203  208  0  0 100  0  0  0
+ 1  0      0 2810336  22364 8062452    0    0     0     0  225  315  0  0 100  0  0  0
 ```
 
----
+Les colonnes `si` (*swap in*) et `so` (*swap out*) indiquent la quantité de mémoire lue et écrite dans le swap chaque seconde. Si elles restent régulièrement au-dessus de zéro, la machine manque de RAM. Ici elles sont à 0, tout va bien. Attention, la première ligne est une moyenne depuis le démarrage : ce sont les suivantes qui reflètent l'activité actuelle.
 
-## /proc/meminfo : aller plus loin que free
-
-`free` lit ses données depuis `/proc/meminfo`. Ce fichier contient bien plus de détails :
-
-```bash
-cat /proc/meminfo
-```
-
-Quelques champs utiles que `free` n'affiche pas directement :
-
-| Champ             | Signification                                                                               |
-|-------------------|---------------------------------------------------------------------------------------------|
-| `MemAvailable`    | Estimation de la mémoire disponible (source de la colonne `available` de `free`)            |
-| `Dirty`           | Pages modifiées en cache, pas encore écrites sur disque                                     |
-| `Slab`            | Mémoire utilisée par les caches internes du noyau                                           |
-| `SReclaimable`    | Partie du Slab qui peut être récupérée                                                      |
-| `Committed_AS`    | Mémoire totale engagée (promise aux applications, potentiellement plus que la RAM physique) |
-| `SwapCached`      | Swap lu en cache dans la RAM (pour des accès plus rapides si besoin)                        |
-| `HugePages_Total` | Nombre de HugePages, des pages mémoire de grande taille (2 Mo par défaut sur x86-64), utilisées par certaines bases de données |
-
-```bash
-# Voir uniquement les champs qui vous intéressent
-grep -E 'MemTotal|MemAvailable|Dirty|Slab|Committed' /proc/meminfo
-```
-
----
-
-## FAQ
-
-**La colonne `free` est presque à zéro, est-ce grave ?**
-Non, c'est normal. Linux utilise la RAM libre comme cache disque. Regardez la colonne `available` : c'est elle qui indique la mémoire réellement disponible pour de nouvelles applications.
-
-**Mon serveur utilise du swap, dois-je ajouter de la RAM ?**
-Pas nécessairement. Du swap utilisé est normal : le noyau y déplace les pages rarement utilisées. C'est un problème uniquement si les colonnes `si`/`so` de `vmstat` montrent un swap actif constant (thrashing), ce qui se traduit par des lenteurs.
-
-**Comment savoir quel processus consomme le plus de mémoire ?**
-`ps aux --sort=-%mem | head -15` trie les processus par utilisation mémoire décroissante. Pour un suivi en temps réel, utilisez `htop` avec un tri par colonne MEM%.
-
-**Quelle est la différence entre `free -h` et `free --si` ?**
-`-h` utilise les puissances de 2 (1 Gi = 1 073 741 824 octets), `--si` utilise les puissances de 10 (1 G = 1 000 000 000 octets). La différence est d'environ 7 % sur les gibioctets. Les fabricants de RAM utilisent les puissances de 2, donc `-h` correspond mieux à la réalité matérielle.
-
-**Comment augmenter le swap ?**
-Vous pouvez ajouter un fichier de swap sans repartitionner :
+Si une machine n'a pas de swap, ou pas assez, on peut ajouter un fichier de swap sans toucher aux partitions. Sur ext4 :
 
 ```bash
 # Créer un fichier swap de 4 Go
@@ -278,21 +155,54 @@ sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
 
-# Rendre permanent (ajouter dans /etc/fstab)
+# Le rendre permanent
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```
 
----
+## Vider le cache, une fausse bonne idée
+
+On trouve souvent cette commande sur les forums pour "libérer de la RAM" :
+
+```bash
+sudo sync && echo 3 | sudo tee /proc/sys/vm/drop_caches
+```
+
+La valeur écrite choisit ce qui est vidé : `1` pour le cache de pages, `2` pour les caches d'inodes et d'entrées de répertoires, `3` pour les deux.
+
+La commande fait bien remonter la colonne `free`, mais elle ne rend aucune mémoire aux applications : le cache était déjà disponible pour elles. Par contre, les prochaines lectures de fichiers devront repasser par le disque. Vider le cache est utile pour des benchmarks (mesurer des performances sans cache), pas en production.
+
+## Aller plus loin avec /proc/meminfo
+
+`free` ne fait que lire et mettre en forme le fichier `/proc/meminfo`, qui contient beaucoup plus de détails :
+
+```bash
+grep -E 'MemTotal|MemAvailable|Dirty|Slab|Committed' /proc/meminfo
+```
+
+```
+MemTotal:       16480968 kB
+MemAvailable:   15969924 kB
+Dirty:               160 kB
+Slab:              53612 kB
+Committed_AS:     397028 kB
+```
+
+Quelques champs que `free` n'affiche pas :
+
+| Champ             | Contenu                                                                         |
+|-------------------|---------------------------------------------------------------------------------|
+| `Dirty`           | Pages modifiées en mémoire, pas encore écrites sur le disque                    |
+| `Slab`            | Caches internes du noyau                                                        |
+| `SReclaimable`    | Partie du `Slab` que le noyau peut récupérer                                    |
+| `Committed_AS`    | Mémoire promise aux processus, qui peut dépasser la RAM physique                |
+| `SwapCached`      | Pages revenues du swap en RAM mais toujours présentes dans le swap              |
+| `HugePages_Total` | Nombre de pages de grande taille (2 Mo sur x86-64), utilisées par certaines bases de données |
 
 ## Voir aussi
 
 - [df/du : surveiller et analyser l'espace disque sous Linux]({% post_url 2026-03-01-Surveiller-espace-disque-avec-df-et-du %})
-- [Ripgrep (rg) : chercher dans le code à la vitesse de l'éclair]({% post_url 2026-02-16-Chercher-dans-le-code-rapidement-avec-ripgrep %})
 - [Linux : Programmer une tâche avec cron]({% post_url 2025-10-11-Linux-programmer-une-tache-avec-cron %})
-
-## Références
-
+- [Ripgrep (rg) : chercher rapidement dans le code]({% post_url 2026-02-16-Chercher-dans-le-code-rapidement-avec-ripgrep %})
 - [man free](https://man7.org/linux/man-pages/man1/free.1.html)
-- [man proc - /proc/meminfo](https://man7.org/linux/man-pages/man5/proc_meminfo.5.html)
-- [Linux Ate My RAM](https://www.linuxatemyram.com/) : explication pédagogique du cache mémoire
-- [vmstat - man page](https://man7.org/linux/man-pages/man8/vmstat.8.html)
+- [man proc_meminfo](https://man7.org/linux/man-pages/man5/proc_meminfo.5.html)
+- [Linux Ate My RAM](https://www.linuxatemyram.com/), l'explication de référence sur le cache mémoire

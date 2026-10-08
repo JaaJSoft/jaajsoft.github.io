@@ -15,8 +15,8 @@ tableaux ou des équations par exemple. <!--more-->
 ## Introduction : étiquettes et références
 
 Il n'y a besoin d'aucun *package* particulier : on étiquette un endroit du
-document avec un `\label{mon label unique}`, puis pour faire référence à cet
-endroit du document à un autre endroit, on utilise `\ref{mon label unique}`. Par
+document avec un `\label{mon label unique}`, puis, pour y faire référence
+ailleurs, on utilise `\ref{mon label unique}`. Par
 exemple, le code :
 
 ```latex
@@ -50,7 +50,7 @@ sont transformées, dans un pdf, en liens vers l'endroit où vous avez placé vo
 ## Prérequis : utilisation des compteurs
 
 En fait, chaque type de référence (section, figure, table ou équation par
-exemple) utilise un compteur, qui sert à dénombrer le nombre de sections, de
+exemple) utilise un compteur, qui sert à compter le nombre de sections, de
 figures, de tables ou d'équations. Lorsque vous écrivez `\section{...}`, le
 compteur de sections est incrémenté : on fait habituellement cela en
 utilisant `\stepcounter{moncompteur}`. Ainsi, si l'on souhaite créer une
@@ -74,7 +74,7 @@ le "Encadré n°". C'est ce que fait le code suivant :
 ```
 {% endraw %}
 
-Le fonctionnement précis de cette commande n'est pas le sujet de cet article,
+Le fonctionnement précis de cette commande n'est pas le sujet de cet article ;
 seuls nous intéressent l'appel à `\stepcounter` et `\theencadre`. Le code :
 
 ```latex
@@ -100,7 +100,7 @@ Nous allons utiliser des compteurs pour créer nos propres
 cousine `\stepcounter`, seulement elle place une sorte d'ancre là où elle a été
 appelée afin d'y avoir accès ailleurs dans le document, par exemple lors de
 l'appel à un `\ref`. Par défaut, cet appel à `\ref` renverra la valeur qu'avait
-le compteur quand elle a été placée. Si nous remplaçons `\stepcounter{encadre}`
+le compteur quand l'ancre a été placée. Si nous remplaçons `\stepcounter{encadre}`
 par `\refstepcounter{encadre}` dans le code précédent, tout fonctionne très
 bien, mais le document pdf contiendra désormais une ancre au début de chaque
 encadré. Pour aller chercher cette ancre, nous avons besoin de la nommer par une
@@ -150,7 +150,7 @@ donne le résultat :
 ![image 4](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image4.jpg){: width="620" height="593"}
 
 *Remarque* : nous écrivons toujours "encadré" avant d'appeler `\ref`, mais il
-est toujours possible et conseillé, d'envelopper cet appel dans une commande *sémantique*, comme :
+est possible, et conseillé, d'envelopper cet appel dans une commande *sémantique*, comme :
 {% raw %}
 ```latex
 \newcommand{\refEncadre}[1]{%
@@ -164,18 +164,18 @@ il faut donc inclure `\usepackage{xcolor}` dans le préambule.
 
 ## Utilisation de `hyperref` pour créer des liens
 
-Le *package* `hyperref` permet de transformer les `\ref` (ainsi que ses petits
+Le *package* `hyperref` permet de transformer les `\ref` (ainsi que leurs petits
 frères comme le `\eqref` défini par `amsmath`) en liens. Cette fonctionnalité du
 format pdf permet de naviguer rapidement dans le document jusqu'à l'endroit
 auquel on fait référence (la fameuse ancre dont nous parlions précédemment).
 C'est particulièrement utile dans la table des matières par exemple. Il suffit
 d'inclure `\usepackage{hyperref}` dans le préambule pour que la magie opère. Il
 vaut cependant mieux l'appeler *en dernier*, car il fonctionnera ainsi dans le
-plus grand nombre de cas possibles (ceux du noyau de LaTeX comme les figures
+plus grand nombre de cas possible (ceux du noyau de LaTeX comme les figures
 ou les sections, mais aussi ceux rajoutés par des *packages* comme les
 environnements de `amsmath`).
 
-Le même code que précédemment, auquel on rajoute cet appel à `hyperref` donne
+Le même code que précédemment, auquel on rajoute cet appel à `hyperref`, donne
 ainsi le résultat :
 
 ![image 5](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image5.jpg){: width="608" height="591"}
@@ -195,11 +195,11 @@ utilisé) un terme comme "section", "figure" ou "équation", selon le contexte
 dans lequel a été appelé `\label` (juste après une section, dans une figure ou
 dans une équation par exemple).
 
-Dans notre cas, l'environnement `encadre` n'est pas connu de `hyperref`. On utilisera
-donc plutôt `\hyperref[identifiant]{texte de remplacement}` qui fonctionne exactement
+Dans notre cas, le compteur `encadre` n'est pas connu de `hyperref`. On utilisera
+donc plutôt `\hyperref[identifiant]{texte de remplacement}`, qui fonctionne exactement
 comme `\ref{identifiant}`, à cela près que le texte affiché est "texte de
 remplacement" et non la valeur du compteur utilisé.
-Utiliser `\hyperref[une étiquette différente !]{cet encadré}` permet
+Écrire `\hyperref[une étiquette différente !]{cet encadré}` permet
 d'utiliser "cet encadré" comme lien :
 
 ![image 6](/assets/images/2022-02-06-Créer-ses-propres-références-en-latex/image6.jpg){: width="689" height="78"}
@@ -217,11 +217,11 @@ et y faire référence de manière très claire à un autre endroit :
 
 ## Conclusion
 
-Comme la plupart des _packages_ LaTeX, la meilleure manière d'apprendre à
+Comme pour la plupart des _packages_ LaTeX, la meilleure façon d'apprendre à
 utiliser `hyperref` est de tester constamment de nouvelles manières de faire.
 
 Adaptez ce qui précède à vos nouveaux documents : ce qui a marché pour des
-encadrés, marchera pour des définitions, ce qui a marché pour des définitions
+encadrés marchera pour des définitions ; ce qui a marché pour des définitions
 peut servir à transformer une variable mathématique en lien vers l'endroit où elle a
 été fixée par exemple !
 
